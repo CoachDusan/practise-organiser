@@ -306,6 +306,35 @@
   }
   .hint b { color: var(--text); }
 
+  /* ---------- tactics ---------- */
+  .cat-head {
+    font-family: "Barlow Condensed", sans-serif; text-transform: uppercase;
+    letter-spacing: .07em; font-size: 12px; color: var(--accent);
+    margin: 14px 0 7px;
+  }
+  .prow.tactic { grid-template-columns: 108px 1fr; }
+  .tthumb {
+    background: var(--court); height: 66px; width: 100%; border-radius: 6px; overflow: hidden;
+  }
+  .tthumb svg { width: 100%; height: 100%; display: block; }
+
+  .option {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 14px; margin-top: 20px;
+  }
+  .option-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+  .option-head .num {
+    font-family: "Barlow Condensed", sans-serif; font-size: 12px; letter-spacing: .09em;
+    text-transform: uppercase; color: var(--accent); white-space: nowrap;
+  }
+  .option-head input[type="text"] {
+    flex: 1 1 200px; min-width: 140px; background: var(--ground);
+    font-family: "Barlow Condensed", sans-serif; font-size: 20px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .03em;
+  }
+  .option .diagrams { margin-top: 16px; }
+  .option .diagram { background: var(--ground); }
+
   /* ---------- roster ---------- */
   .prow.player { grid-template-columns: 62px 1fr; }
   .prow.inactive { opacity: .55; }
@@ -591,6 +620,9 @@
     .pbadge { border-color: #999; color: #000; background: #fff; }
     .day, .mg-cell, .chip-item, .mg-item { background: #fff; border-color: #bbb; break-inside: avoid; }
     .chart-box, .bars, .att-summary, .arow, .att-row { background: #fff; border-color: #bbb; break-inside: avoid; }
+    .option { background: #fff; border-color: #bbb; break-inside: avoid; }
+    .option .diagram { background: #fff; }
+    .cat-head { color: #000; }
     .chart .ax, .chart-cap, .leg, .att-detail, .ma-label { fill: #555; color: #555; }
     .chart .ser { fill: #000; }
     .chart .grid { stroke: #ddd; }
@@ -607,6 +639,7 @@
     <button class="chip" data-view="schedule">Schedule</button>
     <button class="chip" data-view="practices">Practices</button>
     <button class="chip" data-view="library">Drills</button>
+    <button class="chip" data-view="tactics">Tactics</button>
     <button class="chip" data-view="roster">Roster</button>
   </div>
   <div id="crumb" class="label" style="font-size:12px;color:var(--dim)"></div>
@@ -692,7 +725,7 @@
   var FORMATS = ["Individual", "Pairs", "3v3", "4v4", "5v5", "5:0", "Whole team"];
   var SIZES = { S: 300, M: 460, L: 660 };   // css px, the court's drawn width
 
-  var state = { version: 4, drills: [], practices: [], events: [], players: [] };
+  var state = { version: 5, drills: [], practices: [], events: [], players: [], tactics: [] };
   var PREVIEW = !!(window.claude);   // running inside the claude.ai preview sandbox
 
   /* ================= storage =================
@@ -705,21 +738,22 @@
   var LS_KEY = "practise-organiser/v1";
 
   /* One object store per kind of record. Practices arrived at DB version 2 and
-     schedule events at version 3 and players at version 4; each upgrade only
-     creates what is missing, so data written under an older version is carried
-     across untouched. */
+     schedule events at version 3, players at version 4 and tactics at version 5;
+     each upgrade only creates what is missing, so data written under an older
+     version is carried across untouched. */
   var DB = (function () {
     var opening = null;
     function open() {
       if (opening) return opening;
       opening = new Promise(function (resolve, reject) {
-        var req = indexedDB.open("practise-organiser", 4);
+        var req = indexedDB.open("practise-organiser", 5);
         req.onupgradeneeded = function () {
           var db = req.result;
           if (!db.objectStoreNames.contains("drills")) db.createObjectStore("drills", { keyPath: "id" });
           if (!db.objectStoreNames.contains("practices")) db.createObjectStore("practices", { keyPath: "id" });
           if (!db.objectStoreNames.contains("events")) db.createObjectStore("events", { keyPath: "id" });
           if (!db.objectStoreNames.contains("players")) db.createObjectStore("players", { keyPath: "id" });
+          if (!db.objectStoreNames.contains("tactics")) db.createObjectStore("tactics", { keyPath: "id" });
         };
         req.onsuccess = function () { resolve(req.result); };
         req.onerror = function () { reject(req.error); };
@@ -750,12 +784,12 @@
     return Promise.resolve()
       .then(function () {
         if (!window.indexedDB) throw new Error("no idb");
-        return Promise.all([DB.all("drills"), DB.all("practices"),
-                            DB.all("events"), DB.all("players")])
+        return Promise.all([DB.all("drills"), DB.all("practices"), DB.all("events"),
+                            DB.all("players"), DB.all("tactics")])
           .then(function (r) {
             Store.kind = "idb";
-            return { drills: r[0] || [], practices: r[1] || [],
-                     events: r[2] || [], players: r[3] || [] };
+            return { drills: r[0] || [], practices: r[1] || [], events: r[2] || [],
+                     players: r[3] || [], tactics: r[4] || [] };
           });
       })
       .catch(function () {
@@ -770,10 +804,11 @@
           return { drills: (saved && saved.drills) || [],
                    practices: (saved && saved.practices) || [],
                    events: (saved && saved.events) || [],
-                   players: (saved && saved.players) || [] };
+                   players: (saved && saved.players) || [],
+                   tactics: (saved && saved.tactics) || [] };
         } catch (e) {
           Store.kind = "memory";
-          return { drills: [], practices: [], events: [], players: [] };
+          return { drills: [], practices: [], events: [], players: [], tactics: [] };
         }
       })
       .then(function (rows) {
@@ -782,6 +817,8 @@
         state.practices = rows.practices.map(inflatePractice).sort(byDateDesc);
         state.events = rows.events.map(inflateEvent).sort(byDateDesc);
         state.players = rows.players.map(inflatePlayer).sort(bySquadNumber);
+        state.tactics = rows.tactics.map(inflateTactic)
+          .sort(function (a, b) { return (b.updatedAt || 0) - (a.updatedAt || 0); });
         // Ask Safari not to evict this data when space runs low.
         if (navigator.storage && navigator.storage.persist) {
           navigator.storage.persist().catch(function () {});
@@ -793,10 +830,11 @@
     if (Store.kind === "local") {
       try {
         localStorage.setItem(LS_KEY, JSON.stringify({
-          version: 4, drills: state.drills.map(deflateDrill),
+          version: 5, drills: state.drills.map(deflateDrill),
           practices: state.practices.map(deflatePractice),
           events: state.events.map(deflateEvent),
-          players: state.players.map(deflatePlayer)
+          players: state.players.map(deflatePlayer),
+          tactics: state.tactics.map(deflateTactic)
         }));
         return Promise.resolve();
       } catch (e) { return Promise.reject(e); }
@@ -832,6 +870,12 @@
     schedule();
   }
 
+  function touchTactic(t) {
+    t.updatedAt = Date.now();
+    dirty[t.id] = "tactics";
+    schedule();
+  }
+
   function schedule() {
     clearTimeout(saveTimer);
     saveTimer = setTimeout(flush, 400);
@@ -857,6 +901,10 @@
         if (queued[id] === "players") {
           var pl = findPlayer(id);
           return pl ? DB.put("players", deflatePlayer(pl)) : DB.del("players", id);
+        }
+        if (queued[id] === "tactics") {
+          var t = findTactic(id);
+          return t ? DB.put("tactics", deflateTactic(t)) : DB.del("tactics", id);
         }
         var d = findDrill(id);
         return d ? DB.put("drills", deflateDrill(d)) : DB.del("drills", id);
@@ -893,6 +941,12 @@
     state.players = state.players.filter(function (p) { return p.id !== id; });
     if (Store.kind === "idb") DB.del("players", id).then(flashSaved).catch(function () {});
     else { dirty[id] = "players"; schedule(); }
+  }
+
+  function removeTactic(id) {
+    state.tactics = state.tactics.filter(function (t) { return t.id !== id; });
+    if (Store.kind === "idb") DB.del("tactics", id).then(flashSaved).catch(function () {});
+    else { dirty[id] = "tactics"; schedule(); }
   }
 
   var chipEl = document.getElementById("saveChip");
@@ -941,8 +995,13 @@
   }
 
   function newItem(drill) {
-    return { id: uid(), drillId: drill.id, name: drill.name || "Untitled",
-             minutes: drill.minutes || 0 };
+    return { id: uid(), kind: "drill", drillId: drill.id,
+             name: drill.name || "Untitled", minutes: drill.minutes || 0 };
+  }
+
+  function newTacticItem(t, o) {
+    return { id: uid(), kind: "tactic", tacticId: t.id, optionId: o.id,
+             name: optionLabel(t, o), minutes: 0 };
   }
 
   function findPractice(id) {
@@ -960,7 +1019,11 @@
     if (!Array.isArray(p.items)) p.items = [];
     if (p.status !== "done") p.status = "planned";
     if (!p.attendance || typeof p.attendance !== "object") p.attendance = {};
-    p.items.forEach(function (it) { it.minutes = Number(it.minutes) || 0; });
+    p.items.forEach(function (it) {
+      it.minutes = Number(it.minutes) || 0;
+      // items written before tactics existed are all drills
+      if (!it.kind) it.kind = "drill";
+    });
     return p;
   }
 
@@ -971,6 +1034,11 @@
   }
 
   function itemLabel(it) {
+    if (it.kind === "tactic") {
+      var t = it.tacticId ? findTactic(it.tacticId) : null;
+      var o = t ? findOption(t, it.optionId) : null;
+      return t ? optionLabel(t, o) : (it.name || "Untitled");
+    }
     var d = it.drillId ? findDrill(it.drillId) : null;
     return d ? (d.name || "Untitled") : (it.name || "Untitled");
   }
@@ -996,6 +1064,104 @@
       });
     });
     return m;
+  }
+
+  /* ================= tactics =================
+     The team's package, and it has two ends. A set holds options: "Horns" is the
+     set, and Flare, Down and Slip are how it is actually run. Three options typed
+     as three separate entries would be three strings that happen to start with
+     the same word; held as options of one set they are one thing with three ways
+     out of it, which is how it gets explained to a player.
+
+     Defence is a first-class side, not a category tucked under offence. */
+
+  var SIDES = ["Offence", "Defence", "Special situations"];
+
+  var TACTIC_CATEGORIES = {
+    "Offence": ["Half-court sets", "Early offence", "Zone offence", "Press break",
+                "Baseline out of bounds", "Sideline out of bounds", "Delay / clock offence"],
+    "Defence": ["Man-to-man", "Zone defence", "Full-court press", "Half-court trap",
+                "Transition defence", "Defending out of bounds", "Defending the pick & roll"],
+    "Special situations": ["Last shot", "End of quarter", "Free-throw situations",
+                           "Fouling and clock", "Jump ball"]
+  };
+
+  function categoriesFor(side) { return TACTIC_CATEGORIES[side] || []; }
+
+  function newTactic() {
+    return {
+      id: uid(), name: "", side: "Offence", category: "", note: "",
+      options: [newOption()], createdAt: Date.now(), updatedAt: Date.now()
+    };
+  }
+
+  function newOption() {
+    return { id: uid(), name: "", points: "", diagrams: [newDiagram()] };
+  }
+
+  function findTactic(id) {
+    for (var i = 0; i < state.tactics.length; i++) if (state.tactics[i].id === id) return state.tactics[i];
+    return null;
+  }
+
+  function findOption(t, optionId) {
+    if (!t) return null;
+    for (var i = 0; i < t.options.length; i++) if (t.options[i].id === optionId) return t.options[i];
+    return null;
+  }
+
+  function deflateTactic(t) {
+    var copy = {};
+    for (var k in t) if (k !== "options") copy[k] = t[k];
+    copy.options = t.options.map(function (o) {
+      return {
+        id: o.id, name: o.name, points: o.points,
+        diagrams: (o.diagrams || []).map(function (dg) {
+          return { id: dg.id, court: dg.court, size: dg.size, caption: dg.caption,
+                   strokes: dg.strokes.map(packStroke) };
+        })
+      };
+    });
+    return copy;
+  }
+
+  function inflateTactic(t) {
+    if (!Array.isArray(t.options)) t.options = [];
+    t.options.forEach(function (o) {
+      if (!Array.isArray(o.diagrams)) o.diagrams = [];
+      o.diagrams.forEach(function (dg) { dg.strokes = (dg.strokes || []).map(unpackStroke); });
+    });
+    if (SIDES.indexOf(t.side) === -1) t.side = "Offence";
+    return t;
+  }
+
+  function optionLabel(t, o) {
+    var setName = (t && t.name) || "Untitled";
+    var optName = (o && o.name) || "";
+    return optName ? setName + " · " + optName : setName;
+  }
+
+  /* How many completed practices each set, and each option, was worked in.
+     Counted once per session, like the drill tallies. */
+  function tacticUsage() {
+    var sets = {}, options = {};
+    state.practices.forEach(function (p) {
+      if (p.status !== "done") return;
+      var seenSet = {}, seenOpt = {};
+      p.items.forEach(function (it) {
+        if (it.kind !== "tactic" || !it.tacticId) return;
+        if (!seenSet[it.tacticId]) {
+          seenSet[it.tacticId] = 1;
+          sets[it.tacticId] = (sets[it.tacticId] || 0) + 1;
+        }
+        var key = it.tacticId + "/" + it.optionId;
+        if (it.optionId && !seenOpt[key]) {
+          seenOpt[key] = 1;
+          options[key] = (options[key] || 0) + 1;
+        }
+      });
+    });
+    return { sets: sets, options: options };
   }
 
   /* ================= roster =================
@@ -1366,11 +1532,12 @@
 
   function serialize(st) {
     return JSON.stringify({
-      version: 4, updatedAt: st.updatedAt,
+      version: 5, updatedAt: st.updatedAt,
       drills: st.drills.map(deflateDrill),
       practices: st.practices.map(deflatePractice),
       events: st.events.map(deflateEvent),
-      players: st.players.map(deflatePlayer)
+      players: st.players.map(deflatePlayer),
+      tactics: st.tactics.map(deflateTactic)
     });
   }
 
@@ -1386,6 +1553,7 @@
     st.events.sort(byDateDesc);
     st.players = Array.isArray(st.players) ? st.players.map(inflatePlayer) : [];
     st.players.sort(bySquadNumber);
+    st.tactics = Array.isArray(st.tactics) ? st.tactics.map(inflateTactic) : [];
     return st;
   }
 
@@ -1611,7 +1779,7 @@
   var app = document.getElementById("app");
   var crumb = document.getElementById("crumb");
   var route = { view: "schedule", id: null, filter: "", pfilter: "",
-                anchor: null, smode: "week" };
+                anchor: null, smode: "week", side: "" };
   var pads = [];
 
   function go(view, id) {
@@ -1626,7 +1794,8 @@
   // takes over as the way back, so both are never on screen at once.
   function setChrome() {
     var onList = route.view === "library" || route.view === "practices" ||
-                 route.view === "schedule" || route.view === "roster";
+                 route.view === "schedule" || route.view === "roster" ||
+                 route.view === "tactics";
     tabsEl.style.display = onList ? "" : "none";
     Array.prototype.forEach.call(tabsEl.children, function (b) {
       b.setAttribute("aria-pressed", String(b.getAttribute("data-view") === route.view));
@@ -1656,6 +1825,8 @@
     else if (route.view === "practice") renderPracticeEditor();
     else if (route.view === "roster") renderRoster();
     else if (route.view === "player") renderPlayer();
+    else if (route.view === "tactics") renderTactics();
+    else if (route.view === "tactic") renderTacticEditor();
     else renderLibrary();
     relayout();
   }
@@ -1770,6 +1941,281 @@
       wrap.appendChild(e);
     }
     app.appendChild(wrap);
+  }
+
+  /* ---------- tactics ---------- */
+
+  function renderTactics() {
+    var wrap = el("div", "wrap");
+
+    var banner = storageBanner();
+    if (banner) wrap.appendChild(banner);
+
+    var use = tacticUsage();
+
+    var head = el("div", "lib-head");
+    head.appendChild(el("h1", null, "Tactics"));
+    var opts = 0;
+    state.tactics.forEach(function (t) { opts += t.options.length; });
+    head.appendChild(el("span", "count", state.tactics.length
+      ? state.tactics.length + (state.tactics.length === 1 ? " set" : " sets") +
+        "  ·  " + opts + (opts === 1 ? " option" : " options")
+      : ""));
+    var gap = el("div"); gap.style.marginLeft = "auto";
+    head.appendChild(gap);
+    var add = el("button", "chip primary", "+  New set");
+    add.onclick = function () {
+      var t = newTactic();
+      if (route.side) t.side = route.side;
+      state.tactics.unshift(t);
+      touchTactic(t);
+      go("tactic", t.id);
+    };
+    head.appendChild(add);
+    wrap.appendChild(head);
+
+    // filter by end of the floor, because that is how a package divides
+    var f = el("div", "filters");
+    var all = el("button", null, "All");
+    all.setAttribute("aria-pressed", String(!route.side));
+    all.onclick = function () { route.side = ""; render(); };
+    f.appendChild(all);
+    SIDES.forEach(function (s) {
+      var n = state.tactics.filter(function (t) { return t.side === s; }).length;
+      var b = el("button", null, s + (n ? " (" + n + ")" : ""));
+      b.setAttribute("aria-pressed", String(route.side === s));
+      b.onclick = function () { route.side = (route.side === s ? "" : s); render(); };
+      f.appendChild(b);
+    });
+    wrap.appendChild(f);
+
+    var shown = state.tactics.filter(function (t) {
+      return !route.side || t.side === route.side;
+    });
+
+    SIDES.forEach(function (side) {
+      var mine = shown.filter(function (t) { return t.side === side; });
+      if (!mine.length) return;
+      wrap.appendChild(el("div", "month label", side));
+
+      var byCat = {};
+      mine.forEach(function (t) {
+        var c = t.category || "Uncategorised";
+        (byCat[c] = byCat[c] || []).push(t);
+      });
+      var cats = categoriesFor(side).filter(function (c) { return byCat[c]; });
+      Object.keys(byCat).forEach(function (c) { if (cats.indexOf(c) === -1) cats.push(c); });
+
+      cats.forEach(function (c) {
+        wrap.appendChild(el("div", "cat-head", c));
+        byCat[c].forEach(function (t) { wrap.appendChild(tacticRow(t, use)); });
+      });
+    });
+
+    if (!state.tactics.length) {
+      var e = el("div", "empty");
+      e.innerHTML = "Nothing here yet.<br>A set holds its options — Horns, and the ways out of it.";
+      wrap.appendChild(e);
+    } else if (!shown.length) {
+      wrap.appendChild(el("div", "empty", "Nothing on that end of the floor yet."));
+    }
+
+    app.appendChild(wrap);
+  }
+
+  function tacticRow(t, use) {
+    var row = el("button", "prow tactic");
+
+    var left = el("div", "twhen");
+    var first = t.options[0];
+    var thumb = el("div", "tthumb");
+    thumb.innerHTML = thumbForDiagram(first && first.diagrams && first.diagrams[0]);
+    left.appendChild(thumb);
+    row.appendChild(left);
+
+    var right = el("div", "pwhat");
+    right.appendChild(el("div", "pdate", t.name || "Untitled"));
+
+    var sub = [];
+    sub.push(t.options.length + (t.options.length === 1 ? " option" : " options"));
+    if (use.sets[t.id]) {
+      sub.push("worked in " + use.sets[t.id] +
+               (use.sets[t.id] === 1 ? " practice" : " practices"));
+    }
+    right.appendChild(el("div", "psub", sub.join("  ·  ")));
+
+    var named = t.options.filter(function (o) { return o.name; });
+    if (named.length) {
+      right.appendChild(el("div", "pnames",
+        named.map(function (o) { return o.name; }).join("   ·   ")));
+    }
+    if (t.note) right.appendChild(el("div", "pnote", t.note));
+
+    row.appendChild(right);
+    row.onclick = function () { go("tactic", t.id); };
+    return row;
+  }
+
+  // the drill thumbnail, but for any single diagram
+  function thumbForDiagram(d) {
+    var kind = d ? d.court : "half";
+    var c = COURTS[kind] || COURTS.half;
+    var ink = "";
+    if (d && d.strokes && d.strokes.length) {
+      for (var i = 0; i < d.strokes.length; i++) {
+        var s = d.strokes[i];
+        if (s.tool === "eraser" || !s.pts || s.pts.length < 2) continue;
+        var dd = "";
+        for (var j = 0; j < s.pts.length; j++) {
+          dd += (j ? "L" : "M") + (s.pts[j].x * c.w).toFixed(0) + " " + (s.pts[j].y * c.h).toFixed(0) + " ";
+        }
+        ink += '<path d="' + dd + '" fill="none" stroke="' + s.color +
+               '" stroke-width="' + (s.size * 1.6) + '" stroke-linecap="round" stroke-linejoin="round" opacity="' +
+               (s.tool === "marker" ? 0.45 : 0.95) + '"/>';
+      }
+    }
+    return '<svg viewBox="0 0 ' + c.w + ' ' + c.h + '" preserveAspectRatio="xMidYMid slice">' +
+           c.svg + ink + '</svg>';
+  }
+
+  /* ---------- one set ----------
+     Options are laid out down the page rather than behind another tap, so a set
+     reads and prints as one thing: this is what we run, and here is every way
+     out of it. */
+
+  function renderTacticEditor() {
+    var t = findTactic(route.id);
+    if (!t) { go("tactics"); return; }
+
+    backTo("tactics", "Tactics");
+
+    var shell = el("div", "editor");
+    shell.appendChild(buildRail());
+
+    var sheet = el("div", "sheet");
+
+    var name = document.createElement("input");
+    name.type = "text"; name.className = "name-input"; name.value = t.name;
+    name.placeholder = "Set name  —  e.g. Horns";
+    name.oninput = function () { t.name = name.value; touchTactic(t); };
+    sheet.appendChild(name);
+
+    var row = el("div", "metarow");
+    row.appendChild(pickerField("End of the floor", SIDES, t.side, function (v) {
+      t.side = v;
+      if (categoriesFor(v).indexOf(t.category) === -1) t.category = "";
+      touchTactic(t); render();
+    }));
+    row.appendChild(pickerField("Category", categoriesFor(t.side), t.category, function (v) {
+      t.category = v; touchTactic(t);
+    }));
+    sheet.appendChild(row);
+
+    var noteField = el("div", "field");
+    noteField.style.marginTop = "14px";
+    noteField.appendChild(el("div", "label", "The principle"));
+    var nta = document.createElement("textarea");
+    nta.value = t.note || "";
+    nta.placeholder = "What this set is for, and when you call it.";
+    nta.style.minHeight = "62px";
+    nta.oninput = function () { t.note = nta.value; touchTactic(t); };
+    noteField.appendChild(nta);
+    sheet.appendChild(noteField);
+
+    var use = tacticUsage();
+
+    t.options.forEach(function (o, i) {
+      sheet.appendChild(optionBlock(t, o, i, use));
+    });
+
+    var addOpt = el("button", "add-row", "+  Add another option");
+    addOpt.onclick = function () {
+      t.options.push(newOption());
+      touchTactic(t); render();
+    };
+    sheet.appendChild(addOpt);
+
+    var footer = el("div", null);
+    footer.style.cssText = "margin-top:26px;display:flex;gap:8px;flex-wrap:wrap";
+
+    var done = el("button", "chip primary", "Done");
+    done.onclick = function () { go("tactics"); };
+    footer.appendChild(done);
+
+    var print = el("button", "chip ghost", "Print");
+    print.onclick = function () { window.print(); };
+    footer.appendChild(print);
+
+    var del = el("button", "chip danger", "Delete set");
+    del.onclick = function () {
+      var used = use.sets[t.id] || 0;
+      var msg = "Delete “" + (t.name || "Untitled") + "”? This cannot be undone.";
+      if (used) {
+        msg += "\n\nIt is in " + used + " practice" + (used === 1 ? "" : "s") +
+               ". Those still list the name, but the diagrams go for good.";
+      }
+      if (!confirm(msg)) return;
+      removeTactic(t.id);
+      go("tactics");
+    };
+    footer.appendChild(del);
+
+    sheet.appendChild(footer);
+    shell.appendChild(sheet);
+    app.appendChild(shell);
+  }
+
+  function optionBlock(t, o, i, use) {
+    var box = el("div", "option");
+
+    var head = el("div", "option-head");
+    head.appendChild(el("span", "num", "Option " + (i + 1)));
+
+    var nm = document.createElement("input");
+    nm.type = "text"; nm.value = o.name;
+    nm.placeholder = "Option name  —  e.g. Flare";
+    nm.oninput = function () { o.name = nm.value; touchTactic(t); };
+    head.appendChild(nm);
+
+    var n = use.options[t.id + "/" + o.id];
+    if (n) head.appendChild(el("span", "usage", "Worked in " + n + (n === 1 ? " practice" : " practices")));
+
+    if (t.options.length > 1) {
+      var rm = el("button", "chip danger", "Remove option");
+      rm.style.marginLeft = "auto";
+      rm.onclick = function () {
+        if (!confirm("Remove “" + (o.name || "option " + (i + 1)) + "” from this set?")) return;
+        t.options.splice(i, 1); touchTactic(t); render();
+      };
+      head.appendChild(rm);
+    }
+    box.appendChild(head);
+
+    var pts = el("div", "field");
+    pts.appendChild(el("div", "label", "How it is executed"));
+    var ta = document.createElement("textarea");
+    ta.value = o.points || "";
+    ta.placeholder = "The reads, the timing, and what the counter is.";
+    ta.style.minHeight = "62px";
+    ta.oninput = function () { o.points = ta.value; touchTactic(t); };
+    pts.appendChild(ta);
+    box.appendChild(pts);
+
+    var diagrams = el("div", "diagrams");
+    o.diagrams.forEach(function (dg, k) {
+      diagrams.appendChild(buildDiagram(dg, k, o.diagrams,
+        function () { touchTactic(t); }, "option"));
+    });
+    box.appendChild(diagrams);
+
+    var addCourt = el("button", "add-court", "+  Add another court");
+    addCourt.onclick = function () {
+      o.diagrams.push(newDiagram());
+      touchTactic(t); render();
+    };
+    box.appendChild(addCourt);
+
+    return box;
   }
 
   /* ---------- roster ---------- */
@@ -2767,10 +3213,10 @@
 
     if (!p.items.length) {
       wrap.appendChild(el("div", "empty",
-        "Nothing in this practice yet. Add drills from the library."));
+        "Nothing in this practice yet. Add drills from the library, or tactics from the package."));
     }
 
-    var addBtn = el("button", "add-row", "+  Add drill from library");
+    var addBtn = el("button", "add-row", "+  Add a drill or a tactic");
     addBtn.onclick = function () { openDrillPicker(p); };
     wrap.appendChild(addBtn);
 
@@ -2829,15 +3275,24 @@
 
     row.appendChild(el("div", "inum", String(i + 1)));
 
-    var d = it.drillId ? findDrill(it.drillId) : null;
-    var gone = it.drillId && !d;
+    var sub = [], gone = false;
+    if (it.kind === "tactic") {
+      var t = it.tacticId ? findTactic(it.tacticId) : null;
+      gone = it.tacticId && !t;
+      sub.push("Tactic");
+      if (t && t.side) sub.push(t.side);
+      if (t && t.category) sub.push(t.category);
+      if (gone) sub.push("no longer in the package");
+    } else {
+      var d = it.drillId ? findDrill(it.drillId) : null;
+      gone = it.drillId && !d;
+      if (d && d.tag) sub.push(d.tag);
+      if (d && d.format) sub.push(d.format);
+      if (gone) sub.push("no longer in the library");
+    }
 
     var body = el("div", "ibody");
     body.appendChild(el("div", "iname", itemLabel(it)));
-    var sub = [];
-    if (d && d.tag) sub.push(d.tag);
-    if (d && d.format) sub.push(d.format);
-    if (gone) sub.push("no longer in the library");
     if (sub.length) body.appendChild(el("div", "isub" + (gone ? " gone" : ""), sub.join(" · ")));
     row.appendChild(body);
 
@@ -2882,18 +3337,20 @@
     return row;
   }
 
-  /* ---------- picking drills into a practice ----------
-     The sheet stays open after each pick, because a practice is several drills
-     and reopening the list every time would turn taps back into work. */
+  /* ---------- putting things into a practice ----------
+     Drills and tactics come from the same sheet, because from the coach's side
+     they are the same act: this is what we spent the session on. The sheet stays
+     open after each pick — a practice is several things, and reopening the list
+     every time would turn taps back into work. */
 
   function openDrillPicker(p) {
-    var q = "", tag = "", filterRow = null, rows = null;
+    var q = "", tag = "", source = "drills", filterRow = null, rows = null;
 
     var back = el("div", "modal-back");
     var panel = el("div", "modal");
 
     var mhead = el("div", "modal-head");
-    mhead.appendChild(el("div", "mtitle", "Add drills"));
+    mhead.appendChild(el("div", "mtitle", "Add to practice"));
     var added = el("div", "count", "");
     mhead.appendChild(added);
     var gap = el("div"); gap.style.marginLeft = "auto";
@@ -2903,6 +3360,85 @@
     mhead.appendChild(closeBtn);
     panel.appendChild(mhead);
 
+    var sourceRow = el("div", "tabs");
+    sourceRow.style.margin = "0 0 12px";
+    [["drills", "Drills"], ["tactics", "Tactics"]].forEach(function (s) {
+      var b = el("button", "chip", s[1]);
+      b.setAttribute("aria-pressed", String(source === s[0]));
+      b.onclick = function () {
+        source = s[0]; tag = "";
+        Array.prototype.forEach.call(sourceRow.children, function (c, k) {
+          c.setAttribute("aria-pressed", String(["drills", "tactics"][k] === source));
+        });
+        rebuildFilters();
+        paint();
+      };
+      sourceRow.appendChild(b);
+    });
+    panel.appendChild(sourceRow);
+
+    var search = document.createElement("input");
+    search.type = "text"; search.placeholder = "Search";
+    search.className = "msearch";
+    search.oninput = function () { q = search.value.toLowerCase(); paint(); };
+    panel.appendChild(search);
+
+    var filterHolder = el("div");
+    panel.appendChild(filterHolder);
+
+    rows = el("div", "mrows");
+    panel.appendChild(rows);
+
+    function rebuildFilters() {
+      filterHolder.innerHTML = "";
+      filterRow = null;
+      var names;
+      if (source === "drills") {
+        var used = {};
+        state.drills.forEach(function (d) { if (d.tag) used[d.tag] = 1; });
+        names = Object.keys(used).sort();
+      } else {
+        names = SIDES.filter(function (s) {
+          return state.tactics.some(function (t) { return t.side === s; });
+        });
+      }
+      if (names.length < 2) return;
+      filterRow = el("div", "filters");
+      var all = el("button", null, "All");
+      all.onclick = function () { tag = ""; paint(); };
+      filterRow.appendChild(all);
+      names.forEach(function (n) {
+        var b = el("button", null, n);
+        b.onclick = function () { tag = (tag === n ? "" : n); paint(); };
+        filterRow.appendChild(b);
+      });
+      filterHolder.appendChild(filterRow);
+    }
+
+    function row(thumbHtml, title, subBits, onPick) {
+      var r = el("button", "mrow");
+      var th = el("div", "mthumb");
+      th.innerHTML = thumbHtml;
+      r.appendChild(th);
+      var body = el("div", "mbody");
+      body.appendChild(el("div", "mname", title));
+      body.appendChild(el("div", "isub", subBits.filter(Boolean).join(" · ")));
+      r.appendChild(body);
+      var plus = el("div", "mplus", "+");
+      r.appendChild(plus);
+      r.onclick = function () {
+        onPick();
+        touchPractice(p);
+        count();
+        plus.textContent = "✓";
+        plus.className = "mplus on";
+        setTimeout(function () { plus.textContent = "+"; plus.className = "mplus"; }, 700);
+      };
+      return r;
+    }
+
+    function matches(text) { return !q || String(text || "").toLowerCase().indexOf(q) >= 0; }
+
     function paint() {
       if (filterRow) {
         Array.prototype.forEach.call(filterRow.children, function (b, idx) {
@@ -2910,78 +3446,51 @@
         });
       }
       rows.innerHTML = "";
-      var hits = state.drills.filter(function (d) {
-        if (tag && d.tag !== tag) return false;
-        if (!q) return true;
-        return (d.name || "").toLowerCase().indexOf(q) >= 0 ||
-               (d.tag || "").toLowerCase().indexOf(q) >= 0 ||
-               (d.points || "").toLowerCase().indexOf(q) >= 0;
-      });
-      if (!hits.length) { rows.appendChild(el("div", "empty", "No drill matches that.")); return; }
-      hits.forEach(function (d) {
-        var r = el("button", "mrow");
-        var th = el("div", "mthumb");
-        th.innerHTML = thumbFor(d);
-        r.appendChild(th);
-        var body = el("div", "mbody");
-        body.appendChild(el("div", "mname", d.name || "Untitled"));
-        var sub = [];
-        if (d.tag) sub.push(d.tag);
-        if (d.format) sub.push(d.format);
-        if (d.minutes) sub.push(d.minutes + " min");
-        body.appendChild(el("div", "isub", sub.join(" · ")));
-        r.appendChild(body);
-        var plus = el("div", "mplus", "+");
-        r.appendChild(plus);
-        r.onclick = function () {
-          p.items.push(newItem(d));
-          touchPractice(p);
-          count();
-          plus.textContent = "✓";
-          plus.className = "mplus on";
-          setTimeout(function () { plus.textContent = "+"; plus.className = "mplus"; }, 700);
-        };
-        rows.appendChild(r);
-      });
-    }
 
-    if (!state.drills.length) {
-      var e = el("div", "empty");
-      e.innerHTML = "The library is empty.<br>Draw a drill first — practices are built from it.";
-      panel.appendChild(e);
-    } else {
-      var search = document.createElement("input");
-      search.type = "text"; search.placeholder = "Search drills";
-      search.className = "msearch";
-      search.oninput = function () { q = search.value.toLowerCase(); paint(); };
-      panel.appendChild(search);
-
-      var used = {};
-      state.drills.forEach(function (d) { if (d.tag) used[d.tag] = 1; });
-      var tagNames = Object.keys(used).sort();
-      if (tagNames.length > 1) {
-        filterRow = el("div", "filters");
-        var all = el("button", null, "All");
-        all.onclick = function () { tag = ""; paint(); };
-        filterRow.appendChild(all);
-        tagNames.forEach(function (t) {
-          var b = el("button", null, t);
-          b.onclick = function () { tag = (tag === t ? "" : t); paint(); };
-          filterRow.appendChild(b);
+      if (source === "drills") {
+        if (!state.drills.length) {
+          var e = el("div", "empty");
+          e.innerHTML = "The library is empty.<br>Draw a drill first — practices are built from it.";
+          rows.appendChild(e);
+          return;
+        }
+        var hits = state.drills.filter(function (d) {
+          if (tag && d.tag !== tag) return false;
+          return matches(d.name) || matches(d.tag) || matches(d.points);
         });
-        panel.appendChild(filterRow);
+        if (!hits.length) { rows.appendChild(el("div", "empty", "No drill matches that.")); return; }
+        hits.forEach(function (d) {
+          rows.appendChild(row(thumbFor(d), d.name || "Untitled",
+            [d.tag, d.format, d.minutes ? d.minutes + " min" : ""],
+            function () { p.items.push(newItem(d)); }));
+        });
+        return;
       }
 
-      rows = el("div", "mrows");
-      panel.appendChild(rows);
-      paint();
+      if (!state.tactics.length) {
+        var e2 = el("div", "empty");
+        e2.innerHTML = "No tactics yet.<br>Build a set and its options first.";
+        rows.appendChild(e2);
+        return;
+      }
+      var any = false;
+      state.tactics.forEach(function (t) {
+        if (tag && t.side !== tag) return;
+        t.options.forEach(function (o) {
+          if (!(matches(t.name) || matches(o.name) || matches(o.points) || matches(t.category))) return;
+          any = true;
+          rows.appendChild(row(thumbForDiagram(o.diagrams && o.diagrams[0]),
+            optionLabel(t, o), [t.side, t.category],
+            function () { p.items.push(newTacticItem(t, o)); }));
+        });
+      });
+      if (!any) rows.appendChild(el("div", "empty", "No tactic matches that."));
     }
 
     function count() {
       var n = p.items.length;
-      added.textContent = n ? n + (n === 1 ? " drill in this practice" : " drills in this practice") : "";
+      added.textContent = n ? n + (n === 1 ? " thing in this practice" : " things in this practice") : "";
     }
-    count();
 
     function close() {
       document.removeEventListener("keydown", onKey);
@@ -2990,6 +3499,10 @@
     }
     function onKey(e) { if (e.key === "Escape") close(); }
     document.addEventListener("keydown", onKey);
+
+    rebuildFilters();
+    paint();
+    count();
 
     back.onclick = function (e) { if (e.target === back) close(); };
     back.appendChild(panel);
@@ -3018,7 +3531,10 @@
     sheet.appendChild(buildMeta(drill));
 
     var diagrams = el("div", "diagrams");
-    drill.diagrams.forEach(function (dg, i) { diagrams.appendChild(buildDiagram(drill, dg, i)); });
+    drill.diagrams.forEach(function (dg, i) {
+      diagrams.appendChild(buildDiagram(dg, i, drill.diagrams,
+        function () { touch(drill); }, "drill"));
+    });
     sheet.appendChild(diagrams);
 
     var add = el("button", "add-court", "+  Add another court");
@@ -3164,7 +3680,9 @@
     return f;
   }
 
-  function buildDiagram(drill, dg, i) {
+  /* The diagram editor is shared by drills and tactic options, so it takes the
+     list it belongs to and a save function rather than a drill. */
+  function buildDiagram(dg, i, list, save, ownerWord) {
     var box = el("div", "diagram");
     var head = el("div", "diagram-head");
     head.appendChild(el("span", "num", "Court " + (i + 1)));
@@ -3172,7 +3690,7 @@
     var cap = document.createElement("input");
     cap.type = "text"; cap.value = dg.caption;
     cap.placeholder = "What this one shows — e.g. initial spacing";
-    cap.oninput = function () { dg.caption = cap.value; touch(drill); };
+    cap.oninput = function () { dg.caption = cap.value; save(); };
     head.appendChild(cap);
 
     var grp = el("div", "grp");
@@ -3182,7 +3700,7 @@
       var b = el("button", "chip", k === "half" ? "Half" : "Full");
       b.setAttribute("aria-pressed", String(dg.court === k));
       b.onclick = function () {
-        dg.court = k; touch(drill);
+        dg.court = k; save();
         Array.prototype.forEach.call(grp.querySelectorAll("[data-court]"), function (x) {
           x.setAttribute("aria-pressed", String(x.getAttribute("data-court") === k));
         });
@@ -3197,7 +3715,7 @@
       b.setAttribute("data-size", s);
       b.setAttribute("aria-pressed", String(dg.size === s));
       b.onclick = function () {
-        dg.size = s; touch(drill);
+        dg.size = s; save();
         Array.prototype.forEach.call(grp.querySelectorAll("[data-size]"), function (x) {
           x.setAttribute("aria-pressed", String(x.getAttribute("data-size") === s));
         });
@@ -3210,11 +3728,11 @@
     undo.onclick = function () { pad.undo(); };
     grp.appendChild(undo);
 
-    if (drill.diagrams.length > 1) {
+    if (list.length > 1) {
       var rm = el("button", "chip danger", "Remove");
       rm.onclick = function () {
-        if (!confirm("Remove court " + (i + 1) + " from this drill?")) return;
-        drill.diagrams.splice(i, 1); touch(drill); render();
+        if (!confirm("Remove court " + (i + 1) + " from this " + ownerWord + "?")) return;
+        list.splice(i, 1); save(); render();
       };
       grp.appendChild(rm);
     }
@@ -3224,7 +3742,7 @@
 
     var holder = el("div", null);
     box.appendChild(holder);
-    pad = Pad(holder, dg, function () { touch(drill); });
+    pad = Pad(holder, dg, save);
     pads.push(pad);
 
     return box;

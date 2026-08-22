@@ -22,6 +22,7 @@ will keep serving the cached old copy.
 ## Layout
 
     index.html                the app: UI, ink engine, storage
+                              schedule · practices · drills · tactics · roster
     sw.js                     offline shell cache
     manifest.webmanifest      Home Screen install
     icon.svg                  app icon

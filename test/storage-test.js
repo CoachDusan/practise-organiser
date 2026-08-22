@@ -87,10 +87,29 @@ function makeIndexedDB(backing) {
    screen on an iPad in a gym. */
 
 function makeDom() {
+  // Every 2d-context call is a no-op; the test is asking whether the editor
+  // BUILDS, not what it paints. The ink maths has its own coverage.
+  function fakeContext() {
+    return new Proxy({}, {
+      get: function (target, key) {
+        if (key in target) return target[key];
+        return function () { return undefined; };
+      },
+      set: function (target, key, value) { target[key] = value; return true; }
+    });
+  }
+
   function Node(tag) {
     var n = {
       tagName: tag, className: "", textContent: "", value: "", type: "",
       children: [], attrs: {}, style: {}, disabled: false,
+      width: 0, height: 0, clientWidth: 460,
+      getContext: function () { return n._ctx || (n._ctx = fakeContext()); },
+      getBoundingClientRect: function () {
+        return { left: 0, top: 0, width: 460, height: 400, right: 460, bottom: 400 };
+      },
+      setPointerCapture: function () {},
+      releasePointerCapture: function () {},
       appendChild: function (c) { n.children.push(c); c.parentNode = n; return c; },
       removeChild: function (c) {
         var i = n.children.indexOf(c);
@@ -131,7 +150,7 @@ function makeDom() {
     byId[id] = Node("div");
   });
   // the two nav buttons the chrome iterates over
-  ["library", "practices", "schedule", "roster"].forEach(function (v) {
+  ["library", "practices", "schedule", "roster", "tactics"].forEach(function (v) {
     var b = Node("button");
     b.setAttribute("data-view", v);
     byId.tabs.appendChild(b);
@@ -187,6 +206,11 @@ function appSource() {
     "           removePlayer: removePlayer, newAssessment: newAssessment,\n" +
     "           attendanceFor: attendanceFor, attendanceTaken: attendanceTaken,\n" +
     "           latestAssessment: latestAssessment, AREAS: AREAS,\n" +
+    "           newTactic: newTactic, newOption: newOption, touchTactic: touchTactic,\n" +
+    "           findTactic: findTactic, findOption: findOption, removeTactic: removeTactic,\n" +
+    "           newTacticItem: newTacticItem, tacticUsage: tacticUsage,\n" +
+    "           optionLabel: optionLabel, itemLabel: itemLabel, SIDES: SIDES,\n" +
+    "           categoriesFor: categoriesFor,\n" +
     "           practiceMinutes: practiceMinutes, prettyDate: prettyDate,\n" +
     "           openDrillPicker: openDrillPicker, route: route,\n" +
     "           applyImport: applyImport };\n";
@@ -207,7 +231,7 @@ function launch(backing, storage) {
   globalThis.confirm = function () { return true; };
   globalThis.alert = function () {};
   globalThis.scrollTo = function () {};
-  globalThis.print_ = function () {};
+  globalThis.devicePixelRatio = 2;
   globalThis.addEventListener = function () {};
   globalThis.claude = undefined;
   globalThis.Option = fakeOption;
@@ -256,10 +280,11 @@ print("\n1. a version 1 library survives the upgrade to version 2");
 launch(backing, lsStore).then(function (po) {
   eq("storage is IndexedDB", po.Store.kind, "idb");
   eq("both drills came back", po.state.drills.length, 2);
-  eq("database is now at version 4", backing.version, 4);
+  eq("database is now at version 5", backing.version, 5);
   ok("the practices store was created", backing.stores.indexOf("practices") >= 0);
   ok("the events store was created", backing.stores.indexOf("events") >= 0);
   ok("the players store was created", backing.stores.indexOf("players") >= 0);
+  ok("the tactics store was created", backing.stores.indexOf("tactics") >= 0);
   var shell = po.findDrill("d-shell");
   ok("the drill kept its name", shell && shell.name === "Shell defence");
   ok("its ink was unpacked into points",
@@ -352,7 +377,7 @@ launch(backing, lsStore).then(function (po) {
 
   print("\n7. the screens render");
   var errors = [];
-  ["library", "practices", "schedule", "roster"].forEach(function (v) {
+  ["library", "practices", "schedule", "roster", "tactics"].forEach(function (v) {
     try { po.go(v); } catch (e) { errors.push(v + ": " + e); }
   });
   try { po.go("practice", practiceId); } catch (e) { errors.push("practice editor: " + e); }
@@ -526,7 +551,105 @@ launch(backing, lsStore).then(function (po) {
   var older = po.deserialize(JSON.stringify({ version: 3, drills: [], practices: [], events: [] }));
   eq("a backup written before the roster existed still imports", older.players.length, 0);
 
-  print("\n10. the drills imported from drill-management");
+  print("\n10. tactics");
+  var horns = po.newTactic();
+  horns.name = "Horns"; horns.side = "Offence"; horns.category = "Half-court sets";
+  horns.options[0].name = "Flare";
+  horns.options[0].points = "Screener slips if they switch.";
+  horns.options[0].diagrams[0].strokes.push({
+    tool: "pen", color: "#22201C", size: 7,
+    pts: [{ x: 0.2, y: 0.3, p: 0.5 }, { x: 0.5, y: 0.4, p: 0.6 }, { x: 0.8, y: 0.2, p: 0.4 }]
+  });
+  var down = po.newOption();
+  down.name = "Down";
+  horns.options.push(down);
+  po.state.tactics.unshift(horns);
+  po.touchTactic(horns);
+
+  var ice = po.newTactic();
+  ice.name = "Ice the side pick & roll";
+  ice.side = "Defence"; ice.category = "Defending the pick & roll";
+  ice.options[0].name = "Base coverage";
+  po.state.tactics.unshift(ice);
+  po.touchTactic(ice);
+
+  var last = po.newTactic();
+  last.name = "Last shot"; last.side = "Special situations"; last.category = "Last shot";
+  po.state.tactics.unshift(last);
+  po.touchTactic(last);
+
+  eq("a set starts with one option", last.options.length, 1);
+  eq("defence is a side of its own", ice.side, "Defence");
+  ok("and it has its own categories",
+     po.categoriesFor("Defence").indexOf("Defending the pick & roll") >= 0);
+  ok("offence categories are not offered to defence",
+     po.categoriesFor("Defence").indexOf("Half-court sets") === -1);
+  eq("all three ends of the floor exist", po.SIDES.length, 3);
+  eq("an option reads as set then option", po.optionLabel(horns, horns.options[0]), "Horns · Flare");
+  eq("a set with an unnamed option reads as just the set",
+     po.optionLabel(last, last.options[0]), "Last shot");
+
+  // logging tactics into a practice
+  var sess = po.findPractice(practiceId);
+  sess.items.push(po.newTacticItem(horns, horns.options[0]));
+  sess.items.push(po.newTacticItem(ice, ice.options[0]));
+  po.touchPractice(sess);
+  eq("a tactic item knows it is a tactic", sess.items[sess.items.length - 1].kind, "tactic");
+  eq("and resolves its name live", po.itemLabel(sess.items[sess.items.length - 2]), "Horns · Flare");
+
+  var u = po.tacticUsage();
+  eq("the set is counted", u.sets[horns.id], 1);
+  eq("and so is the option", u.options[horns.id + "/" + horns.options[0].id], 1);
+
+  var planTac = po.newPractice();
+  planTac.items.push(po.newTacticItem(horns, horns.options[0]));
+  po.state.practices.push(planTac);
+  po.touchPractice(planTac);
+  eq("a planned practice does not count a tactic", po.tacticUsage().sets[horns.id], 1);
+
+  // the same set twice in one session is one session
+  sess.items.push(po.newTacticItem(horns, down));
+  po.touchPractice(sess);
+  var u2 = po.tacticUsage();
+  eq("two options of one set is still one session for the set", u2.sets[horns.id], 1);
+  eq("but each option is counted", u2.options[horns.id + "/" + down.id], 1);
+
+  var drew3 = [];
+  try { po.go("tactics"); } catch (e) { drew3.push("tactics list: " + e); }
+  try { po.route.side = "Defence"; po.go("tactics"); po.route.side = ""; }
+  catch (e) { drew3.push("defence filter: " + e); }
+  try { po.go("tactic", horns.id); } catch (e) { drew3.push("set editor with ink: " + e); }
+  try { po.go("drill", "d-shell"); } catch (e) { drew3.push("drill editor: " + e); }
+  try { po.go("practice", practiceId); } catch (e) { drew3.push("practice with tactics: " + e); }
+  ok("the tactics screens built without throwing", drew3.length === 0, drew3.join(" | "));
+
+  po.flush();
+  return Promise.resolve().then(function () { return launch(backing, lsStore); });
+})
+.then(function (po) {
+  eq("the tactics came back after a restart", po.state.tactics.length, 3);
+  var h = null;
+  po.state.tactics.forEach(function (t) { if (t.name === "Horns") h = t; });
+  eq("with both options", h.options.length, 2);
+  eq("and the execution notes", h.options[0].points, "Screener slips if they switch.");
+  eq("the ink on an option survived", h.options[0].diagrams[0].strokes[0].pts.length, 3);
+  ok("and round-tripped accurately",
+     Math.abs(h.options[0].diagrams[0].strokes[0].pts[0].x - 0.2) < 0.001,
+     h.options[0].diagrams[0].strokes[0].pts[0].x);
+  eq("the practice still counts the set", po.tacticUsage().sets[h.id], 1);
+
+  var json = po.serialize(po.state);
+  var round = po.deserialize(json);
+  eq("tactics survive export and import", round.tactics.length, 3);
+  var older = po.deserialize(JSON.stringify({
+    version: 4, drills: [], practices: [{ id: "old", date: "2026-01-01", status: "done",
+      items: [{ id: "i1", drillId: "d-shell", name: "Shell defence", minutes: 10 }] }],
+    events: [], players: []
+  }));
+  eq("a backup written before tactics existed still imports", older.tactics.length, 0);
+  eq("and its practice items are read as drills", older.practices[0].items[0].kind, "drill");
+
+  print("\n11. the drills imported from drill-management");
   var raw = null;
   try { raw = readFile("private/drills-import.json"); } catch (e) { raw = null; }
   if (!raw) {
@@ -566,7 +689,7 @@ launch(backing, lsStore).then(function (po) {
     po.flush();
   }
 
-  print("\n11. the smaller store, for a browser that refuses IndexedDB");
+  print("\n12. the smaller store, for a browser that refuses IndexedDB");
   var fresh = { version: 0, stores: [], data: {} };
   var lsOnly = lsStore;
   globalThis.__forceLocal = true;

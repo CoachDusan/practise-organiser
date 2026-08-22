@@ -396,6 +396,62 @@ create the attendance object, so the first practice made after this change would
 when the register tried to render. It parsed fine. Only running it found it — the second time
 that has been true in this project.
 
+## Stage 5: tactics (2026-08-22)
+
+### A set holds its options — Dusan's call
+
+"Horns" is the set; Flare, Down and Slip are how it is actually run. Three options typed as
+three separate entries would be three strings that happen to start with the same word. Held
+as options of one set, they are one thing with three ways out of it — which is how it gets
+explained to a player, and the same argument that made a drill a referenced record rather
+than a retyped name.
+
+A set always has at least one option. A set whose single option is unnamed reads as just
+the set name ("Last shot"), so a one-thing tactic does not look half-filled.
+
+### Defence is a side, not a category — Dusan's correction
+
+The first category sketch led with offence and left defence looking like an afterthought.
+He pushed back, and he was right. A tactic now carries a **side** — Offence, Defence, or
+Special situations — and the category list is filtered by it, so defence has its own seven
+categories rather than borrowing offence's. `categoriesFor("Defence")` does not contain
+"Half-court sets", and there is a test that says so.
+
+| Side | Categories |
+|---|---|
+| Offence | Half-court sets · Early offence · Zone offence · Press break · BLOB · SLOB · Delay |
+| Defence | Man-to-man · Zone · Full-court press · Half-court trap · Transition defence · Defending out of bounds · Defending the pick & roll |
+| Special situations | Last shot · End of quarter · Free-throw situations · Fouling and clock · Jump ball |
+
+The list groups by side, then by category, so the package reads as a package.
+
+### Tactics are loggable in a practice — Dusan's call
+
+A practice item now carries a `kind`. Items written before tactics existed have no `kind`
+and are read as drills, so nothing needed migrating. The picker gained a Drills / Tactics
+toggle rather than a second button, because from the coach's side both are the same act:
+this is what the session was spent on.
+
+Chosen on the same reasoning as attendance — the drills he runs are being recorded from
+tonight, and tactics not recorded alongside them would be a hole that cannot be filled in
+later. Counted once per session, planned practices excluded, exactly like the drill tallies.
+A set worked through two of its options in one night counts once for the set and once for
+each option.
+
+### The diagram editor stopped belonging to drills
+
+`buildDiagram` took a `drill` and called `touch(drill)`. It now takes the diagram, the list
+it lives in, and a save function, so drills and tactic options share one editor. Both ink
+editors are rendered in `test/run.sh` against a stubbed canvas — the refactor is the kind
+that parses perfectly and breaks one of two callers.
+
+### Storage: database version 4 → 5
+
+A `tactics` store. Options hold diagrams, so tactics deflate and inflate their strokes the
+same way drills do — verified by round-tripping real ink through a restart.
+
+`test/run.sh` is now **117 checks**.
+
 ## The ink engine (first proved in `pencil-test.html`)
 
 Worth keeping whichever platform wins, because the reasoning carries over.
