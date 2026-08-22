@@ -1,4 +1,4 @@
-<title>Drill Library</title>
+<title>Practise Organiser</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
@@ -37,7 +37,7 @@
   /* ---------- chrome ---------- */
   .topbar {
     position: sticky; top: 0; z-index: 30;
-    display: flex; align-items: center; gap: 14px;
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap; row-gap: 8px;
     padding: 10px 16px;
     background: var(--panel);
     border-bottom: 1px solid var(--line);
@@ -71,7 +71,7 @@
   .chip.ghost { background: transparent; }
   .chip.danger { color: var(--danger); border-color: #4A342F; background: transparent; }
 
-  input[type="text"], input[type="number"], textarea, select {
+  input[type="text"], input[type="number"], input[type="date"], textarea, select {
     background: var(--ground); border: 1px solid var(--line);
     border-radius: 8px; padding: 9px 11px; width: 100%;
   }
@@ -202,8 +202,8 @@
   .court-line.dash { stroke-dasharray: 26 20; }
   .rim { stroke: #C0552A; stroke-width: 6; fill: none; }
 
-  .add-court { width: 100%; padding: 15px; border-style: dashed; background: transparent; color: var(--dim); }
-  .add-court:hover { color: var(--accent); border-color: var(--accent); }
+  .add-court, .add-row { width: 100%; padding: 15px; border-style: dashed; background: transparent; color: var(--dim); }
+  .add-court:hover, .add-row:hover { color: var(--accent); border-color: var(--accent); }
 
   .savechip { font-size: 11.5px; color: var(--dim); white-space: nowrap; }
   .savechip.on { color: var(--accent); }
@@ -215,18 +215,175 @@
   }
   .warn b { color: #fff; }
 
+  /* ---------- practices ---------- */
+  .tabs { display: flex; gap: 6px; }
+  .tabs .chip { padding: 6px 12px; font-size: 13px; }
+
+  .narrow { max-width: 780px; }
+
+  .month {
+    font-size: 11px; color: var(--dim); margin: 22px 0 8px;
+  }
+  .month:first-of-type { margin-top: 14px; }
+
+  .prow {
+    width: 100%; display: grid; grid-template-columns: 190px 1fr; gap: 16px;
+    align-items: start; text-align: left; padding: 13px 15px; margin-bottom: 8px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+  }
+  .prow:hover { border-color: #4C463C; }
+  .pwhen { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+  .pdate {
+    font-family: "Barlow Condensed", sans-serif; font-size: 19px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .04em; line-height: 1.1;
+  }
+  .pbadge {
+    display: inline-block; font-family: "Barlow Condensed", sans-serif;
+    text-transform: uppercase; letter-spacing: .09em; font-size: 10px;
+    padding: 3px 8px; border-radius: 99px;
+    background: #332F27; color: var(--dim); border: 1px solid #433D33;
+  }
+  .pbadge.done { background: #2A3326; color: #9CC47F; border-color: #3E4C36; }
+  .pwhat { display: grid; gap: 5px; min-width: 0; }
+  .psub { font-size: 11.5px; color: var(--dim); }
+  .pnames { font-size: 13.5px; line-height: 1.5; }
+  .pnames.dim { color: var(--dim); font-style: italic; }
+  .pnote {
+    font-size: 12.5px; color: var(--dim); line-height: 1.5;
+    border-left: 2px solid var(--line); padding-left: 9px; margin-top: 3px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+
+  .prac-head {
+    display: grid; grid-template-columns: minmax(170px, 220px) auto auto;
+    gap: 18px; align-items: end; margin: 6px 0 22px;
+  }
+  .ptotal {
+    font-family: "Barlow Condensed", sans-serif; font-size: 24px; font-weight: 700;
+    letter-spacing: .03em; line-height: 1.2;
+  }
+
+  .items { display: grid; gap: 7px; margin-bottom: 14px; }
+  .item {
+    display: grid; grid-template-columns: 26px 1fr 66px 28px auto;
+    gap: 10px; align-items: center;
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 10px; padding: 9px 12px;
+  }
+  .inum {
+    font-family: "Barlow Condensed", sans-serif; font-size: 15px; color: var(--accent);
+    text-align: center; font-variant-numeric: tabular-nums;
+  }
+  .ibody { min-width: 0; display: grid; gap: 3px; }
+  .iname {
+    font-family: "Barlow Condensed", sans-serif; font-size: 19px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .03em; line-height: 1.15;
+  }
+  .isub { font-size: 11px; color: var(--dim); }
+  .isub.gone { color: #C08A80; }
+  .imin { text-align: right; padding: 7px 8px; font-variant-numeric: tabular-nums; }
+  .imunit { font-size: 11px; color: var(--dim); }
+  .imoves { display: flex; gap: 4px; }
+  .mini {
+    width: 38px; height: 38px; border-radius: 8px; background: transparent;
+    display: grid; place-items: center; font-size: 15px; line-height: 1; color: var(--dim);
+  }
+  .mini:hover:not(:disabled) { color: var(--text); border-color: #4C463C; }
+  .mini:disabled { opacity: .3; cursor: default; }
+  .mini.rm:hover { color: var(--danger); border-color: #4A342F; }
+
+  .prac-foot { margin-top: 28px; display: grid; gap: 14px; }
+  .foot-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .hint {
+    background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--accent);
+    border-radius: 8px; padding: 11px 14px; font-size: 13px; line-height: 1.55; color: var(--dim);
+  }
+  .hint b { color: var(--text); }
+
+  /* ---------- drill picker ---------- */
+  .modal-back {
+    position: fixed; inset: 0; z-index: 60; background: rgba(10,9,7,.72);
+    display: flex; align-items: flex-end; justify-content: center; padding: 0;
+  }
+  .modal {
+    background: var(--ground); border: 1px solid var(--line);
+    border-radius: 16px 16px 0 0; width: 100%; max-width: 720px;
+    max-height: 88dvh; overflow-y: auto; padding: 14px 16px 24px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .modal-head {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    position: sticky; top: -14px; background: var(--ground);
+    padding: 6px 0 12px; margin: -6px 0 0; z-index: 2;
+  }
+  .mtitle {
+    font-family: "Barlow Condensed", sans-serif; text-transform: uppercase;
+    letter-spacing: .06em; font-size: 22px; font-weight: 700;
+  }
+  .msearch { margin-bottom: 12px; }
+  .mrows { display: grid; gap: 7px; }
+  .mrow {
+    display: grid; grid-template-columns: 78px 1fr 34px; gap: 12px; align-items: center;
+    text-align: left; padding: 8px; background: var(--panel);
+    border: 1px solid var(--line); border-radius: 10px;
+  }
+  .mrow:hover { border-color: var(--accent); }
+  .mthumb {
+    background: var(--court); height: 46px; border-radius: 5px; overflow: hidden;
+  }
+  .mthumb svg { width: 100%; height: 100%; display: block; }
+  .mbody { min-width: 0; display: grid; gap: 3px; }
+  .mname {
+    font-family: "Barlow Condensed", sans-serif; font-size: 18px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .03em; line-height: 1.15;
+  }
+  .mplus {
+    width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+    border: 1px solid var(--line); color: var(--dim); font-size: 17px; line-height: 1;
+  }
+  .mplus.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+
+  .usage {
+    font-family: "Barlow Condensed", sans-serif; text-transform: uppercase;
+    letter-spacing: .07em; font-size: 10px; color: #9CC47F;
+  }
+
+  @media (max-width: 620px) {
+    .prow { grid-template-columns: 1fr; gap: 8px; }
+    .prac-head { grid-template-columns: 1fr 1fr; }
+    .item { grid-template-columns: 22px 1fr auto; row-gap: 6px; }
+    .item .imin { grid-column: 2; justify-self: start; width: 66px; }
+    .item .imunit { display: none; }
+  }
+
   @media print {
-    .topbar, .rail, .add-court, .diagram-head .grp, .filters { display: none !important; }
+    .topbar, .rail, .add-court, .add-row, .diagram-head .grp, .filters,
+    .tabs, .modal-back, .prac-foot, .imoves, .hint { display: none !important; }
     body { background: #fff; color: #000; }
     .editor { grid-template-columns: 1fr; }
     .diagram { break-inside: avoid; border-color: #bbb; background: #fff; }
     .sheet { padding: 0; }
+    /* A printed practice sheet is carried into the gym, so it has to read as
+       paper: no dark panels, no form-field chrome around the numbers. */
+    .wrap { padding: 0; max-width: none; }
+    .item, .prow, .hint { background: #fff; border-color: #bbb; break-inside: avoid; }
+    .isub, .psub, .label, .imunit, .pnote { color: #555; }
+    .inum { color: #000; }
+    input, textarea { background: #fff !important; color: #000 !important;
+                      border: 0 !important; padding: 0 !important; }
+    .imin { text-align: left; }
+    textarea { min-height: 0; height: auto; }
+    .pbadge { border-color: #999; color: #000; background: #fff; }
   }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 
 <div class="topbar">
   <div class="wordmark">Practise<span>Organiser</span></div>
+  <div id="tabs" class="tabs">
+    <button class="chip" data-view="library">Drills</button>
+    <button class="chip" data-view="practices">Practices</button>
+  </div>
   <div id="crumb" class="label" style="font-size:12px;color:var(--dim)"></div>
   <div class="spacer"></div>
   <span id="saveChip" class="savechip"></span>
@@ -309,7 +466,7 @@
   var FORMATS = ["Individual", "Pairs", "3v3", "4v4", "5v5", "5:0", "Whole team"];
   var SIZES = { S: 300, M: 460, L: 660 };   // css px, the court's drawn width
 
-  var state = { version: 1, drills: [] };
+  var state = { version: 2, drills: [], practices: [] };
   var PREVIEW = !!(window.claude);   // running inside the claude.ai preview sandbox
 
   /* ================= storage =================
@@ -321,15 +478,19 @@
   var Store = { kind: "memory" };
   var LS_KEY = "practise-organiser/v1";
 
+  /* Two object stores, one per kind of record. Practices were added at DB
+     version 2; the upgrade only creates what is missing, so a library written
+     under version 1 is carried across untouched. */
   var DB = (function () {
     var opening = null;
     function open() {
       if (opening) return opening;
       opening = new Promise(function (resolve, reject) {
-        var req = indexedDB.open("practise-organiser", 1);
+        var req = indexedDB.open("practise-organiser", 2);
         req.onupgradeneeded = function () {
           var db = req.result;
           if (!db.objectStoreNames.contains("drills")) db.createObjectStore("drills", { keyPath: "id" });
+          if (!db.objectStoreNames.contains("practices")) db.createObjectStore("practices", { keyPath: "id" });
         };
         req.onsuccess = function () { resolve(req.result); };
         req.onerror = function () { reject(req.error); };
@@ -337,11 +498,11 @@
       });
       return opening;
     }
-    function run(mode, fn) {
+    function run(store, mode, fn) {
       return open().then(function (db) {
         return new Promise(function (resolve, reject) {
-          var t = db.transaction("drills", mode);
-          var req = fn(t.objectStore("drills"));
+          var t = db.transaction(store, mode);
+          var req = fn(t.objectStore(store));
           t.oncomplete = function () { resolve(req ? req.result : undefined); };
           t.onerror = function () { reject(t.error); };
           t.onabort = function () { reject(t.error); };
@@ -349,10 +510,10 @@
       });
     }
     return {
-      all:   function ()   { return run("readonly",  function (s) { return s.getAll(); }); },
-      put:   function (d)  { return run("readwrite", function (s) { return s.put(d); }); },
-      del:   function (id) { return run("readwrite", function (s) { return s.delete(id); }); },
-      clear: function ()   { return run("readwrite", function (s) { return s.clear(); }); }
+      all:   function (s)     { return run(s, "readonly",  function (o) { return o.getAll(); }); },
+      put:   function (s, d)  { return run(s, "readwrite", function (o) { return o.put(d); }); },
+      del:   function (s, id) { return run(s, "readwrite", function (o) { return o.delete(id); }); },
+      clear: function (s)     { return run(s, "readwrite", function (o) { return o.clear(); }); }
     };
   })();
 
@@ -360,7 +521,10 @@
     return Promise.resolve()
       .then(function () {
         if (!window.indexedDB) throw new Error("no idb");
-        return DB.all().then(function (rows) { Store.kind = "idb"; return rows || []; });
+        return Promise.all([DB.all("drills"), DB.all("practices")]).then(function (r) {
+          Store.kind = "idb";
+          return { drills: r[0] || [], practices: r[1] || [] };
+        });
       })
       .catch(function () {
         try {
@@ -370,15 +534,17 @@
           if (!ok) throw new Error("no ls");
           Store.kind = "local";
           var raw = localStorage.getItem(LS_KEY);
-          return raw ? (JSON.parse(raw).drills || []) : [];
+          var saved = raw ? JSON.parse(raw) : null;
+          return { drills: (saved && saved.drills) || [], practices: (saved && saved.practices) || [] };
         } catch (e) {
           Store.kind = "memory";
-          return [];
+          return { drills: [], practices: [] };
         }
       })
       .then(function (rows) {
-        state.drills = rows.map(inflateDrill)
+        state.drills = rows.drills.map(inflateDrill)
           .sort(function (a, b) { return (b.updatedAt || 0) - (a.updatedAt || 0); });
+        state.practices = rows.practices.map(inflatePractice).sort(byDateDesc);
         // Ask Safari not to evict this data when space runs low.
         if (navigator.storage && navigator.storage.persist) {
           navigator.storage.persist().catch(function () {});
@@ -390,7 +556,8 @@
     if (Store.kind === "local") {
       try {
         localStorage.setItem(LS_KEY, JSON.stringify({
-          version: 1, drills: state.drills.map(deflateDrill)
+          version: 2, drills: state.drills.map(deflateDrill),
+          practices: state.practices.map(deflatePractice)
         }));
         return Promise.resolve();
       } catch (e) { return Promise.reject(e); }
@@ -398,11 +565,19 @@
     return Promise.resolve();
   }
 
+  /* dirty maps a record id to the store it belongs in, so one save queue can
+     carry both drills and practices. */
   var dirty = {}, saveTimer = null;
 
   function touch(drill) {
     drill.updatedAt = Date.now();
-    dirty[drill.id] = 1;
+    dirty[drill.id] = "drills";
+    schedule();
+  }
+
+  function touchPractice(p) {
+    p.updatedAt = Date.now();
+    dirty[p.id] = "practices";
     schedule();
   }
 
@@ -412,15 +587,20 @@
   }
 
   function flush() {
-    var ids = Object.keys(dirty);
+    var queued = dirty;
+    var ids = Object.keys(queued);
     dirty = {};
     if (Store.kind === "memory") { chip("Not being saved", true); return; }
 
     var work;
     if (Store.kind === "idb") {
       work = Promise.all(ids.map(function (id) {
+        if (queued[id] === "practices") {
+          var p = findPractice(id);
+          return p ? DB.put("practices", deflatePractice(p)) : DB.del("practices", id);
+        }
         var d = findDrill(id);
-        return d ? DB.put(deflateDrill(d)) : DB.del(id);
+        return d ? DB.put("drills", deflateDrill(d)) : DB.del("drills", id);
       }));
     } else {
       work = persistAll();
@@ -434,8 +614,14 @@
 
   function removeDrill(id) {
     state.drills = state.drills.filter(function (d) { return d.id !== id; });
-    if (Store.kind === "idb") DB.del(id).then(flashSaved).catch(function () {});
-    else { dirty[id] = 1; schedule(); }
+    if (Store.kind === "idb") DB.del("drills", id).then(flashSaved).catch(function () {});
+    else { dirty[id] = "drills"; schedule(); }
+  }
+
+  function removePractice(id) {
+    state.practices = state.practices.filter(function (p) { return p.id !== id; });
+    if (Store.kind === "idb") DB.del("practices", id).then(flashSaved).catch(function () {});
+    else { dirty[id] = "practices"; schedule(); }
   }
 
   var chipEl = document.getElementById("saveChip");
@@ -462,6 +648,114 @@
   function findDrill(id) {
     for (var i = 0; i < state.drills.length; i++) if (state.drills[i].id === id) return state.drills[i];
     return null;
+  }
+
+  /* ================= practices =================
+     A practice is a dated list of which drills were run. It holds no ink of its
+     own: the diagram lives once, in the drill. An item keeps `drillId` as the
+     fact and `name` only as a label to fall back on, so a practice from October
+     still reads sensibly if the drill is deleted in March. Counting always goes
+     through drillId, never the label.
+
+     `status` is the honesty mechanism. A practice starts "planned" and becomes
+     "done" only when the coach says the session happened. Nothing planned is
+     ever counted, so the archive can never report an intention as a fact. */
+
+  function newPractice() {
+    return {
+      id: uid(), date: todayISO(), status: "planned", items: [], note: "",
+      createdAt: Date.now(), updatedAt: Date.now()
+    };
+  }
+
+  function newItem(drill) {
+    return { id: uid(), drillId: drill.id, name: drill.name || "Untitled",
+             minutes: drill.minutes || 0 };
+  }
+
+  function findPractice(id) {
+    for (var i = 0; i < state.practices.length; i++) {
+      if (state.practices[i].id === id) return state.practices[i];
+    }
+    return null;
+  }
+
+  // Practices carry no strokes, so there is nothing to pack; the pair exists so
+  // the save path looks the same for both kinds of record.
+  function deflatePractice(p) { return p; }
+
+  function inflatePractice(p) {
+    if (!Array.isArray(p.items)) p.items = [];
+    if (p.status !== "done") p.status = "planned";
+    p.items.forEach(function (it) { it.minutes = Number(it.minutes) || 0; });
+    return p;
+  }
+
+  // Newest session first; ties broken by when the record was made.
+  function byDateDesc(a, b) {
+    var d = String(b.date || "").localeCompare(String(a.date || ""));
+    return d !== 0 ? d : (b.createdAt || 0) - (a.createdAt || 0);
+  }
+
+  function itemLabel(it) {
+    var d = it.drillId ? findDrill(it.drillId) : null;
+    return d ? (d.name || "Untitled") : (it.name || "Untitled");
+  }
+
+  function practiceMinutes(p) {
+    var t = 0;
+    for (var i = 0; i < p.items.length; i++) t += Number(p.items[i].minutes) || 0;
+    return t;
+  }
+
+  /* How many completed sessions each drill has appeared in. Counted once per
+     session, not once per entry — "run in 7 practices" is the honest sentence.
+     Planned practices are excluded on purpose. */
+  function usageMap() {
+    var m = {};
+    state.practices.forEach(function (p) {
+      if (p.status !== "done") return;
+      var seen = {};
+      p.items.forEach(function (it) {
+        if (!it.drillId || seen[it.drillId]) return;
+        seen[it.drillId] = 1;
+        m[it.drillId] = (m[it.drillId] || 0) + 1;
+      });
+    });
+    return m;
+  }
+
+  /* ---------- dates ----------
+     Parsed by hand rather than through Date(string): "2026-08-25" fed to the
+     Date constructor is read as UTC and can come back as the 24th in a western
+     timezone, which would put a session on the wrong day. */
+
+  var DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  var MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  var MONTH_LONG = ["January", "February", "March", "April", "May", "June", "July",
+                    "August", "September", "October", "November", "December"];
+
+  function todayISO() {
+    var d = new Date(), p = function (n) { return (n < 10 ? "0" : "") + n; };
+    return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
+  }
+
+  function isoParts(iso) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || "");
+    return m ? { y: +m[1], m: +m[2], d: +m[3] } : null;
+  }
+
+  function prettyDate(iso) {
+    var p = isoParts(iso);
+    if (!p) return "No date";
+    var dt = new Date(p.y, p.m - 1, p.d);
+    return DAY_NAMES[dt.getDay()] + " " + p.d + " " + MONTH_SHORT[p.m - 1] + " " + p.y;
+  }
+
+  function monthLabel(iso) {
+    var p = isoParts(iso);
+    return p ? MONTH_LONG[p.m - 1] + " " + p.y : "Undated";
   }
 
   /* ================= stroke storage =================
@@ -561,15 +855,20 @@
 
   function serialize(st) {
     return JSON.stringify({
-      version: st.version, updatedAt: st.updatedAt,
-      drills: st.drills.map(deflateDrill)
+      version: 2, updatedAt: st.updatedAt,
+      drills: st.drills.map(deflateDrill),
+      practices: st.practices.map(deflatePractice)
     });
   }
 
+  // Backups written before practices existed have no `practices` key; they are
+  // still valid and simply restore an empty diary.
   function deserialize(raw) {
     var st = typeof raw === "string" ? JSON.parse(raw) : raw;
     if (!st || !Array.isArray(st.drills)) return null;
     st.drills.forEach(inflateDrill);
+    st.practices = Array.isArray(st.practices) ? st.practices.map(inflatePractice) : [];
+    st.practices.sort(byDateDesc);
     return st;
   }
 
@@ -794,7 +1093,7 @@
 
   var app = document.getElementById("app");
   var crumb = document.getElementById("crumb");
-  var route = { view: "library", id: null, filter: "" };
+  var route = { view: "library", id: null, filter: "", pfilter: "" };
   var pads = [];
 
   function go(view, id) {
@@ -803,10 +1102,39 @@
     window.scrollTo(0, 0);
   }
 
+  var tabsEl = document.getElementById("tabs");
+
+  // The tabs are for moving between the two lists; inside a record the crumb
+  // takes over as the way back, so both are never on screen at once.
+  function setChrome() {
+    var onList = route.view === "library" || route.view === "practices";
+    tabsEl.style.display = onList ? "" : "none";
+    Array.prototype.forEach.call(tabsEl.children, function (b) {
+      b.setAttribute("aria-pressed", String(b.getAttribute("data-view") === route.view));
+    });
+    crumb.textContent = "";
+    crumb.onclick = null;
+    crumb.style.cursor = "";
+  }
+
+  Array.prototype.forEach.call(tabsEl.children, function (b) {
+    b.onclick = function () { go(b.getAttribute("data-view")); };
+  });
+
+  function backTo(view, text) {
+    crumb.textContent = "\u2039 " + text;
+    crumb.style.cursor = "pointer";
+    crumb.onclick = function () { go(view); };
+  }
+
   function render() {
     pads = [];
     app.innerHTML = "";
-    if (route.view === "drill") renderEditor(); else renderLibrary();
+    setChrome();
+    if (route.view === "drill") renderEditor();
+    else if (route.view === "practices") renderPractices();
+    else if (route.view === "practice") renderPracticeEditor();
+    else renderLibrary();
     relayout();
   }
 
@@ -842,8 +1170,8 @@
   }
 
   function renderLibrary() {
-    crumb.textContent = "";
     var wrap = el("div", "wrap");
+    var usage = usageMap();
 
     var banner = storageBanner();
     if (banner) wrap.appendChild(banner);
@@ -902,6 +1230,11 @@
       bits.push(n + (n === 1 ? " court" : " courts"));
       sub.appendChild(el("span", null, bits.join(" · ")));
       meta.appendChild(sub);
+      // The countable fact the library exists to produce.
+      if (usage[d.id]) {
+        meta.appendChild(el("div", "usage",
+          "Run in " + usage[d.id] + (usage[d.id] === 1 ? " practice" : " practices")));
+      }
       card.appendChild(thumb); card.appendChild(meta);
       card.onclick = function () { go("drill", d.id); };
       grid.appendChild(card);
@@ -917,15 +1250,373 @@
     app.appendChild(wrap);
   }
 
+  /* ---------- practices ---------- */
+
+  function renderPractices() {
+    var wrap = el("div", "wrap");
+
+    var banner = storageBanner();
+    if (banner) wrap.appendChild(banner);
+
+    var doneList = state.practices.filter(function (p) { return p.status === "done"; });
+    var planned = state.practices.length - doneList.length;
+
+    var head = el("div", "lib-head");
+    head.appendChild(el("h1", null, "Practices"));
+    var bits = [];
+    if (doneList.length) bits.push(doneList.length + " done");
+    if (planned) bits.push(planned + " planned");
+    head.appendChild(el("span", "count", bits.join(" · ")));
+    var gap = el("div"); gap.style.marginLeft = "auto";
+    head.appendChild(gap);
+    var add = el("button", "chip primary", "+  New practice");
+    add.onclick = function () {
+      var p = newPractice();
+      state.practices.unshift(p);
+      touchPractice(p);
+      go("practice", p.id);
+    };
+    head.appendChild(add);
+    wrap.appendChild(head);
+
+    if (state.practices.length > 1) {
+      var f = el("div", "filters");
+      [["", "All"], ["planned", "Planned"], ["done", "Done"]].forEach(function (o) {
+        var b = el("button", null, o[1]);
+        b.setAttribute("aria-pressed", String(route.pfilter === o[0]));
+        b.onclick = function () { route.pfilter = o[0]; render(); };
+        f.appendChild(b);
+      });
+      wrap.appendChild(f);
+    }
+
+    var list = state.practices.filter(function (p) {
+      return !route.pfilter || p.status === route.pfilter;
+    });
+
+    var month = null;
+    list.forEach(function (p) {
+      var m = monthLabel(p.date);
+      if (m !== month) { month = m; wrap.appendChild(el("div", "month label", m)); }
+      wrap.appendChild(practiceRow(p));
+    });
+
+    if (!state.practices.length) {
+      var e = el("div", "empty");
+      e.innerHTML = "No practices yet.<br>Log a session and the library starts counting.";
+      wrap.appendChild(e);
+    } else if (!list.length) {
+      wrap.appendChild(el("div", "empty", "Nothing with that status."));
+    }
+
+    app.appendChild(wrap);
+  }
+
+  function practiceRow(p) {
+    var row = el("button", "prow");
+
+    var left = el("div", "pwhen");
+    left.appendChild(el("div", "pdate", prettyDate(p.date)));
+    left.appendChild(el("div", "pbadge" + (p.status === "done" ? " done" : ""),
+                       p.status === "done" ? "Done" : "Planned"));
+    row.appendChild(left);
+
+    var right = el("div", "pwhat");
+    var n = p.items.length;
+    var mins = practiceMinutes(p);
+    var sub = [n + (n === 1 ? " drill" : " drills")];
+    if (mins) sub.push(mins + " min");
+    right.appendChild(el("div", "psub", sub.join(" · ")));
+    right.appendChild(n
+      ? el("div", "pnames", p.items.map(itemLabel).join("   ·   "))
+      : el("div", "pnames dim", "Nothing added yet"));
+    if (p.note) right.appendChild(el("div", "pnote", p.note));
+    row.appendChild(right);
+
+    row.onclick = function () { go("practice", p.id); };
+    return row;
+  }
+
+  /* ---------- one practice ---------- */
+
+  function renderPracticeEditor() {
+    var p = findPractice(route.id);
+    if (!p) { go("practices"); return; }
+
+    backTo("practices", "Practices");
+
+    var wrap = el("div", "wrap narrow");
+
+    var head = el("div", "prac-head");
+
+    var dateField = el("div", "field");
+    dateField.appendChild(el("div", "label", "Date"));
+    var di = document.createElement("input");
+    di.type = "date"; di.value = p.date || "";
+    di.onchange = function () {
+      p.date = di.value;
+      touchPractice(p);
+      state.practices.sort(byDateDesc);
+    };
+    dateField.appendChild(di);
+    head.appendChild(dateField);
+
+    var statusField = el("div", "field");
+    statusField.appendChild(el("div", "label", "Status"));
+    var st = el("div");
+    st.appendChild(el("span", "pbadge" + (p.status === "done" ? " done" : ""),
+                      p.status === "done" ? "Done" : "Planned"));
+    statusField.appendChild(st);
+    head.appendChild(statusField);
+
+    var totalField = el("div", "field");
+    totalField.appendChild(el("div", "label", "Total"));
+    var mins = practiceMinutes(p);
+    totalField.appendChild(el("div", "ptotal", mins ? mins + " min" : "—"));
+    head.appendChild(totalField);
+
+    wrap.appendChild(head);
+
+    var list = el("div", "items");
+    p.items.forEach(function (it, i) { list.appendChild(itemRow(p, it, i)); });
+    wrap.appendChild(list);
+
+    if (!p.items.length) {
+      wrap.appendChild(el("div", "empty",
+        "Nothing in this practice yet. Add drills from the library."));
+    }
+
+    var addBtn = el("button", "add-row", "+  Add drill from library");
+    addBtn.onclick = function () { openDrillPicker(p); };
+    wrap.appendChild(addBtn);
+
+    var noteField = el("div", "field");
+    noteField.style.marginTop = "24px";
+    noteField.appendChild(el("div", "label", "Session note"));
+    var ta = document.createElement("textarea");
+    ta.value = p.note || "";
+    ta.placeholder = "How it went, who stood out, what to fix next time.";
+    ta.oninput = function () { p.note = ta.value; touchPractice(p); };
+    noteField.appendChild(ta);
+    wrap.appendChild(noteField);
+
+    var footer = el("div", "prac-foot");
+
+    if (p.status === "planned") {
+      var hint = el("div", "hint");
+      hint.innerHTML = "This is still a <b>plan</b>, so nothing in it is counted yet. " +
+                       "After the session, take out anything you did not get to — then mark it done.";
+      footer.appendChild(hint);
+    }
+
+    var buttons = el("div", "foot-row");
+
+    if (p.status === "planned") {
+      var mark = el("button", "chip primary", "Mark this practice done");
+      mark.onclick = function () { p.status = "done"; touchPractice(p); render(); };
+      buttons.appendChild(mark);
+    } else {
+      var reopen = el("button", "chip ghost", "Reopen to change it");
+      reopen.onclick = function () { p.status = "planned"; touchPractice(p); render(); };
+      buttons.appendChild(reopen);
+    }
+
+    var print = el("button", "chip ghost", "Print");
+    print.onclick = function () { window.print(); };
+    buttons.appendChild(print);
+
+    var del = el("button", "chip danger", "Delete practice");
+    del.onclick = function () {
+      if (!confirm("Delete the practice on " + prettyDate(p.date) + "? This cannot be undone.")) return;
+      removePractice(p.id);
+      go("practices");
+    };
+    buttons.appendChild(del);
+
+    footer.appendChild(buttons);
+    wrap.appendChild(footer);
+    app.appendChild(wrap);
+  }
+
+  function itemRow(p, it, i) {
+    var row = el("div", "item");
+
+    row.appendChild(el("div", "inum", String(i + 1)));
+
+    var d = it.drillId ? findDrill(it.drillId) : null;
+    var gone = it.drillId && !d;
+
+    var body = el("div", "ibody");
+    body.appendChild(el("div", "iname", itemLabel(it)));
+    var sub = [];
+    if (d && d.tag) sub.push(d.tag);
+    if (d && d.format) sub.push(d.format);
+    if (gone) sub.push("no longer in the library");
+    if (sub.length) body.appendChild(el("div", "isub" + (gone ? " gone" : ""), sub.join(" · ")));
+    row.appendChild(body);
+
+    var mi = document.createElement("input");
+    mi.type = "number"; mi.min = "0"; mi.max = "240"; mi.className = "imin";
+    mi.value = it.minutes;
+    mi.setAttribute("aria-label", "Minutes");
+    mi.oninput = function () {
+      it.minutes = Math.max(0, parseInt(mi.value, 10) || 0);
+      touchPractice(p);
+      var t = app.querySelector(".ptotal");
+      var m = practiceMinutes(p);
+      if (t) t.textContent = m ? m + " min" : "—";
+    };
+    row.appendChild(mi);
+    row.appendChild(el("div", "imunit", "min"));
+
+    var moves = el("div", "imoves");
+    var up = el("button", "mini", "↑");
+    up.title = "Move earlier";
+    up.disabled = i === 0;
+    up.onclick = function () {
+      p.items.splice(i - 1, 0, p.items.splice(i, 1)[0]);
+      touchPractice(p); render();
+    };
+    var down = el("button", "mini", "↓");
+    down.title = "Move later";
+    down.disabled = i === p.items.length - 1;
+    down.onclick = function () {
+      p.items.splice(i + 1, 0, p.items.splice(i, 1)[0]);
+      touchPractice(p); render();
+    };
+    var rm = el("button", "mini rm", "×");
+    rm.title = "Take out of this practice";
+    rm.onclick = function () {
+      p.items.splice(i, 1);
+      touchPractice(p); render();
+    };
+    moves.appendChild(up); moves.appendChild(down); moves.appendChild(rm);
+    row.appendChild(moves);
+
+    return row;
+  }
+
+  /* ---------- picking drills into a practice ----------
+     The sheet stays open after each pick, because a practice is several drills
+     and reopening the list every time would turn taps back into work. */
+
+  function openDrillPicker(p) {
+    var q = "", tag = "", filterRow = null, rows = null;
+
+    var back = el("div", "modal-back");
+    var panel = el("div", "modal");
+
+    var mhead = el("div", "modal-head");
+    mhead.appendChild(el("div", "mtitle", "Add drills"));
+    var added = el("div", "count", "");
+    mhead.appendChild(added);
+    var gap = el("div"); gap.style.marginLeft = "auto";
+    mhead.appendChild(gap);
+    var closeBtn = el("button", "chip primary", "Done");
+    closeBtn.onclick = close;
+    mhead.appendChild(closeBtn);
+    panel.appendChild(mhead);
+
+    function paint() {
+      if (filterRow) {
+        Array.prototype.forEach.call(filterRow.children, function (b, idx) {
+          b.setAttribute("aria-pressed", String(idx === 0 ? tag === "" : tag === b.textContent));
+        });
+      }
+      rows.innerHTML = "";
+      var hits = state.drills.filter(function (d) {
+        if (tag && d.tag !== tag) return false;
+        if (!q) return true;
+        return (d.name || "").toLowerCase().indexOf(q) >= 0 ||
+               (d.tag || "").toLowerCase().indexOf(q) >= 0 ||
+               (d.points || "").toLowerCase().indexOf(q) >= 0;
+      });
+      if (!hits.length) { rows.appendChild(el("div", "empty", "No drill matches that.")); return; }
+      hits.forEach(function (d) {
+        var r = el("button", "mrow");
+        var th = el("div", "mthumb");
+        th.innerHTML = thumbFor(d);
+        r.appendChild(th);
+        var body = el("div", "mbody");
+        body.appendChild(el("div", "mname", d.name || "Untitled"));
+        var sub = [];
+        if (d.tag) sub.push(d.tag);
+        if (d.format) sub.push(d.format);
+        if (d.minutes) sub.push(d.minutes + " min");
+        body.appendChild(el("div", "isub", sub.join(" · ")));
+        r.appendChild(body);
+        var plus = el("div", "mplus", "+");
+        r.appendChild(plus);
+        r.onclick = function () {
+          p.items.push(newItem(d));
+          touchPractice(p);
+          count();
+          plus.textContent = "✓";
+          plus.className = "mplus on";
+          setTimeout(function () { plus.textContent = "+"; plus.className = "mplus"; }, 700);
+        };
+        rows.appendChild(r);
+      });
+    }
+
+    if (!state.drills.length) {
+      var e = el("div", "empty");
+      e.innerHTML = "The library is empty.<br>Draw a drill first — practices are built from it.";
+      panel.appendChild(e);
+    } else {
+      var search = document.createElement("input");
+      search.type = "text"; search.placeholder = "Search drills";
+      search.className = "msearch";
+      search.oninput = function () { q = search.value.toLowerCase(); paint(); };
+      panel.appendChild(search);
+
+      var used = {};
+      state.drills.forEach(function (d) { if (d.tag) used[d.tag] = 1; });
+      var tagNames = Object.keys(used).sort();
+      if (tagNames.length > 1) {
+        filterRow = el("div", "filters");
+        var all = el("button", null, "All");
+        all.onclick = function () { tag = ""; paint(); };
+        filterRow.appendChild(all);
+        tagNames.forEach(function (t) {
+          var b = el("button", null, t);
+          b.onclick = function () { tag = (tag === t ? "" : t); paint(); };
+          filterRow.appendChild(b);
+        });
+        panel.appendChild(filterRow);
+      }
+
+      rows = el("div", "mrows");
+      panel.appendChild(rows);
+      paint();
+    }
+
+    function count() {
+      var n = p.items.length;
+      added.textContent = n ? n + (n === 1 ? " drill in this practice" : " drills in this practice") : "";
+    }
+    count();
+
+    function close() {
+      document.removeEventListener("keydown", onKey);
+      back.remove();
+      render();
+    }
+    function onKey(e) { if (e.key === "Escape") close(); }
+    document.addEventListener("keydown", onKey);
+
+    back.onclick = function (e) { if (e.target === back) close(); };
+    back.appendChild(panel);
+    document.body.appendChild(back);
+  }
+
   /* ---------- editor ---------- */
 
   function renderEditor() {
     var drill = findDrill(route.id);
     if (!drill) { go("library"); return; }
 
-    crumb.textContent = "‹ Library";
-    crumb.style.cursor = "pointer";
-    crumb.onclick = function () { go("library"); };
+    backTo("library", "Library");
 
     var shell = el("div", "editor");
     shell.appendChild(buildRail());
@@ -955,7 +1646,18 @@
     footer.style.cssText = "margin-top:26px;display:flex;gap:8px;flex-wrap:wrap";
     var del = el("button", "chip danger", "Delete drill");
     del.onclick = function () {
-      if (!confirm("Delete “" + (drill.name || "Untitled") + "”? This cannot be undone.")) return;
+      // Practices keep a name snapshot, so history survives — but say so plainly
+      // rather than letting a season of records quietly lose their diagram.
+      var used = state.practices.filter(function (p) {
+        for (var i = 0; i < p.items.length; i++) if (p.items[i].drillId === drill.id) return true;
+        return false;
+      }).length;
+      var msg = "Delete “" + (drill.name || "Untitled") + "”? This cannot be undone.";
+      if (used) {
+        msg += "\n\nIt is in " + used + " practice" + (used === 1 ? "" : "s") +
+               ". Those still list the name, but the diagram and its details go for good.";
+      }
+      if (!confirm(msg)) return;
       removeDrill(drill.id);
       go("library");
     };
@@ -1191,10 +1893,7 @@
 
   /* ================= backup ================= */
 
-  function stamp() {
-    var d = new Date(), p = function (n) { return (n < 10 ? "0" : "") + n; };
-    return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
-  }
+  function stamp() { return todayISO(); }
 
   document.getElementById("exportBtn").onclick = async function () {
     var json = serialize(state);
@@ -1224,12 +1923,18 @@
         var incoming = deserialize(String(reader.result));
         if (!incoming) throw new Error("shape");
         var msg = "Import " + incoming.drills.length + " drill" +
-                  (incoming.drills.length === 1 ? "" : "s") + "?\n\n" +
-                  "This replaces what is in the app now (" + state.drills.length + ").";
+                  (incoming.drills.length === 1 ? "" : "s") + " and " +
+                  incoming.practices.length + " practice" +
+                  (incoming.practices.length === 1 ? "" : "s") + "?\n\n" +
+                  "This replaces what is in the app now (" + state.drills.length +
+                  " drills, " + state.practices.length + " practices).";
         if (!confirm(msg)) return;
         state = incoming;
-        state.drills.forEach(function (d) { dirty[d.id] = 1; });
-        if (Store.kind === "idb") DB.clear().then(flush); else flush();
+        state.drills.forEach(function (d) { dirty[d.id] = "drills"; });
+        state.practices.forEach(function (p) { dirty[p.id] = "practices"; });
+        if (Store.kind === "idb") {
+          Promise.all([DB.clear("drills"), DB.clear("practices")]).then(flush);
+        } else flush();
         render();
         chip("Imported", false);
       } catch (e) {

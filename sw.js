@@ -3,7 +3,7 @@
    data is NOT here: that lives in IndexedDB, which is offline by nature. Bump
    VERSION whenever the shell changes, so old copies are cleared out. */
 
-var VERSION = "po-shell-v2";
+var VERSION = "po-shell-v3";
 var SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg"];
 
 self.addEventListener("install", function (e) {

@@ -26,6 +26,9 @@ will keep serving the cached old copy.
     manifest.webmanifest      Home Screen install
     icon.svg                  app icon
     .nojekyll                 stops GitHub Pages processing the app as a blog
+    test/
+      run.sh                  storage tests — run before shipping storage changes
+      storage-test.js         headless, under JavaScriptCore
     archive/
       pencil-test.html        the Apple Pencil spike that chose the platform
     CLAUDE.md                 decisions and the reasoning behind them

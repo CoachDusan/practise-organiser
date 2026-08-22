@@ -167,6 +167,71 @@ downward pen stroke could scroll the page instead of drawing. Not worth gambling
 impression on. The canvases are `touch-action: none`, and a finger drag over a court is turned
 into a `window.scrollTo` by hand. Deterministic, both behaviours controlled.
 
+## Stage 2: the practice log (2026-08-22)
+
+The library had no consumer: drills were drawn and then sat there. A practice is
+a dated list of which drills were run — the thing Dusan's inversion was for.
+
+### Plan and fact are the same record, separated by a status — Dusan's call
+
+Two of his requirements pulled against each other. Logging is *"a few taps after
+the session"*, but a practice sheet is also something you **print and carry into the
+gym**, which means it exists before the session. Presented as a choice; he took the
+one that keeps both without letting the archive lie.
+
+A practice carries `status: "planned" | "done"`. It can be built at any time. Nothing
+counts until he marks it done, and the screen says so in as many words while it is
+still a plan. The review step is not a modal — the drill list is already on screen, so
+"take out what you did not get to, then mark it done" needs no extra machinery.
+
+**The rule this enforces: an intention is never reported as a fact.** Plan six drills,
+run four, and the archive says four.
+
+### What a practice holds
+
+`{ id, date, status, items: [{ id, drillId, name, minutes }], note }`
+
+- **No ink of its own.** The diagram lives once, in the drill.
+- `drillId` is the fact; `name` is a label to fall back on. Counting always goes
+  through the id, never the string — that is the whole point of the library.
+- The name snapshot exists so a session from October still reads sensibly after the
+  drill is deleted in March. Deleting a used drill now says how many practices it is
+  in before it goes.
+- `minutes` is per-item and defaults from the drill, because the same drill runs 10
+  minutes one night and 20 the next.
+
+### The first countable fact
+
+Drill cards now read **"Run in 7 practices"** — completed sessions only, counted once
+per session even if the drill appears twice in one. It is the smallest possible proof
+that the library model works, and the shape every later export takes.
+
+### Storage: database version 1 → 2
+
+A second object store, `practices`. The upgrade only creates what is missing, so a
+library written under version 1 is carried across untouched. One save queue serves
+both kinds of record: `dirty` maps a record id to the store it belongs in.
+
+Dates are parsed by hand rather than through `new Date(string)` — `"2026-08-25"` fed
+to the Date constructor is read as UTC and comes back as the 24th in a western
+timezone, which would file a session on the wrong day.
+
+### The test now exists, and is committed
+
+`test/run.sh` — headless, under JavaScriptCore, with IndexedDB, localStorage and a
+slice of the DOM faked. It seeds a **version 1** database with drills and packed ink,
+upgrades it, quits, reopens, and checks everything came back; it checks that planned
+practices are not counted; that pre-practices backups still import; that the
+localStorage fallback round-trips; and it renders every screen, which is the class of
+bug that parses fine and only appears when the thing is run. 36 checks.
+**Run it before shipping any storage change.**
+
+### Still deferred, still not blocking
+
+Drill versioning (redraw in March: what does October show?) and a per-session
+scribble on top of a stored diagram. The practice log works without either, and
+neither should be guessed at before Dusan has run real sessions through this.
+
 ## The ink engine (first proved in `pencil-test.html`)
 
 Worth keeping whichever platform wins, because the reasoning carries over.
