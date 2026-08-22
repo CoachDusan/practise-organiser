@@ -71,7 +71,8 @@
   .chip.ghost { background: transparent; }
   .chip.danger { color: var(--danger); border-color: #4A342F; background: transparent; }
 
-  input[type="text"], input[type="number"], input[type="date"], textarea, select {
+  input[type="text"], input[type="number"], input[type="date"], input[type="time"],
+  textarea, select {
     background: var(--ground); border: 1px solid var(--line);
     border-radius: 8px; padding: 9px 11px; width: 100%;
   }
@@ -260,7 +261,7 @@
   }
 
   .prac-head {
-    display: grid; grid-template-columns: minmax(170px, 220px) auto auto;
+    display: grid; grid-template-columns: minmax(150px, 200px) auto auto auto;
     gap: 18px; align-items: end; margin: 6px 0 22px;
   }
   .ptotal {
@@ -304,6 +305,100 @@
     border-radius: 8px; padding: 11px 14px; font-size: 13px; line-height: 1.55; color: var(--dim);
   }
   .hint b { color: var(--text); }
+
+  /* ---------- schedule ---------- */
+  .cal-nav { display: flex; align-items: center; gap: 8px; margin: 16px 0 14px; flex-wrap: wrap; }
+  .cal-nav .chip { padding: 7px 13px; }
+  .cal-title {
+    font-family: "Barlow Condensed", sans-serif; text-transform: uppercase;
+    letter-spacing: .06em; font-size: 19px; font-weight: 700; min-width: 210px;
+  }
+
+  .week { display: grid; gap: 7px; }
+  .day {
+    display: grid; grid-template-columns: 62px 1fr 42px; gap: 12px; align-items: start;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 11px 12px;
+  }
+  .day.today { border-color: var(--accent); }
+  .dwhen { display: grid; gap: 1px; justify-items: center; padding-top: 2px; }
+  .dday { font-size: 10px; color: var(--dim); }
+  .day.today .dday { color: var(--accent); }
+  .dnum {
+    font-family: "Barlow Condensed", sans-serif; font-size: 24px; font-weight: 700;
+    line-height: 1; font-variant-numeric: tabular-nums;
+  }
+  .dbody { display: grid; gap: 6px; min-width: 0; }
+  .dempty { color: #4E483E; font-size: 13px; padding: 5px 0; }
+  .dadd {
+    width: 38px; height: 38px; border-radius: 10px; background: transparent;
+    color: var(--dim); font-size: 19px; line-height: 1; display: grid; place-items: center;
+  }
+  .dadd:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* One chip per thing on a day. The left edge carries the colour, so a week
+     can be read at a glance without a legend. */
+  .chip-item {
+    display: grid; gap: 2px; text-align: left; padding: 7px 10px;
+    background: var(--panel-hi); border: 1px solid var(--line);
+    border-left: 3px solid var(--dim); border-radius: 8px; width: 100%;
+  }
+  .chip-item:hover { border-color: #4C463C; }
+  .ci-title {
+    font-family: "Barlow Condensed", sans-serif; font-size: 16px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .03em; line-height: 1.15;
+  }
+  .ci-sub { font-size: 11.5px; color: var(--dim); line-height: 1.4; }
+
+  .chip-item.practice        { border-left-color: var(--accent); }
+  .chip-item.practice.done   { border-left-color: #9CC47F; }
+  .chip-item.game            { border-left-color: #D2603F; }
+  .chip-item.tournament      { border-left-color: #C08BD8; }
+  .chip-item.travel          { border-left-color: #6FA8C7; }
+  .chip-item.off             { border-left-color: #6B655A; }
+  .chip-item.gym             { border-left-color: #8C7A55; }
+  .chip-item.note            { border-left-color: #575149; }
+
+  .month-grid {
+    display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px;
+  }
+  .mg-head { font-size: 10px; color: var(--dim); text-align: center; padding-bottom: 2px; }
+  .mg-cell {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+    min-height: 92px; padding: 5px; display: grid; gap: 3px; align-content: start;
+    cursor: pointer; overflow: hidden;
+  }
+  .mg-cell:hover { border-color: #4C463C; }
+  .mg-cell.outside { opacity: .38; }
+  .mg-cell.today { border-color: var(--accent); }
+  .mg-num {
+    font-family: "Barlow Condensed", sans-serif; font-size: 13px; color: var(--dim);
+    font-variant-numeric: tabular-nums; line-height: 1;
+  }
+  .mg-cell.today .mg-num { color: var(--accent); }
+  .mg-item {
+    font-size: 10px; line-height: 1.25; padding: 2px 4px; border-radius: 4px;
+    background: var(--panel-hi); border-left: 2px solid var(--dim);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .mg-item.practice      { border-left-color: var(--accent); }
+  .mg-item.practice.done { border-left-color: #9CC47F; }
+  .mg-item.game          { border-left-color: #D2603F; }
+  .mg-item.tournament    { border-left-color: #C08BD8; }
+  .mg-item.travel        { border-left-color: #6FA8C7; }
+  .mg-item.off           { border-left-color: #6B655A; }
+  .mg-item.gym           { border-left-color: #8C7A55; }
+
+  .ev-form { display: grid; gap: 14px; }
+  .ev-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  @media (max-width: 620px) {
+    .day { grid-template-columns: 52px 1fr 38px; gap: 8px; }
+    .month-grid { gap: 3px; }
+    .mg-cell { min-height: 62px; padding: 3px; }
+    .mg-item { font-size: 9px; }
+    .cal-title { min-width: 0; font-size: 17px; }
+  }
 
   /* ---------- drill picker ---------- */
   .modal-back {
@@ -381,7 +476,8 @@
 
   @media print {
     .topbar, .rail, .add-court, .add-row, .diagram-head .grp, .filters,
-    .tabs, .modal-back, .prac-foot, .imoves, .hint { display: none !important; }
+    .tabs, .modal-back, .prac-foot, .imoves, .hint, .dadd, .cal-nav .chip
+      { display: none !important; }
     body { background: #fff; color: #000; }
     .editor { grid-template-columns: 1fr; }
     .diagram { break-inside: avoid; border-color: #bbb; background: #fff; }
@@ -397,6 +493,9 @@
     .imin { text-align: left; }
     textarea { min-height: 0; height: auto; }
     .pbadge { border-color: #999; color: #000; background: #fff; }
+    .day, .mg-cell, .chip-item, .mg-item { background: #fff; border-color: #bbb; break-inside: avoid; }
+    .ci-sub, .dempty, .mg-num, .dday { color: #555; }
+    .cal-nav { margin-top: 0; }
   }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
@@ -404,8 +503,9 @@
 <div class="topbar">
   <div class="wordmark">Practise<span>Organiser</span></div>
   <div id="tabs" class="tabs">
-    <button class="chip" data-view="library">Drills</button>
+    <button class="chip" data-view="schedule">Schedule</button>
     <button class="chip" data-view="practices">Practices</button>
+    <button class="chip" data-view="library">Drills</button>
   </div>
   <div id="crumb" class="label" style="font-size:12px;color:var(--dim)"></div>
   <div class="spacer"></div>
@@ -490,7 +590,7 @@
   var FORMATS = ["Individual", "Pairs", "3v3", "4v4", "5v5", "5:0", "Whole team"];
   var SIZES = { S: 300, M: 460, L: 660 };   // css px, the court's drawn width
 
-  var state = { version: 2, drills: [], practices: [] };
+  var state = { version: 3, drills: [], practices: [], events: [] };
   var PREVIEW = !!(window.claude);   // running inside the claude.ai preview sandbox
 
   /* ================= storage =================
@@ -502,19 +602,20 @@
   var Store = { kind: "memory" };
   var LS_KEY = "practise-organiser/v1";
 
-  /* Two object stores, one per kind of record. Practices were added at DB
-     version 2; the upgrade only creates what is missing, so a library written
-     under version 1 is carried across untouched. */
+  /* One object store per kind of record. Practices arrived at DB version 2 and
+     schedule events at version 3; each upgrade only creates what is missing, so
+     data written under an older version is carried across untouched. */
   var DB = (function () {
     var opening = null;
     function open() {
       if (opening) return opening;
       opening = new Promise(function (resolve, reject) {
-        var req = indexedDB.open("practise-organiser", 2);
+        var req = indexedDB.open("practise-organiser", 3);
         req.onupgradeneeded = function () {
           var db = req.result;
           if (!db.objectStoreNames.contains("drills")) db.createObjectStore("drills", { keyPath: "id" });
           if (!db.objectStoreNames.contains("practices")) db.createObjectStore("practices", { keyPath: "id" });
+          if (!db.objectStoreNames.contains("events")) db.createObjectStore("events", { keyPath: "id" });
         };
         req.onsuccess = function () { resolve(req.result); };
         req.onerror = function () { reject(req.error); };
@@ -545,10 +646,11 @@
     return Promise.resolve()
       .then(function () {
         if (!window.indexedDB) throw new Error("no idb");
-        return Promise.all([DB.all("drills"), DB.all("practices")]).then(function (r) {
-          Store.kind = "idb";
-          return { drills: r[0] || [], practices: r[1] || [] };
-        });
+        return Promise.all([DB.all("drills"), DB.all("practices"), DB.all("events")])
+          .then(function (r) {
+            Store.kind = "idb";
+            return { drills: r[0] || [], practices: r[1] || [], events: r[2] || [] };
+          });
       })
       .catch(function () {
         try {
@@ -559,16 +661,19 @@
           Store.kind = "local";
           var raw = localStorage.getItem(LS_KEY);
           var saved = raw ? JSON.parse(raw) : null;
-          return { drills: (saved && saved.drills) || [], practices: (saved && saved.practices) || [] };
+          return { drills: (saved && saved.drills) || [],
+                   practices: (saved && saved.practices) || [],
+                   events: (saved && saved.events) || [] };
         } catch (e) {
           Store.kind = "memory";
-          return { drills: [], practices: [] };
+          return { drills: [], practices: [], events: [] };
         }
       })
       .then(function (rows) {
         state.drills = rows.drills.map(inflateDrill)
           .sort(function (a, b) { return (b.updatedAt || 0) - (a.updatedAt || 0); });
         state.practices = rows.practices.map(inflatePractice).sort(byDateDesc);
+        state.events = rows.events.map(inflateEvent).sort(byDateDesc);
         // Ask Safari not to evict this data when space runs low.
         if (navigator.storage && navigator.storage.persist) {
           navigator.storage.persist().catch(function () {});
@@ -580,8 +685,9 @@
     if (Store.kind === "local") {
       try {
         localStorage.setItem(LS_KEY, JSON.stringify({
-          version: 2, drills: state.drills.map(deflateDrill),
-          practices: state.practices.map(deflatePractice)
+          version: 3, drills: state.drills.map(deflateDrill),
+          practices: state.practices.map(deflatePractice),
+          events: state.events.map(deflateEvent)
         }));
         return Promise.resolve();
       } catch (e) { return Promise.reject(e); }
@@ -605,6 +711,12 @@
     schedule();
   }
 
+  function touchEvent(e) {
+    e.updatedAt = Date.now();
+    dirty[e.id] = "events";
+    schedule();
+  }
+
   function schedule() {
     clearTimeout(saveTimer);
     saveTimer = setTimeout(flush, 400);
@@ -622,6 +734,10 @@
         if (queued[id] === "practices") {
           var p = findPractice(id);
           return p ? DB.put("practices", deflatePractice(p)) : DB.del("practices", id);
+        }
+        if (queued[id] === "events") {
+          var ev = findEvent(id);
+          return ev ? DB.put("events", deflateEvent(ev)) : DB.del("events", id);
         }
         var d = findDrill(id);
         return d ? DB.put("drills", deflateDrill(d)) : DB.del("drills", id);
@@ -646,6 +762,12 @@
     state.practices = state.practices.filter(function (p) { return p.id !== id; });
     if (Store.kind === "idb") DB.del("practices", id).then(flashSaved).catch(function () {});
     else { dirty[id] = "practices"; schedule(); }
+  }
+
+  function removeEvent(id) {
+    state.events = state.events.filter(function (e) { return e.id !== id; });
+    if (Store.kind === "idb") DB.del("events", id).then(flashSaved).catch(function () {});
+    else { dirty[id] = "events"; schedule(); }
   }
 
   var chipEl = document.getElementById("saveChip");
@@ -687,7 +809,7 @@
 
   function newPractice() {
     return {
-      id: uid(), date: todayISO(), status: "planned", items: [], note: "",
+      id: uid(), date: todayISO(), time: "", status: "planned", items: [], note: "",
       createdAt: Date.now(), updatedAt: Date.now()
     };
   }
@@ -749,6 +871,84 @@
     return m;
   }
 
+  /* ================= schedule events =================
+     Everything on the calendar that is not a practice. A season is not only
+     the nights you coach: the game is what the week is built around, and a
+     travel day or a shut gym is the reason a plan changes. Kept as one record
+     type with a `kind`, rather than six near-identical ones. */
+
+  var EVENT_KINDS = [
+    { id: "game",       label: "Game",            hint: "Who you play, home or away, and the score when you have it" },
+    { id: "tournament", label: "Tournament",      hint: "A multi-day competition" },
+    { id: "travel",     label: "Travel",          hint: "On the road, not training" },
+    { id: "off",        label: "Day off",         hint: "Deliberate rest" },
+    { id: "gym",        label: "Gym unavailable", hint: "The hall is taken" },
+    { id: "note",       label: "Note",            hint: "Anything else worth seeing on the calendar" }
+  ];
+
+  function kindLabel(id) {
+    for (var i = 0; i < EVENT_KINDS.length; i++) if (EVENT_KINDS[i].id === id) return EVENT_KINDS[i].label;
+    return "Note";
+  }
+
+  function newEvent(kind, date) {
+    return {
+      id: uid(), kind: kind || "note", date: date || todayISO(), time: "",
+      title: "", venue: "", scoreUs: null, scoreThem: null, note: "",
+      createdAt: Date.now(), updatedAt: Date.now()
+    };
+  }
+
+  function findEvent(id) {
+    for (var i = 0; i < state.events.length; i++) if (state.events[i].id === id) return state.events[i];
+    return null;
+  }
+
+  function deflateEvent(e) { return e; }
+
+  function inflateEvent(e) {
+    if (!e.kind) e.kind = "note";
+    e.scoreUs = numOrNull(e.scoreUs);
+    e.scoreThem = numOrNull(e.scoreThem);
+    return e;
+  }
+
+  function numOrNull(v) {
+    if (v === null || v === undefined || v === "") return null;
+    var n = Number(v);
+    return isFinite(n) ? n : null;
+  }
+
+  function eventTitle(e) {
+    if (e.kind === "game") {
+      var who = e.title || "Game";
+      var where = e.venue === "home" ? "H" : e.venue === "away" ? "A" : e.venue === "neutral" ? "N" : "";
+      return where ? who + " (" + where + ")" : who;
+    }
+    return e.title || kindLabel(e.kind);
+  }
+
+  function gameResult(e) {
+    if (e.kind !== "game") return "";
+    if (e.scoreUs === null || e.scoreThem === null) return "";
+    return e.scoreUs + "\u2013" + e.scoreThem;
+  }
+
+  /* Won-lost, from games that actually have both scores filled in. A game with
+     no score is not a draw and is not counted — the record says only what the
+     data supports. */
+  function seasonRecord() {
+    var w = 0, l = 0, d = 0, pending = 0;
+    state.events.forEach(function (e) {
+      if (e.kind !== "game") return;
+      if (e.scoreUs === null || e.scoreThem === null) { pending++; return; }
+      if (e.scoreUs > e.scoreThem) w++;
+      else if (e.scoreUs < e.scoreThem) l++;
+      else d++;
+    });
+    return { w: w, l: l, d: d, pending: pending };
+  }
+
   /* ---------- dates ----------
      Parsed by hand rather than through Date(string): "2026-08-25" fed to the
      Date constructor is read as UTC and can come back as the 24th in a western
@@ -780,6 +980,61 @@
   function monthLabel(iso) {
     var p = isoParts(iso);
     return p ? MONTH_LONG[p.m - 1] + " " + p.y : "Undated";
+  }
+
+  function dateFromISO(iso) {
+    var p = isoParts(iso);
+    return p ? new Date(p.y, p.m - 1, p.d) : new Date();
+  }
+
+  function isoFromDate(dt) {
+    var p = function (n) { return (n < 10 ? "0" : "") + n; };
+    return dt.getFullYear() + "-" + p(dt.getMonth() + 1) + "-" + p(dt.getDate());
+  }
+
+  function addDays(iso, n) {
+    var d = dateFromISO(iso);
+    d.setDate(d.getDate() + n);
+    return isoFromDate(d);
+  }
+
+  function addMonths(iso, n) {
+    var p = isoParts(iso) || isoParts(todayISO());
+    var d = new Date(p.y, p.m - 1 + n, 1);
+    return isoFromDate(d);
+  }
+
+  // Weeks start on Monday: a basketball week runs to the weekend game.
+  function startOfWeek(iso) {
+    var d = dateFromISO(iso);
+    d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+    return isoFromDate(d);
+  }
+
+  function shortDay(iso) { return DAY_NAMES[dateFromISO(iso).getDay()]; }
+  function dayNum(iso) { var p = isoParts(iso); return p ? p.d : 0; }
+
+  function shortDate(iso) {
+    var p = isoParts(iso);
+    return p ? p.d + " " + MONTH_SHORT[p.m - 1] : "";
+  }
+
+  // Everything on one day, practices first, then events in time order.
+  function dayItems(iso) {
+    var out = [];
+    state.practices.forEach(function (p) {
+      if (p.date === iso) out.push({ type: "practice", rec: p, time: p.time || "" });
+    });
+    state.events.forEach(function (e) {
+      if (e.date === iso) out.push({ type: "event", rec: e, time: e.time || "" });
+    });
+    out.sort(function (a, b) {
+      if (a.time && b.time) return a.time.localeCompare(b.time);
+      if (a.time) return -1;
+      if (b.time) return 1;
+      return 0;
+    });
+    return out;
   }
 
   /* ================= stroke storage =================
@@ -879,9 +1134,10 @@
 
   function serialize(st) {
     return JSON.stringify({
-      version: 2, updatedAt: st.updatedAt,
+      version: 3, updatedAt: st.updatedAt,
       drills: st.drills.map(deflateDrill),
-      practices: st.practices.map(deflatePractice)
+      practices: st.practices.map(deflatePractice),
+      events: st.events.map(deflateEvent)
     });
   }
 
@@ -893,6 +1149,8 @@
     st.drills.forEach(inflateDrill);
     st.practices = Array.isArray(st.practices) ? st.practices.map(inflatePractice) : [];
     st.practices.sort(byDateDesc);
+    st.events = Array.isArray(st.events) ? st.events.map(inflateEvent) : [];
+    st.events.sort(byDateDesc);
     return st;
   }
 
@@ -1117,7 +1375,8 @@
 
   var app = document.getElementById("app");
   var crumb = document.getElementById("crumb");
-  var route = { view: "library", id: null, filter: "", pfilter: "" };
+  var route = { view: "schedule", id: null, filter: "", pfilter: "",
+                anchor: null, smode: "week" };
   var pads = [];
 
   function go(view, id) {
@@ -1131,7 +1390,8 @@
   // The tabs are for moving between the two lists; inside a record the crumb
   // takes over as the way back, so both are never on screen at once.
   function setChrome() {
-    var onList = route.view === "library" || route.view === "practices";
+    var onList = route.view === "library" || route.view === "practices" ||
+                 route.view === "schedule";
     tabsEl.style.display = onList ? "" : "none";
     Array.prototype.forEach.call(tabsEl.children, function (b) {
       b.setAttribute("aria-pressed", String(b.getAttribute("data-view") === route.view));
@@ -1156,6 +1416,7 @@
     app.innerHTML = "";
     setChrome();
     if (route.view === "drill") renderEditor();
+    else if (route.view === "schedule") renderSchedule();
     else if (route.view === "practices") renderPractices();
     else if (route.view === "practice") renderPracticeEditor();
     else renderLibrary();
@@ -1274,6 +1535,365 @@
     app.appendChild(wrap);
   }
 
+  /* ---------- schedule ----------
+     Two ways of looking at the same dates. The week is the working view — it
+     is where a coach decides what Thursday looks like given Saturday's game.
+     The month is for standing back and seeing the block. */
+
+  function renderSchedule() {
+    var wrap = el("div", "wrap");
+
+    var banner = storageBanner();
+    if (banner) wrap.appendChild(banner);
+
+    if (!route.anchor) route.anchor = todayISO();
+    if (!route.smode) route.smode = "week";
+
+    var head = el("div", "lib-head");
+    head.appendChild(el("h1", null, "Schedule"));
+
+    var rec = seasonRecord();
+    if (rec.w || rec.l || rec.d || rec.pending) {
+      var parts = [];
+      if (rec.w || rec.l || rec.d) {
+        parts.push(rec.w + "–" + rec.l + (rec.d ? "–" + rec.d : ""));
+      }
+      if (rec.pending) parts.push(rec.pending + " still to play");
+      head.appendChild(el("span", "count", parts.join("  ·  ")));
+    }
+
+    var gap = el("div"); gap.style.marginLeft = "auto";
+    head.appendChild(gap);
+
+    var modes = el("div", "tabs");
+    [["week", "Week"], ["month", "Month"]].forEach(function (m) {
+      var b = el("button", "chip", m[1]);
+      b.setAttribute("aria-pressed", String(route.smode === m[0]));
+      b.onclick = function () { route.smode = m[0]; render(); };
+      modes.appendChild(b);
+    });
+    head.appendChild(modes);
+    wrap.appendChild(head);
+
+    // moving through the season
+    var nav = el("div", "cal-nav");
+    var step = route.smode === "week" ? 7 : 0;
+
+    var prev = el("button", "chip ghost", "‹");
+    prev.setAttribute("aria-label", "Previous");
+    prev.onclick = function () {
+      route.anchor = step ? addDays(route.anchor, -step) : addMonths(route.anchor, -1);
+      render();
+    };
+    nav.appendChild(prev);
+
+    var title = el("div", "cal-title");
+    if (route.smode === "week") {
+      var from = startOfWeek(route.anchor);
+      title.textContent = shortDate(from) + " – " + shortDate(addDays(from, 6)) +
+                          "  " + (isoParts(from) || {}).y;
+    } else {
+      title.textContent = monthLabel(route.anchor);
+    }
+    nav.appendChild(title);
+
+    var next = el("button", "chip ghost", "›");
+    next.setAttribute("aria-label", "Next");
+    next.onclick = function () {
+      route.anchor = step ? addDays(route.anchor, step) : addMonths(route.anchor, 1);
+      render();
+    };
+    nav.appendChild(next);
+
+    var today = el("button", "chip ghost", "Today");
+    today.onclick = function () { route.anchor = todayISO(); render(); };
+    nav.appendChild(today);
+
+    wrap.appendChild(nav);
+
+    if (route.smode === "week") wrap.appendChild(weekView());
+    else wrap.appendChild(monthView());
+
+    app.appendChild(wrap);
+  }
+
+  function weekView() {
+    var box = el("div", "week");
+    var from = startOfWeek(route.anchor);
+    var now = todayISO();
+    for (var i = 0; i < 7; i++) {
+      var iso = addDays(from, i);
+      box.appendChild(dayRow(iso, iso === now));
+    }
+    return box;
+  }
+
+  function dayRow(iso, isToday) {
+    var row = el("div", "day" + (isToday ? " today" : ""));
+
+    var when = el("div", "dwhen");
+    when.appendChild(el("div", "dday label", shortDay(iso)));
+    when.appendChild(el("div", "dnum", String(dayNum(iso))));
+    row.appendChild(when);
+
+    var body = el("div", "dbody");
+    var items = dayItems(iso);
+    if (!items.length) body.appendChild(el("div", "dempty", "—"));
+    items.forEach(function (it) { body.appendChild(itemChip(it)); });
+    row.appendChild(body);
+
+    var add = el("button", "dadd", "+");
+    add.setAttribute("aria-label", "Add to " + prettyDate(iso));
+    add.onclick = function () { openDayMenu(iso); };
+    row.appendChild(add);
+
+    return row;
+  }
+
+  function itemChip(it) {
+    if (it.type === "practice") {
+      var p = it.rec;
+      var b = el("button", "chip-item practice" + (p.status === "done" ? " done" : ""));
+      var line = el("div", "ci-title", "Practice");
+      b.appendChild(line);
+      var bits = [];
+      if (p.time) bits.push(p.time);
+      bits.push(p.items.length + (p.items.length === 1 ? " drill" : " drills"));
+      var mins = practiceMinutes(p);
+      if (mins) bits.push(mins + " min");
+      bits.push(p.status === "done" ? "done" : "planned");
+      b.appendChild(el("div", "ci-sub", bits.join(" · ")));
+      b.onclick = function () { go("practice", p.id); };
+      return b;
+    }
+    var e = it.rec;
+    var c = el("button", "chip-item " + e.kind);
+    c.appendChild(el("div", "ci-title", eventTitle(e)));
+    var sub = [];
+    if (e.time) sub.push(e.time);
+    if (e.kind !== "note") sub.push(kindLabel(e.kind));
+    var r = gameResult(e);
+    if (r) sub.push(r + (e.scoreUs > e.scoreThem ? "  W" : e.scoreUs < e.scoreThem ? "  L" : "  D"));
+    if (e.note) sub.push(e.note);
+    if (sub.length) c.appendChild(el("div", "ci-sub", sub.join(" · ")));
+    c.onclick = function () { openEventEditor(e); };
+    return c;
+  }
+
+  function monthView() {
+    var box = el("div", "month-grid");
+    var p = isoParts(route.anchor) || isoParts(todayISO());
+    var first = p.y + "-" + (p.m < 10 ? "0" : "") + p.m + "-01";
+    var gridStart = startOfWeek(first);
+    var now = todayISO();
+
+    ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].forEach(function (d) {
+      box.appendChild(el("div", "mg-head label", d));
+    });
+
+    // six rows always, so the grid does not jump height month to month
+    for (var i = 0; i < 42; i++) {
+      var iso = addDays(gridStart, i);
+      var parts = isoParts(iso);
+      var cell = el("div", "mg-cell" +
+        (parts.m !== p.m ? " outside" : "") + (iso === now ? " today" : ""));
+      cell.appendChild(el("div", "mg-num", String(parts.d)));
+      dayItems(iso).forEach(function (it) {
+        var dot = el("div", "mg-item " +
+          (it.type === "practice" ? "practice" + (it.rec.status === "done" ? " done" : "")
+                                  : it.rec.kind));
+        dot.textContent = it.type === "practice" ? "Practice" : eventTitle(it.rec);
+        cell.appendChild(dot);
+      });
+      (function (dayIso) {
+        cell.onclick = function () {
+          route.anchor = dayIso; route.smode = "week"; render();
+        };
+      })(iso);
+      box.appendChild(cell);
+    }
+    return box;
+  }
+
+  /* What can go on a day. A practice is a full record with its own screen; the
+     rest are small enough to edit in a sheet. */
+
+  function openDayMenu(iso) {
+    var back = el("div", "modal-back");
+    var panel = el("div", "modal choice");
+
+    var head = el("div", "modal-head");
+    head.appendChild(el("div", "mtitle", "Add to " + prettyDate(iso)));
+    panel.appendChild(head);
+
+    function close() { back.remove(); }
+
+    var opts = el("div", "choice-opts");
+
+    var prac = el("button", "choice-btn");
+    prac.innerHTML = "<b>Practice</b><span>A session: which drills, how long, and how it went.</span>";
+    prac.onclick = function () {
+      close();
+      var p = newPractice();
+      p.date = iso;
+      state.practices.unshift(p);
+      state.practices.sort(byDateDesc);
+      touchPractice(p);
+      go("practice", p.id);
+    };
+    opts.appendChild(prac);
+
+    EVENT_KINDS.forEach(function (k) {
+      var b = el("button", "choice-btn");
+      b.innerHTML = "<b>" + k.label + "</b><span>" + k.hint + "</span>";
+      b.onclick = function () {
+        close();
+        var e = newEvent(k.id, iso);
+        state.events.push(e);
+        state.events.sort(byDateDesc);
+        touchEvent(e);
+        openEventEditor(e);
+      };
+      opts.appendChild(b);
+    });
+
+    var cancel = el("button", "choice-btn");
+    cancel.innerHTML = "<b>Cancel</b><span>Change nothing.</span>";
+    cancel.onclick = close;
+    opts.appendChild(cancel);
+
+    panel.appendChild(opts);
+    back.onclick = function (ev) { if (ev.target === back) close(); };
+    back.appendChild(panel);
+    document.body.appendChild(back);
+  }
+
+  function openEventEditor(e) {
+    var back = el("div", "modal-back");
+    var panel = el("div", "modal choice");
+
+    var head = el("div", "modal-head");
+    head.appendChild(el("div", "mtitle", kindLabel(e.kind)));
+    var gap = el("div"); gap.style.marginLeft = "auto";
+    head.appendChild(gap);
+    var doneBtn = el("button", "chip primary", "Done");
+    doneBtn.onclick = close;
+    head.appendChild(doneBtn);
+    panel.appendChild(head);
+
+    var form = el("div", "ev-form");
+
+    function field(label, node) {
+      var f = el("div", "field");
+      f.appendChild(el("div", "label", label));
+      f.appendChild(node);
+      return f;
+    }
+
+    function textInput(value, placeholder, set) {
+      var i = document.createElement("input");
+      i.type = "text"; i.value = value || ""; i.placeholder = placeholder || "";
+      i.oninput = function () { set(i.value); touchEvent(e); };
+      return i;
+    }
+
+    var whenRow = el("div", "ev-row");
+    var di = document.createElement("input");
+    di.type = "date"; di.value = e.date || "";
+    di.onchange = function () {
+      e.date = di.value; touchEvent(e); state.events.sort(byDateDesc);
+    };
+    whenRow.appendChild(field("Date", di));
+
+    var ti = document.createElement("input");
+    ti.type = "time"; ti.value = e.time || "";
+    ti.onchange = function () { e.time = ti.value; touchEvent(e); };
+    whenRow.appendChild(field("Time", ti));
+    form.appendChild(whenRow);
+
+    if (e.kind === "game") {
+      form.appendChild(field("Opponent",
+        textInput(e.title, "Who you play", function (v) { e.title = v; })));
+
+      var venue = el("div", "field");
+      venue.appendChild(el("div", "label", "Where"));
+      var vr = el("div", "pips");
+      [["home", "Home"], ["away", "Away"], ["neutral", "Neutral"]].forEach(function (v) {
+        var b = el("button", null, v[1]);
+        b.style.width = "auto";
+        b.style.padding = "0 12px";
+        b.setAttribute("aria-pressed", String(e.venue === v[0]));
+        b.onclick = function () {
+          e.venue = (e.venue === v[0] ? "" : v[0]);
+          touchEvent(e);
+          Array.prototype.forEach.call(vr.children, function (c, k) {
+            c.setAttribute("aria-pressed", String(e.venue === ["home", "away", "neutral"][k]));
+          });
+        };
+        vr.appendChild(b);
+      });
+      venue.appendChild(vr);
+      form.appendChild(venue);
+
+      var scoreRow = el("div", "ev-row");
+      function scoreInput(value, set) {
+        var i = document.createElement("input");
+        i.type = "number"; i.min = "0"; i.max = "300";
+        i.value = value === null || value === undefined ? "" : value;
+        i.oninput = function () {
+          set(i.value === "" ? null : Math.max(0, parseInt(i.value, 10) || 0));
+          touchEvent(e);
+        };
+        return i;
+      }
+      scoreRow.appendChild(field("Us", scoreInput(e.scoreUs, function (v) { e.scoreUs = v; })));
+      scoreRow.appendChild(field("Them", scoreInput(e.scoreThem, function (v) { e.scoreThem = v; })));
+      form.appendChild(scoreRow);
+
+      var unplayed = el("div", "hint");
+      unplayed.innerHTML = "Leave the scores empty until it is played — " +
+                           "a game with no score is counted as still to play, never as a draw.";
+      form.appendChild(unplayed);
+    } else {
+      form.appendChild(field(e.kind === "tournament" ? "Tournament" : "What",
+        textInput(e.title, kindLabel(e.kind), function (v) { e.title = v; })));
+    }
+
+    var noteField = el("div", "field");
+    noteField.appendChild(el("div", "label", "Note"));
+    var ta = document.createElement("textarea");
+    ta.value = e.note || "";
+    ta.style.minHeight = "60px";
+    ta.oninput = function () { e.note = ta.value; touchEvent(e); };
+    noteField.appendChild(ta);
+    form.appendChild(noteField);
+
+    panel.appendChild(form);
+
+    var foot = el("div", "foot-row");
+    foot.style.marginTop = "16px";
+    var del = el("button", "chip danger", "Delete");
+    del.onclick = function () {
+      if (!confirm("Delete this " + kindLabel(e.kind).toLowerCase() + "?")) return;
+      removeEvent(e.id);
+      close();
+    };
+    foot.appendChild(del);
+    panel.appendChild(foot);
+
+    function close() {
+      document.removeEventListener("keydown", onKey);
+      back.remove();
+      render();
+    }
+    function onKey(ev) { if (ev.key === "Escape") close(); }
+    document.addEventListener("keydown", onKey);
+
+    back.onclick = function (ev) { if (ev.target === back) close(); };
+    back.appendChild(panel);
+    document.body.appendChild(back);
+  }
+
   /* ---------- practices ---------- */
 
   function renderPractices() {
@@ -1384,6 +2004,14 @@
     };
     dateField.appendChild(di);
     head.appendChild(dateField);
+
+    var timeField = el("div", "field");
+    timeField.appendChild(el("div", "label", "Time"));
+    var ti = document.createElement("input");
+    ti.type = "time"; ti.value = p.time || "";
+    ti.onchange = function () { p.time = ti.value; touchPractice(p); };
+    timeField.appendChild(ti);
+    head.appendChild(timeField);
 
     var statusField = el("div", "field");
     statusField.appendChild(el("div", "label", "Status"));

@@ -280,6 +280,59 @@ now asks: **add to what is here**, or **replace everything** (with a second conf
 what would be destroyed). Merging matches on drill id, so the same file can be imported twice
 without doubling the library.
 
+## Stage 3: the schedule (2026-08-22)
+
+Offered load tracking, the schedule, the roster and tactics. Dusan took the schedule.
+
+### It carries the whole season, not only the nights he coaches — his call
+
+Asked what belonged on it: practices only, practices and games, or everything that eats a
+week. He took **everything**: games, tournaments, travel, days off, gym unavailable, and
+free notes. His reasoning holds — a calendar showing only practices is empty on the days
+that decide what the practices should be.
+
+The cost is honest and was stated: a calendar only helps if it is kept current, and this
+is the version that asks the most of him.
+
+### One record type with a `kind`, not six
+
+`{ id, date, time, kind, title, venue, scoreUs, scoreThem, note }`. Six near-identical
+record types would have meant six editors and six migrations. `kind` drives what the sheet
+shows: a game gets opponent, home/away/neutral and a score; everything else gets a title
+and a note.
+
+Practices gained an optional `time` at the same time, because a practice sitting next to a
+19:00 game on a calendar needs to say when it is.
+
+### The season record only says what the data supports
+
+`seasonRecord()` counts wins and losses from games that have **both** scores filled in. A
+game with no score is reported as *still to play* — never as a draw, and never quietly
+dropped. The event sheet says so in as many words, because an empty score box is otherwise
+exactly the kind of thing that turns into a wrong number.
+
+### Week is the working view, month is the overview
+
+The week is seven day rows, each with everything on it in time order — it is where a coach
+decides what Thursday looks like given Saturday's game. The month is a six-row grid, always
+six so it does not jump height between months; tapping a day drops into that week.
+
+Weeks start **Monday**. A basketball week runs to the weekend game.
+
+Colour is carried on the left edge of each chip so a week reads at a glance without a legend.
+
+### Storage: database version 2 → 3
+
+A third object store, `events`. Same upgrade rule as before: create only what is missing,
+so an existing library and diary come across untouched. Verified in `test/run.sh` — now 72
+checks, including that a backup written before the schedule existed still imports.
+
+### Two changes that were not asked for, and can be reversed
+
+The tabs are now **Schedule · Practices · Drills**, and the app **opens on the week** rather
+than the drill library. A season diary's front page is what is happening, not the reference
+book. Both are one line to change back if he prefers.
+
 ## The ink engine (first proved in `pencil-test.html`)
 
 Worth keeping whichever platform wins, because the reasoning carries over.

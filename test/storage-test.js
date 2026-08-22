@@ -131,7 +131,7 @@ function makeDom() {
     byId[id] = Node("div");
   });
   // the two nav buttons the chrome iterates over
-  ["library", "practices"].forEach(function (v) {
+  ["library", "practices", "schedule"].forEach(function (v) {
     var b = Node("button");
     b.setAttribute("data-view", v);
     byId.tabs.appendChild(b);
@@ -178,6 +178,11 @@ function appSource() {
     "           removeDrill: removeDrill, removePractice: removePractice,\n" +
     "           usageMap: usageMap, findDrill: findDrill, findPractice: findPractice,\n" +
     "           serialize: serialize, deserialize: deserialize,\n" +
+    "           newEvent: newEvent, touchEvent: touchEvent, findEvent: findEvent,\n" +
+    "           removeEvent: removeEvent, seasonRecord: seasonRecord,\n" +
+    "           dayItems: dayItems, startOfWeek: startOfWeek, addDays: addDays,\n" +
+    "           addMonths: addMonths, gameResult: gameResult,\n" +
+    "           openDayMenu: openDayMenu, openEventEditor: openEventEditor,\n" +
     "           practiceMinutes: practiceMinutes, prettyDate: prettyDate,\n" +
     "           openDrillPicker: openDrillPicker, route: route,\n" +
     "           applyImport: applyImport };\n";
@@ -238,8 +243,9 @@ print("\n1. a version 1 library survives the upgrade to version 2");
 launch(backing, lsStore).then(function (po) {
   eq("storage is IndexedDB", po.Store.kind, "idb");
   eq("both drills came back", po.state.drills.length, 2);
-  eq("database is now at version 2", backing.version, 2);
+  eq("database is now at version 3", backing.version, 3);
   ok("the practices store was created", backing.stores.indexOf("practices") >= 0);
+  ok("the events store was created", backing.stores.indexOf("events") >= 0);
   var shell = po.findDrill("d-shell");
   ok("the drill kept its name", shell && shell.name === "Shell defence");
   ok("its ink was unpacked into points",
@@ -249,6 +255,7 @@ launch(backing, lsStore).then(function (po) {
      Math.abs(shell.diagrams[0].strokes[0].pts[0].x - 0.1) < 1e-9,
      shell.diagrams[0].strokes[0].pts[0].x);
   eq("the diary starts empty", po.state.practices.length, 0);
+  eq("the calendar starts empty", po.state.events.length, 0);
 
   print("\n2. logging a practice");
   var p = po.newPractice();
@@ -303,6 +310,7 @@ launch(backing, lsStore).then(function (po) {
   twice.items.push(po.newItem(po.findDrill("d-pnr")));
   twice.items.push(po.newItem(po.findDrill("d-pnr")));
   po.state.practices.unshift(twice);
+  po.touchPractice(twice);
   eq("the same drill twice in one session counts once", po.usageMap()["d-pnr"], 2);
 
   print("\n5. deleting a drill leaves the history readable");
@@ -330,14 +338,83 @@ launch(backing, lsStore).then(function (po) {
 
   print("\n7. the screens render");
   var errors = [];
-  ["library", "practices"].forEach(function (v) {
+  ["library", "practices", "schedule"].forEach(function (v) {
     try { po.go(v); } catch (e) { errors.push(v + ": " + e); }
   });
   try { po.go("practice", practiceId); } catch (e) { errors.push("practice editor: " + e); }
   try { po.openDrillPicker(po.findPractice(practiceId)); } catch (e) { errors.push("drill picker: " + e); }
+  try { po.route.smode = "month"; po.go("schedule"); } catch (e) { errors.push("month view: " + e); }
+  try { po.openDayMenu("2026-08-25"); } catch (e) { errors.push("day menu: " + e); }
+  po.route.smode = "week";
   ok("every screen built without throwing", errors.length === 0, errors.join(" | "));
 
-  print("\n8. the drills imported from drill-management");
+  print("\n8. the schedule");
+  var g = po.newEvent("game", "2026-08-29");
+  g.title = "Partizan"; g.venue = "away"; g.time = "19:00";
+  g.scoreUs = 78; g.scoreThem = 81;
+  po.state.events.push(g);
+  po.touchEvent(g);
+
+  var won = po.newEvent("game", "2026-09-05");
+  won.title = "Crvena Zvezda"; won.venue = "home";
+  won.scoreUs = 90; won.scoreThem = 71;
+  po.state.events.push(won);
+  po.touchEvent(won);
+
+  var unplayed = po.newEvent("game", "2026-09-12");
+  unplayed.title = "Mega"; unplayed.venue = "home";
+  po.state.events.push(unplayed);
+  po.touchEvent(unplayed);
+
+  var off = po.newEvent("off", "2026-08-30");
+  po.state.events.push(off);
+  po.touchEvent(off);
+
+  var rec = po.seasonRecord();
+  eq("a win is counted", rec.w, 1);
+  eq("a loss is counted", rec.l, 1);
+  eq("a game with no score is not counted as a draw", rec.d, 0);
+  eq("it is reported as still to play", rec.pending, 1);
+  eq("the score reads the right way round", po.gameResult(g), "78\u201381");
+
+  eq("weeks start on Monday", po.startOfWeek("2026-08-29"), "2026-08-24");
+  eq("a Monday is its own week start", po.startOfWeek("2026-08-24"), "2026-08-24");
+  eq("day arithmetic crosses a month end", po.addDays("2026-08-31", 1), "2026-09-01");
+  eq("month arithmetic crosses a year end", po.addMonths("2026-12-15", 1), "2027-01-01");
+
+  var onGameDay = po.dayItems("2026-08-29");
+  eq("the game shows on its day", onGameDay.length, 1);
+  eq("and it is the game", onGameDay[0].rec.title, "Partizan");
+
+  var drew = [];
+  try { po.openEventEditor(g); } catch (e) { drew.push("game editor: " + e); }
+  try { po.openEventEditor(off); } catch (e) { drew.push("day-off editor: " + e); }
+  try { po.route.anchor = "2026-08-29"; po.go("schedule"); } catch (e) { drew.push("week with events: " + e); }
+  try { po.route.smode = "month"; po.go("schedule"); po.route.smode = "week"; }
+  catch (e) { drew.push("month with events: " + e); }
+  ok("the calendar draws with things on it", drew.length === 0, drew.join(" | "));
+
+  po.flush();
+  return Promise.resolve().then(function () { return launch(backing, lsStore); });
+})
+.then(function (po) {
+  eq("the events came back after a restart", po.state.events.length, 4);
+  eq("the season record survived", po.seasonRecord().w, 1);
+  var back = null;
+  po.state.events.forEach(function (e) { if (e.title === "Partizan") back = e; });
+  ok("a game kept its venue and time", back && back.venue === "away" && back.time === "19:00");
+  eq("and its score", back.scoreUs, 78);
+  // one drill was deleted back in section 5
+  eq("the surviving drill is still there", po.state.drills.length, 1);
+  eq("and all three practices", po.state.practices.length, 3);
+
+  var json = po.serialize(po.state);
+  var round = po.deserialize(json);
+  eq("events survive export and import", round.events.length, 4);
+  var older = po.deserialize(JSON.stringify({ version: 2, drills: [], practices: [] }));
+  eq("a backup written before the schedule existed still imports", older.events.length, 0);
+
+  print("\n9. the drills imported from drill-management");
   var raw = null;
   try { raw = readFile("private/drills-import.json"); } catch (e) { raw = null; }
   if (!raw) {
@@ -377,7 +454,7 @@ launch(backing, lsStore).then(function (po) {
     po.flush();
   }
 
-  print("\n9. the smaller store, for a browser that refuses IndexedDB");
+  print("\n10. the smaller store, for a browser that refuses IndexedDB");
   var fresh = { version: 0, stores: [], data: {} };
   var lsOnly = lsStore;
   globalThis.__forceLocal = true;
