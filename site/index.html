@@ -1,0 +1,1255 @@
+<title>Drill Library</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+  :root {
+    --ground:     #1B1A17;
+    --panel:      #24221D;
+    --panel-hi:   #2E2B24;
+    --line:       #3B372F;
+    --text:       #E9E4D8;
+    --dim:        #948C7C;
+    --accent:     #F2A413;
+    --accent-ink: #1B1A17;
+    --court:      #EDE6D8;
+    --court-line: #3A342A;
+    --danger:     #C8574B;
+    --rail: 64px;
+  }
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--text);
+    font-family: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior-y: none;
+  }
+
+  .label {
+    font-family: "Barlow Condensed", "Arial Narrow", sans-serif;
+    text-transform: uppercase; letter-spacing: .09em; font-weight: 600;
+  }
+
+  /* ---------- chrome ---------- */
+  .topbar {
+    position: sticky; top: 0; z-index: 30;
+    display: flex; align-items: center; gap: 14px;
+    padding: 10px 16px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+  }
+  .wordmark {
+    font-family: "Barlow Condensed", sans-serif;
+    text-transform: uppercase; letter-spacing: .12em;
+    font-weight: 700; font-size: 18px; line-height: 1; white-space: nowrap;
+  }
+  .wordmark span { color: var(--accent); }
+  .spacer { margin-left: auto; }
+
+  button, input, select, textarea {
+    font: inherit; color: var(--text);
+    -webkit-tap-highlight-color: transparent;
+  }
+  button {
+    background: var(--panel-hi); border: 1px solid var(--line);
+    border-radius: 8px; cursor: pointer; touch-action: manipulation;
+  }
+  button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 2px;
+  }
+  .chip {
+    padding: 8px 13px; font-family: "Barlow Condensed", sans-serif;
+    text-transform: uppercase; letter-spacing: .08em; font-weight: 600;
+    font-size: 14px; white-space: nowrap;
+  }
+  .chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .chip.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .chip.ghost { background: transparent; }
+  .chip.danger { color: var(--danger); border-color: #4A342F; background: transparent; }
+
+  input[type="text"], input[type="number"], textarea, select {
+    background: var(--ground); border: 1px solid var(--line);
+    border-radius: 8px; padding: 9px 11px; width: 100%;
+  }
+  textarea { resize: vertical; min-height: 84px; line-height: 1.5; }
+
+  .field { display: grid; gap: 5px; min-width: 0; }
+  .field > .label { font-size: 10px; color: var(--dim); }
+
+  /* ---------- library ---------- */
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 20px 16px 80px; }
+
+  .lib-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
+  .lib-head h1 { font-family: "Barlow Condensed", sans-serif; text-transform: uppercase;
+                 letter-spacing: .06em; font-size: 30px; margin: 0; font-weight: 700; }
+  .count { color: var(--dim); font-size: 13px; }
+
+  .filters { display: flex; gap: 7px; flex-wrap: wrap; margin: 16px 0 20px; }
+  .filters button { padding: 6px 11px; font-size: 13px; border-radius: 99px; background: transparent; }
+  .filters button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
+
+  .card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 0; overflow: hidden; text-align: left; display: grid;
+    grid-template-rows: auto 1fr; min-height: 168px;
+  }
+  .card:hover { border-color: #4C463C; }
+  .card .thumb {
+    background: var(--court); height: 92px; position: relative; overflow: hidden;
+    display: grid; place-items: center;
+  }
+  .card .thumb svg { width: 100%; height: 100%; display: block; }
+  .card .meta { padding: 10px 12px 12px; display: grid; gap: 6px; align-content: start; }
+  .card .name {
+    font-family: "Barlow Condensed", sans-serif; font-size: 21px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .04em; line-height: 1.05;
+  }
+  .card .sub { font-size: 11.5px; color: var(--dim); display: flex; gap: 8px; flex-wrap: wrap; }
+  .tag {
+    display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 99px;
+    background: #332F27; color: var(--accent); border: 1px solid #433D33;
+    font-family: "Barlow Condensed", sans-serif; text-transform: uppercase; letter-spacing: .07em;
+  }
+
+  .card.new { border-style: dashed; place-items: center; display: grid; grid-template-rows: 1fr;
+               color: var(--dim); background: transparent; }
+  .card.new:hover { color: var(--accent); border-color: var(--accent); }
+  .card.new .plus { font-size: 30px; line-height: 1; }
+
+  .empty { color: var(--dim); text-align: center; padding: 60px 20px; line-height: 1.6; }
+
+  /* ---------- editor ---------- */
+  .editor { display: grid; grid-template-columns: var(--rail) 1fr; min-height: 100dvh; }
+  .rail {
+    position: sticky; top: 49px; align-self: start;
+    height: calc(100dvh - 49px);
+    background: var(--panel); border-right: 1px solid var(--line);
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+    padding: 12px 0; overflow-y: auto; z-index: 20;
+  }
+  .rail .cap { font-size: 9px; color: var(--dim); margin: 6px 0 1px; }
+  .rail hr { width: 30px; border: 0; border-top: 1px solid var(--line); margin: 7px 0; }
+  .tool { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 10px;
+          background: transparent; border: 1px solid transparent; }
+  .tool svg { width: 23px; height: 23px; stroke: var(--text); fill: none;
+              stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .tool[aria-pressed="true"] { background: var(--panel-hi); border-color: var(--accent); }
+  .tool[aria-pressed="true"] svg { stroke: var(--accent); }
+  .swatch { width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; padding: 0;
+            box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.14); }
+  .swatch[aria-pressed="true"] { border-color: var(--accent); transform: scale(1.09); }
+  .size-btn { width: 38px; height: 28px; display: grid; place-items: center; border-radius: 8px;
+              background: transparent; border: 1px solid transparent; }
+  .size-btn i { display: block; background: var(--text); border-radius: 99px; }
+  .size-btn[aria-pressed="true"] { background: var(--panel-hi); border-color: var(--accent); }
+  .size-btn[aria-pressed="true"] i { background: var(--accent); }
+
+  .sheet { padding: 18px 20px 100px; max-width: 1100px; }
+
+  .name-input {
+    font-family: "Barlow Condensed", sans-serif; font-size: 32px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .04em;
+    background: transparent; border: 0; border-bottom: 2px solid var(--line);
+    border-radius: 0; padding: 4px 2px; width: 100%;
+  }
+  .name-input:focus { border-bottom-color: var(--accent); outline: none; }
+  .name-input::placeholder { color: #4E483E; }
+
+  .metarow {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 14px; margin: 18px 0 8px;
+  }
+
+  .pips { display: flex; gap: 5px; }
+  .pips button {
+    width: 34px; height: 34px; border-radius: 8px; background: transparent;
+    font-variant-numeric: tabular-nums; font-size: 13px;
+  }
+  .pips button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+
+  .diagrams { display: grid; gap: 18px; margin-top: 22px; }
+
+  .diagram { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+  .diagram-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+  .diagram-head .num {
+    font-family: "Barlow Condensed", sans-serif; font-size: 12px; letter-spacing: .09em;
+    text-transform: uppercase; color: var(--accent); white-space: nowrap;
+  }
+  .diagram-head input[type="text"] { flex: 1 1 180px; min-width: 120px; background: var(--ground); }
+  .diagram-head .grp { display: flex; gap: 5px; margin-left: auto; }
+  .diagram-head .grp button { padding: 6px 10px; font-size: 12px; }
+
+  .court-wrap {
+    position: relative; background: var(--court); border-radius: 5px; margin: 0 auto;
+    box-shadow: 0 8px 26px rgba(0,0,0,.38), 0 0 0 1px rgba(0,0,0,.35);
+    max-width: 100%;
+  }
+  .court-wrap svg, .court-wrap canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .court-wrap svg  { pointer-events: none; }
+  /* touch-action:none guarantees the Pencil draws instead of scrolling the page.
+     Finger scrolling over a court is then handled by hand, in the pad below. */
+  .court-wrap canvas { touch-action: none; }
+  .court-wrap .ink-base { pointer-events: none; }
+
+  .court-line { stroke: var(--court-line); fill: none; stroke-width: 4; }
+  .court-line.thick { stroke-width: 7; }
+  .court-line.dash { stroke-dasharray: 26 20; }
+  .rim { stroke: #C0552A; stroke-width: 6; fill: none; }
+
+  .add-court { width: 100%; padding: 15px; border-style: dashed; background: transparent; color: var(--dim); }
+  .add-court:hover { color: var(--accent); border-color: var(--accent); }
+
+  .savechip { font-size: 11.5px; color: var(--dim); white-space: nowrap; }
+  .savechip.on { color: var(--accent); }
+
+  .warn {
+    background: #33231E; border: 1px solid #593B33; color: #E8C9BF;
+    border-radius: 10px; padding: 11px 14px; font-size: 13px; line-height: 1.5;
+    margin: 0 0 18px;
+  }
+  .warn b { color: #fff; }
+
+  @media print {
+    .topbar, .rail, .add-court, .diagram-head .grp, .filters { display: none !important; }
+    body { background: #fff; color: #000; }
+    .editor { grid-template-columns: 1fr; }
+    .diagram { break-inside: avoid; border-color: #bbb; background: #fff; }
+    .sheet { padding: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="topbar">
+  <div class="wordmark">Practise<span>Organiser</span></div>
+  <div id="crumb" class="label" style="font-size:12px;color:var(--dim)"></div>
+  <div class="spacer"></div>
+  <span id="saveChip" class="savechip"></span>
+  <button class="chip ghost" id="exportBtn">Export backup</button>
+  <button class="chip ghost" id="importBtn">Import</button>
+  <input type="file" id="importFile" accept="application/json" hidden>
+</div>
+
+<div id="app"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* The page is served inside a <head> we do not author, so the tags that make
+     this behave like an installed app are added here. */
+  function meta(name, content) {
+    var m = document.querySelector('meta[name="' + name + '"]');
+    if (!m) { m = document.createElement("meta"); m.name = name; document.head.appendChild(m); }
+    m.content = content;
+  }
+  meta("viewport", "width=device-width, initial-scale=1, viewport-fit=cover");
+  meta("apple-mobile-web-app-capable", "yes");          // full screen off the Home Screen
+  meta("apple-mobile-web-app-status-bar-style", "black-translucent");
+  meta("apple-mobile-web-app-title", "Practise");
+  meta("theme-color", "#1B1A17");
+
+  function link(rel, href, extra) {
+    var l = document.createElement("link");
+    l.rel = rel; l.href = href;
+    if (extra) for (var k in extra) l.setAttribute(k, extra[k]);
+    document.head.appendChild(l);
+  }
+  if (!window.claude) {                                  // only meaningful when properly hosted
+    link("manifest", "manifest.webmanifest");
+    link("apple-touch-icon", "icon.svg");
+    link("icon", "icon.svg", { type: "image/svg+xml" });
+  }
+
+  /* ================= court geometry (FIBA, centimetres) ================= */
+
+  function halfCourtMarks() {
+    return '<rect class="court-line" x="505" y="0" width="490" height="580"/>' +
+           '<path class="court-line" d="M 570 580 A 180 180 0 0 0 930 580"/>' +
+           '<path class="court-line dash" d="M 570 580 A 180 180 0 0 1 930 580"/>' +
+           '<path class="court-line" d="M 90 0 L 90 299 A 675 675 0 0 0 1410 299 L 1410 0"/>' +
+           '<path class="court-line" d="M 625 157.5 A 125 125 0 0 0 875 157.5"/>' +
+           '<path class="court-line thick" d="M 660 120 L 840 120"/>' +
+           '<path class="court-line" d="M 750 120 L 750 135"/>' +
+           '<circle class="rim" cx="750" cy="157.5" r="22.5"/>';
+  }
+
+  var COURTS = {
+    half: { w: 1500, h: 1400, svg:
+      '<rect class="court-line thick" x="0" y="0" width="1500" height="1400"/>' + halfCourtMarks() +
+      '<path class="court-line" d="M 570 1400 A 180 180 0 0 1 930 1400"/>' },
+    full: { w: 2800, h: 1500, svg:
+      '<rect class="court-line thick" x="0" y="0" width="2800" height="1500"/>' +
+      '<g transform="matrix(0 1 1 0 0 0)">' + halfCourtMarks() + '</g>' +
+      '<g transform="matrix(0 1 -1 0 2800 0)">' + halfCourtMarks() + '</g>' +
+      '<path class="court-line" d="M 1400 0 L 1400 1500"/>' +
+      '<circle class="court-line" cx="1400" cy="750" r="180"/>' }
+  };
+  var BLEED = 8;   // keeps boundary lines off the viewBox edge
+
+  function courtSvg(kind) {
+    var c = COURTS[kind] || COURTS.half;
+    return '<svg viewBox="' + (-BLEED) + ' ' + (-BLEED) + ' ' + (c.w + BLEED * 2) + ' ' +
+           (c.h + BLEED * 2) + '" preserveAspectRatio="none">' + c.svg + '</svg>';
+  }
+  function courtAspect(kind) {
+    var c = COURTS[kind] || COURTS.half;
+    return (c.h + BLEED * 2) / (c.w + BLEED * 2);   // height / width
+  }
+
+  /* ================= state ================= */
+
+  var TAGS = ["Warm-up", "Shooting", "Transition", "Pick & roll", "Post play",
+              "Defence", "Rebounding", "Conditioning", "Set plays", "Ball handling"];
+  var FORMATS = ["Individual", "Pairs", "3v3", "4v4", "5v5", "5:0", "Whole team"];
+  var SIZES = { S: 300, M: 460, L: 660 };   // css px, the court's drawn width
+
+  var state = { version: 1, drills: [] };
+  var PREVIEW = !!(window.claude);   // running inside the claude.ai preview sandbox
+
+  /* ================= storage =================
+     IndexedDB, not localStorage: a far larger quota, and it stores structured
+     records so saving one drill does not mean rewriting the whole library.
+     Drills are held one record each, packed. localStorage is kept only as a
+     fallback for a browser that refuses IndexedDB. */
+
+  var Store = { kind: "memory" };
+  var LS_KEY = "practise-organiser/v1";
+
+  var DB = (function () {
+    var opening = null;
+    function open() {
+      if (opening) return opening;
+      opening = new Promise(function (resolve, reject) {
+        var req = indexedDB.open("practise-organiser", 1);
+        req.onupgradeneeded = function () {
+          var db = req.result;
+          if (!db.objectStoreNames.contains("drills")) db.createObjectStore("drills", { keyPath: "id" });
+        };
+        req.onsuccess = function () { resolve(req.result); };
+        req.onerror = function () { reject(req.error); };
+        req.onblocked = function () { reject(new Error("blocked")); };
+      });
+      return opening;
+    }
+    function run(mode, fn) {
+      return open().then(function (db) {
+        return new Promise(function (resolve, reject) {
+          var t = db.transaction("drills", mode);
+          var req = fn(t.objectStore("drills"));
+          t.oncomplete = function () { resolve(req ? req.result : undefined); };
+          t.onerror = function () { reject(t.error); };
+          t.onabort = function () { reject(t.error); };
+        });
+      });
+    }
+    return {
+      all:   function ()   { return run("readonly",  function (s) { return s.getAll(); }); },
+      put:   function (d)  { return run("readwrite", function (s) { return s.put(d); }); },
+      del:   function (id) { return run("readwrite", function (s) { return s.delete(id); }); },
+      clear: function ()   { return run("readwrite", function (s) { return s.clear(); }); }
+    };
+  })();
+
+  function initStore() {
+    return Promise.resolve()
+      .then(function () {
+        if (!window.indexedDB) throw new Error("no idb");
+        return DB.all().then(function (rows) { Store.kind = "idb"; return rows || []; });
+      })
+      .catch(function () {
+        try {
+          localStorage.setItem("__probe", "1");
+          var ok = localStorage.getItem("__probe") === "1";
+          localStorage.removeItem("__probe");
+          if (!ok) throw new Error("no ls");
+          Store.kind = "local";
+          var raw = localStorage.getItem(LS_KEY);
+          return raw ? (JSON.parse(raw).drills || []) : [];
+        } catch (e) {
+          Store.kind = "memory";
+          return [];
+        }
+      })
+      .then(function (rows) {
+        state.drills = rows.map(inflateDrill)
+          .sort(function (a, b) { return (b.updatedAt || 0) - (a.updatedAt || 0); });
+        // Ask Safari not to evict this data when space runs low.
+        if (navigator.storage && navigator.storage.persist) {
+          navigator.storage.persist().catch(function () {});
+        }
+      });
+  }
+
+  function persistAll() {
+    if (Store.kind === "local") {
+      try {
+        localStorage.setItem(LS_KEY, JSON.stringify({
+          version: 1, drills: state.drills.map(deflateDrill)
+        }));
+        return Promise.resolve();
+      } catch (e) { return Promise.reject(e); }
+    }
+    return Promise.resolve();
+  }
+
+  var dirty = {}, saveTimer = null;
+
+  function touch(drill) {
+    drill.updatedAt = Date.now();
+    dirty[drill.id] = 1;
+    schedule();
+  }
+
+  function schedule() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(flush, 400);
+  }
+
+  function flush() {
+    var ids = Object.keys(dirty);
+    dirty = {};
+    if (Store.kind === "memory") { chip("Not being saved", true); return; }
+
+    var work;
+    if (Store.kind === "idb") {
+      work = Promise.all(ids.map(function (id) {
+        var d = findDrill(id);
+        return d ? DB.put(deflateDrill(d)) : DB.del(id);
+      }));
+    } else {
+      work = persistAll();
+    }
+    work.then(flashSaved).catch(function () {
+      Store.kind = "memory";
+      chip("Could not save — export a backup now", true);
+      render();
+    });
+  }
+
+  function removeDrill(id) {
+    state.drills = state.drills.filter(function (d) { return d.id !== id; });
+    if (Store.kind === "idb") DB.del(id).then(flashSaved).catch(function () {});
+    else { dirty[id] = 1; schedule(); }
+  }
+
+  var chipEl = document.getElementById("saveChip");
+  function chip(msg, sticky) {
+    chipEl.textContent = msg;
+    chipEl.className = "savechip" + (sticky ? " on" : "");
+  }
+  var flashTimer = null;
+  function flashSaved() {
+    chip("Saved");
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(function () { chip(""); }, 1400);
+  }
+
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+  function newDrill() {
+    return {
+      id: uid(), name: "", tag: "", format: "", minutes: 10, intensity: 3,
+      points: "", diagrams: [newDiagram()], createdAt: Date.now(), updatedAt: Date.now()
+    };
+  }
+  function newDiagram() { return { id: uid(), court: "half", size: "M", caption: "", strokes: [] }; }
+  function findDrill(id) {
+    for (var i = 0; i < state.drills.length; i++) if (state.drills[i].id === id) return state.drills[i];
+    return null;
+  }
+
+  /* ================= stroke storage =================
+     Pencil samples arrive at up to 240 Hz, which is far more detail than a
+     court diagram needs. Ramer-Douglas-Peucker drops the points that sit on a
+     line their neighbours already describe: typically an 8-10x reduction with
+     no visible change to the drawing, which is what keeps a season of diagrams
+     small enough to hold and to back up. */
+
+  function rdp(pts, eps) {
+    if (pts.length < 3) return pts.slice();
+    var first = pts[0], last = pts[pts.length - 1];
+    var dx = last.x - first.x, dy = last.y - first.y;
+    var len2 = dx * dx + dy * dy;
+    var maxD = -1, idx = 0;
+
+    for (var i = 1; i < pts.length - 1; i++) {
+      var px = pts[i].x - first.x, py = pts[i].y - first.y, d;
+      if (len2 === 0) { d = px * px + py * py; }
+      else {
+        var t = (px * dx + py * dy) / len2;
+        t = t < 0 ? 0 : (t > 1 ? 1 : t);
+        var ex = px - t * dx, ey = py - t * dy;
+        d = ex * ex + ey * ey;
+      }
+      if (d > maxD) { maxD = d; idx = i; }
+    }
+    if (maxD > eps * eps) {
+      var left = rdp(pts.slice(0, idx + 1), eps);
+      var right = rdp(pts.slice(idx), eps);
+      return left.slice(0, -1).concat(right);
+    }
+    return [first, last];
+  }
+
+  function simplify(stroke) {
+    var pts = stroke.pts;
+    if (pts.length > 2) {
+      // Iterative for very long strokes, so deep recursion cannot blow the stack.
+      var out = [], CHUNK = 400;
+      for (var i = 0; i < pts.length; i += CHUNK) {
+        var seg = rdp(pts.slice(i, Math.min(pts.length, i + CHUNK + 1)), 0.0018);
+        out = out.length ? out.concat(seg.slice(1)) : seg;
+      }
+      stroke.pts = out;
+    }
+    return stroke;
+  }
+
+  /* ================= compact storage =================
+     A hand-drawn point does not need 16 decimal places. Coordinates go to
+     integers at 1/10000 of the court (0.15 cm - far finer than a pencil line),
+     pressure to two places, and each point is stored as a DELTA from the last,
+     which keeps the numbers tiny and the JSON short. Roughly 7x smaller than
+     the raw objects, which is the difference between an archive that grows
+     comfortably for years and one that hits a wall. */
+
+  var TOOL_CODE = { pen: "p", marker: "m", eraser: "e" };
+  var CODE_TOOL = { p: "pen", m: "marker", e: "eraser" };
+
+  function packStroke(s) {
+    var d = [], px = 0, py = 0;
+    for (var i = 0; i < s.pts.length; i++) {
+      var x = Math.round(s.pts[i].x * 10000);
+      var y = Math.round(s.pts[i].y * 10000);
+      d.push(x - px, y - py, Math.round(s.pts[i].p * 100));
+      px = x; py = y;
+    }
+    return { t: TOOL_CODE[s.tool] || "p", c: s.color, w: s.size, d: d };
+  }
+
+  function unpackStroke(o) {
+    if (o && o.pts) return o;                    // already expanded
+    var pts = [], px = 0, py = 0;
+    for (var i = 0; i + 2 < o.d.length; i += 3) {
+      px += o.d[i]; py += o.d[i + 1];
+      pts.push({ x: px / 10000, y: py / 10000, p: o.d[i + 2] / 100 });
+    }
+    return { tool: CODE_TOOL[o.t] || "pen", color: o.c, size: o.w, pts: pts };
+  }
+
+  function deflateDrill(d) {
+    var copy = {};
+    for (var k in d) if (k !== "diagrams") copy[k] = d[k];
+    copy.diagrams = d.diagrams.map(function (dg) {
+      return { id: dg.id, court: dg.court, size: dg.size, caption: dg.caption,
+               strokes: dg.strokes.map(packStroke) };
+    });
+    return copy;
+  }
+
+  function inflateDrill(d) {
+    if (!Array.isArray(d.diagrams)) d.diagrams = [];
+    d.diagrams.forEach(function (dg) { dg.strokes = (dg.strokes || []).map(unpackStroke); });
+    return d;
+  }
+
+  function serialize(st) {
+    return JSON.stringify({
+      version: st.version, updatedAt: st.updatedAt,
+      drills: st.drills.map(deflateDrill)
+    });
+  }
+
+  function deserialize(raw) {
+    var st = typeof raw === "string" ? JSON.parse(raw) : raw;
+    if (!st || !Array.isArray(st.drills)) return null;
+    st.drills.forEach(inflateDrill);
+    return st;
+  }
+
+  /* ================= ink engine =================
+     Two layers per diagram: #base holds finished strokes, #live only the one in
+     progress. Pen is opaque so it appends segment by segment (lowest latency);
+     marker is see-through so it is repainted whole as ONE path or overlaps go
+     blotchy; the eraser has to cut into finished work so it writes to base. */
+
+  var tool = { name: "pen", color: "#22201C", size: 7, fingerDraws: false };
+
+  function Pad(host, diagram, onChange) {
+    var wrap = document.createElement("div");
+    wrap.className = "court-wrap";
+    wrap.innerHTML = courtSvg(diagram.court);
+
+    var base = document.createElement("canvas"); base.className = "ink-base";
+    var live = document.createElement("canvas"); live.className = "ink-live";
+    wrap.appendChild(base); wrap.appendChild(live);
+    host.appendChild(wrap);
+
+    var bctx = base.getContext("2d"), lctx = live.getContext("2d");
+    var active = null;
+    var pan = null;      // a finger dragging to scroll, rather than to draw
+
+    function dims() { return COURTS[diagram.court] || COURTS.half; }
+    function unitScale() { return base.width / (dims().w + BLEED * 2); }
+
+    function layout() {
+      var want = SIZES[diagram.size] || SIZES.M;
+      var avail = host.clientWidth || want;
+      var cssW = Math.max(200, Math.min(want, avail));
+      var cssH = Math.round(cssW * courtAspect(diagram.court));
+
+      wrap.style.width = cssW + "px";
+      wrap.style.height = cssH + "px";
+
+      var dpr = Math.min(window.devicePixelRatio || 1, 3);
+      base.width = live.width = Math.round(cssW * dpr);
+      base.height = live.height = Math.round(cssH * dpr);
+      redraw();
+    }
+
+    function penWidth(s, p) { return Math.max(0.6, s.size * unitScale() * (0.35 + 0.85 * p)); }
+    function flatWidth(s) { return s.size * unitScale() * (s.tool === "marker" ? 3.2 : 5.5); }
+
+    function styleFor(ctx, s) {
+      ctx.lineCap = "round"; ctx.lineJoin = "round";
+      if (s.tool === "eraser") {
+        ctx.globalCompositeOperation = "destination-out";
+        ctx.globalAlpha = 1; ctx.strokeStyle = "#000";
+      } else {
+        ctx.globalCompositeOperation = "source-over";
+        ctx.globalAlpha = s.tool === "marker" ? 0.42 : 1;
+        ctx.strokeStyle = s.color;
+      }
+    }
+
+    function dot(ctx, s, p) {
+      var w = s.tool === "pen" ? penWidth(s, p.p) : flatWidth(s);
+      ctx.beginPath();
+      ctx.arc(p.x * ctx.canvas.width, p.y * ctx.canvas.height, w / 2, 0, Math.PI * 2);
+      ctx.fillStyle = s.tool === "eraser" ? "#000" : s.color;
+      ctx.fill();
+    }
+
+    function pathThrough(ctx, pts, from, to) {
+      var W = ctx.canvas.width, H = ctx.canvas.height;
+      var prev = pts[from - 2] || pts[from - 1], a = pts[from - 1];
+      ctx.moveTo((prev.x * W + a.x * W) / 2, (prev.y * H + a.y * H) / 2);
+      for (var i = from; i <= to; i++) {
+        var c = pts[i - 1], b = pts[i];
+        ctx.quadraticCurveTo(c.x * W, c.y * H, (c.x * W + b.x * W) / 2, (c.y * H + b.y * H) / 2);
+      }
+    }
+
+    function paintWhole(ctx, s) {
+      var pts = s.pts;
+      if (!pts || !pts.length) return;
+      ctx.save(); styleFor(ctx, s);
+      if (pts.length === 1) { dot(ctx, s, pts[0]); ctx.restore(); return; }
+      if (s.tool === "pen") {
+        for (var i = 1; i < pts.length; i++) {
+          ctx.beginPath(); ctx.lineWidth = penWidth(s, pts[i].p);
+          pathThrough(ctx, pts, i, i); ctx.stroke();
+        }
+      } else {
+        ctx.beginPath(); ctx.lineWidth = flatWidth(s);
+        pathThrough(ctx, pts, 1, pts.length - 1); ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function paintNewest(ctx, s) {
+      var pts = s.pts, n = pts.length;
+      ctx.save(); styleFor(ctx, s);
+      if (n < 2) { dot(ctx, s, pts[0]); ctx.restore(); return; }
+      ctx.beginPath();
+      ctx.lineWidth = s.tool === "pen" ? penWidth(s, pts[n - 1].p) : flatWidth(s);
+      pathThrough(ctx, pts, n - 1, n - 1); ctx.stroke();
+      ctx.restore();
+    }
+
+    function redraw() {
+      bctx.clearRect(0, 0, base.width, base.height);
+      for (var i = 0; i < diagram.strokes.length; i++) paintWhole(bctx, diagram.strokes[i]);
+      lctx.clearRect(0, 0, live.width, live.height);
+      if (active) paintWhole(lctx, active);
+    }
+
+    function accepts(e) {
+      if (e.pointerType === "pen") return true;
+      if (e.pointerType === "touch") return tool.fingerDraws;
+      return true;
+    }
+    function toNorm(e) {
+      var r = live.getBoundingClientRect();
+      return { x: (e.clientX - r.left) / r.width, y: (e.clientY - r.top) / r.height };
+    }
+    function pressureOf(e) {
+      if (e.pointerType !== "pen") return 0.5;
+      return e.pressure > 0 ? e.pressure : 0.25;
+    }
+    function surface(s) { return s.tool === "eraser" ? bctx : lctx; }
+
+    live.addEventListener("pointerdown", function (e) {
+      // A finger on the court scrolls the page, unless it has been given a pen.
+      if (e.pointerType === "touch" && !tool.fingerDraws) {
+        pan = { y: e.clientY, from: window.scrollY };
+        live.setPointerCapture(e.pointerId);
+        return;
+      }
+      if (!accepts(e)) return;
+      e.preventDefault();
+      live.setPointerCapture(e.pointerId);
+      var n = toNorm(e);
+      active = { tool: tool.name, color: tool.color, size: tool.size,
+                 pts: [{ x: n.x, y: n.y, p: pressureOf(e) }] };
+      paintNewest(surface(active), active);
+    });
+
+    live.addEventListener("pointermove", function (e) {
+      if (pan) { window.scrollTo(0, pan.from - (e.clientY - pan.y)); return; }
+      if (!active) return;
+      e.preventDefault();
+      var evs = (typeof e.getCoalescedEvents === "function") ? e.getCoalescedEvents() : null;
+      if (!evs || !evs.length) evs = [e];
+      var added = false;
+      for (var i = 0; i < evs.length; i++) {
+        var n = toNorm(evs[i]);
+        var last = active.pts[active.pts.length - 1];
+        if (Math.abs(n.x - last.x) < 0.0004 && Math.abs(n.y - last.y) < 0.0004) continue;
+        active.pts.push({ x: n.x, y: n.y, p: pressureOf(evs[i]) });
+        added = true;
+        if (active.tool !== "marker") paintNewest(surface(active), active);
+      }
+      if (added && active.tool === "marker") {
+        lctx.clearRect(0, 0, live.width, live.height);
+        paintWhole(lctx, active);
+      }
+    });
+
+    function end(e) {
+      if (pan) {
+        pan = null;
+        if (e && live.hasPointerCapture && live.hasPointerCapture(e.pointerId)) {
+          live.releasePointerCapture(e.pointerId);
+        }
+        return;
+      }
+      if (!active) return;
+      var done = active; active = null;
+      lctx.clearRect(0, 0, live.width, live.height);
+      if (done.pts.length) {
+        diagram.strokes.push(simplify(done));
+        if (done.tool !== "eraser") paintWhole(bctx, done);
+        onChange();
+      }
+      if (e && live.hasPointerCapture && live.hasPointerCapture(e.pointerId)) {
+        live.releasePointerCapture(e.pointerId);
+      }
+    }
+    live.addEventListener("pointerup", end);
+    live.addEventListener("pointercancel", end);
+
+    return {
+      el: wrap,
+      layout: layout,
+      redraw: redraw,
+      undo: function () { diagram.strokes.pop(); redraw(); onChange(); },
+      clear: function () { diagram.strokes.length = 0; redraw(); onChange(); },
+      setCourt: function (kind) { diagram.court = kind; wrap.innerHTML = courtSvg(kind);
+                                  wrap.appendChild(base); wrap.appendChild(live); layout(); onChange(); }
+    };
+  }
+
+  /* ================= thumbnails ================= */
+
+  function thumbFor(drill) {
+    var d = drill.diagrams && drill.diagrams[0];
+    var kind = d ? d.court : "half";
+    var c = COURTS[kind] || COURTS.half;
+    var ink = "";
+    if (d && d.strokes.length) {
+      for (var i = 0; i < d.strokes.length; i++) {
+        var s = d.strokes[i];
+        if (s.tool === "eraser" || !s.pts || s.pts.length < 2) continue;
+        var dd = "";
+        for (var j = 0; j < s.pts.length; j++) {
+          dd += (j ? "L" : "M") + (s.pts[j].x * c.w).toFixed(0) + " " + (s.pts[j].y * c.h).toFixed(0) + " ";
+        }
+        ink += '<path d="' + dd + '" fill="none" stroke="' + s.color +
+               '" stroke-width="' + (s.size * 1.6) + '" stroke-linecap="round" stroke-linejoin="round" opacity="' +
+               (s.tool === "marker" ? 0.45 : 0.95) + '"/>';
+      }
+    }
+    return '<svg viewBox="0 0 ' + c.w + ' ' + c.h + '" preserveAspectRatio="xMidYMid slice">' +
+           c.svg + ink + '</svg>';
+  }
+
+  /* ================= views ================= */
+
+  var app = document.getElementById("app");
+  var crumb = document.getElementById("crumb");
+  var route = { view: "library", id: null, filter: "" };
+  var pads = [];
+
+  function go(view, id) {
+    route.view = view; route.id = id || null;
+    render();
+    window.scrollTo(0, 0);
+  }
+
+  function render() {
+    pads = [];
+    app.innerHTML = "";
+    if (route.view === "drill") renderEditor(); else renderLibrary();
+    relayout();
+  }
+
+  function relayout() { for (var i = 0; i < pads.length; i++) pads[i].layout(); }
+  window.addEventListener("resize", function () { clearTimeout(window.__rl);
+    window.__rl = setTimeout(relayout, 100); });
+
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+
+  /* ---------- library ---------- */
+
+  // Always tell the truth about whether work is being kept.
+  function storageBanner() {
+    if (Store.kind === "idb" && !PREVIEW) return null;   // the good case: say nothing
+    var w = el("div", "warn");
+    if (PREVIEW) {
+      w.innerHTML = "<b>Preview — nothing here is kept.</b> This page runs in a sandbox that " +
+                    "wipes its storage when you close it. Try the app out, but do not build " +
+                    "your real library until it has its own home on the web.";
+    } else if (Store.kind === "local") {
+      w.innerHTML = "<b>Saving, but to the smaller store.</b> This browser refused the main " +
+                    "one, so the library will run out of room sooner. Export a backup regularly.";
+    } else {
+      w.innerHTML = "<b>Nothing is being saved.</b> This browser is blocking storage entirely — " +
+                    "everything you do will vanish when you close the page. Export a backup now.";
+    }
+    return w;
+  }
+
+  function renderLibrary() {
+    crumb.textContent = "";
+    var wrap = el("div", "wrap");
+
+    var banner = storageBanner();
+    if (banner) wrap.appendChild(banner);
+
+    var head = el("div", "lib-head");
+    var h1 = el("h1", null, "Drill Library");
+    var count = el("span", "count",
+      state.drills.length ? state.drills.length + (state.drills.length === 1 ? " drill" : " drills") : "");
+    head.appendChild(h1); head.appendChild(count);
+    wrap.appendChild(head);
+
+    // tag filters, built from what is actually in the library
+    var used = {};
+    state.drills.forEach(function (d) { if (d.tag) used[d.tag] = (used[d.tag] || 0) + 1; });
+    var tagNames = Object.keys(used).sort();
+    if (tagNames.length > 1) {
+      var f = el("div", "filters");
+      var all = el("button", null, "All");
+      all.setAttribute("aria-pressed", String(!route.filter));
+      all.onclick = function () { route.filter = ""; render(); };
+      f.appendChild(all);
+      tagNames.forEach(function (t) {
+        var b = el("button", null, t + " (" + used[t] + ")");
+        b.setAttribute("aria-pressed", String(route.filter === t));
+        b.onclick = function () { route.filter = (route.filter === t ? "" : t); render(); };
+        f.appendChild(b);
+      });
+      wrap.appendChild(f);
+    }
+
+    var grid = el("div", "grid");
+
+    var add = el("button", "card new");
+    add.innerHTML = '<div><div class="plus">+</div><div class="label" style="font-size:12px;margin-top:6px">New drill</div></div>';
+    add.onclick = function () {
+      var d = newDrill();
+      state.drills.unshift(d);
+      touch(d);
+      go("drill", d.id);
+    };
+    grid.appendChild(add);
+
+    var list = state.drills.filter(function (d) { return !route.filter || d.tag === route.filter; });
+    list.forEach(function (d) {
+      var card = el("button", "card");
+      var thumb = el("div", "thumb");
+      thumb.innerHTML = thumbFor(d);
+      var meta = el("div", "meta");
+      meta.appendChild(el("div", "name", d.name || "Untitled"));
+      var sub = el("div", "sub");
+      if (d.tag) { var t = el("span", "tag", d.tag); sub.appendChild(t); }
+      var bits = [];
+      if (d.format) bits.push(d.format);
+      if (d.minutes) bits.push(d.minutes + " min");
+      var n = d.diagrams.length;
+      bits.push(n + (n === 1 ? " court" : " courts"));
+      sub.appendChild(el("span", null, bits.join(" · ")));
+      meta.appendChild(sub);
+      card.appendChild(thumb); card.appendChild(meta);
+      card.onclick = function () { go("drill", d.id); };
+      grid.appendChild(card);
+    });
+
+    wrap.appendChild(grid);
+
+    if (!state.drills.length) {
+      var e = el("div", "empty");
+      e.innerHTML = "Nothing here yet.<br>Draw a drill once, then reuse it all season.";
+      wrap.appendChild(e);
+    }
+    app.appendChild(wrap);
+  }
+
+  /* ---------- editor ---------- */
+
+  function renderEditor() {
+    var drill = findDrill(route.id);
+    if (!drill) { go("library"); return; }
+
+    crumb.textContent = "‹ Library";
+    crumb.style.cursor = "pointer";
+    crumb.onclick = function () { go("library"); };
+
+    var shell = el("div", "editor");
+    shell.appendChild(buildRail());
+
+    var sheet = el("div", "sheet");
+
+    var name = document.createElement("input");
+    name.type = "text"; name.className = "name-input"; name.value = drill.name;
+    name.placeholder = "Drill name  —  e.g. 5:0";
+    name.oninput = function () { drill.name = name.value; touch(drill); };
+    sheet.appendChild(name);
+
+    sheet.appendChild(buildMeta(drill));
+
+    var diagrams = el("div", "diagrams");
+    drill.diagrams.forEach(function (dg, i) { diagrams.appendChild(buildDiagram(drill, dg, i)); });
+    sheet.appendChild(diagrams);
+
+    var add = el("button", "add-court", "+  Add another court");
+    add.onclick = function () {
+      drill.diagrams.push(newDiagram());
+      touch(drill); render();
+    };
+    sheet.appendChild(add);
+
+    var footer = el("div", null);
+    footer.style.cssText = "margin-top:26px;display:flex;gap:8px;flex-wrap:wrap";
+    var del = el("button", "chip danger", "Delete drill");
+    del.onclick = function () {
+      if (!confirm("Delete “" + (drill.name || "Untitled") + "”? This cannot be undone.")) return;
+      removeDrill(drill.id);
+      go("library");
+    };
+    var done = el("button", "chip primary", "Done");
+    done.onclick = function () { go("library"); };
+    footer.appendChild(done); footer.appendChild(del);
+    sheet.appendChild(footer);
+
+    shell.appendChild(sheet);
+    app.appendChild(shell);
+  }
+
+  function buildMeta(drill) {
+    var row = el("div", "metarow");
+
+    row.appendChild(pickerField("Focus tag", TAGS, drill.tag, function (v) {
+      drill.tag = v; touch(drill);
+    }));
+    row.appendChild(pickerField("Group format", FORMATS, drill.format, function (v) {
+      drill.format = v; touch(drill);
+    }));
+
+    var mins = el("div", "field");
+    mins.appendChild(el("div", "label", "Typical minutes"));
+    var mi = document.createElement("input");
+    mi.type = "number"; mi.min = "1"; mi.max = "180"; mi.value = drill.minutes;
+    mi.oninput = function () {
+      var v = parseInt(mi.value, 10);
+      drill.minutes = isNaN(v) ? 0 : v; touch(drill);
+    };
+    mins.appendChild(mi);
+    row.appendChild(mins);
+
+    var inten = el("div", "field");
+    inten.appendChild(el("div", "label", "Intensity"));
+    var pips = el("div", "pips");
+    for (var i = 1; i <= 5; i++) (function (n) {
+      var b = el("button", null, String(n));
+      b.setAttribute("aria-pressed", String(drill.intensity === n));
+      b.onclick = function () {
+        drill.intensity = n; touch(drill);
+        Array.prototype.forEach.call(pips.children, function (c, k) {
+          c.setAttribute("aria-pressed", String(k + 1 === n));
+        });
+      };
+      pips.appendChild(b);
+    })(i);
+    inten.appendChild(pips);
+    row.appendChild(inten);
+
+    var wrapper = document.createElement("div");
+    wrapper.appendChild(row);
+
+    var pts = el("div", "field");
+    pts.style.marginTop = "14px";
+    pts.appendChild(el("div", "label", "Coaching points"));
+    var ta = document.createElement("textarea");
+    ta.value = drill.points;
+    ta.placeholder = "The two or three things you are actually looking for.";
+    ta.oninput = function () { drill.points = ta.value; touch(drill); };
+    pts.appendChild(ta);
+    wrapper.appendChild(pts);
+
+    return wrapper;
+  }
+
+  // A select that also accepts a value it has never seen, so the lists grow with use.
+  function pickerField(label, options, value, onSet) {
+    var f = el("div", "field");
+    f.appendChild(el("div", "label", label));
+    var sel = document.createElement("select");
+    var opts = options.slice();
+    if (value && opts.indexOf(value) === -1) opts.push(value);
+    sel.appendChild(new Option("—", ""));
+    opts.forEach(function (o) { sel.appendChild(new Option(o, o)); });
+    sel.appendChild(new Option("Add new…", "__new"));
+    sel.value = value || "";
+    sel.onchange = function () {
+      if (sel.value === "__new") {
+        var v = prompt("New " + label.toLowerCase());
+        if (v && v.trim()) {
+          v = v.trim();
+          sel.insertBefore(new Option(v, v), sel.lastChild);
+          sel.value = v; onSet(v);
+        } else { sel.value = value || ""; }
+        return;
+      }
+      value = sel.value; onSet(sel.value);
+    };
+    f.appendChild(sel);
+    return f;
+  }
+
+  function buildDiagram(drill, dg, i) {
+    var box = el("div", "diagram");
+    var head = el("div", "diagram-head");
+    head.appendChild(el("span", "num", "Court " + (i + 1)));
+
+    var cap = document.createElement("input");
+    cap.type = "text"; cap.value = dg.caption;
+    cap.placeholder = "What this one shows — e.g. initial spacing";
+    cap.oninput = function () { dg.caption = cap.value; touch(drill); };
+    head.appendChild(cap);
+
+    var grp = el("div", "grp");
+    var pad;
+
+    ["half", "full"].forEach(function (k) {
+      var b = el("button", "chip", k === "half" ? "Half" : "Full");
+      b.setAttribute("aria-pressed", String(dg.court === k));
+      b.onclick = function () {
+        dg.court = k; touch(drill);
+        Array.prototype.forEach.call(grp.querySelectorAll("[data-court]"), function (x) {
+          x.setAttribute("aria-pressed", String(x.getAttribute("data-court") === k));
+        });
+        pad.setCourt(k);
+      };
+      b.setAttribute("data-court", k);
+      grp.appendChild(b);
+    });
+
+    ["S", "M", "L"].forEach(function (s) {
+      var b = el("button", "chip", s);
+      b.setAttribute("data-size", s);
+      b.setAttribute("aria-pressed", String(dg.size === s));
+      b.onclick = function () {
+        dg.size = s; touch(drill);
+        Array.prototype.forEach.call(grp.querySelectorAll("[data-size]"), function (x) {
+          x.setAttribute("aria-pressed", String(x.getAttribute("data-size") === s));
+        });
+        pad.layout();
+      };
+      grp.appendChild(b);
+    });
+
+    var undo = el("button", "chip", "Undo");
+    undo.onclick = function () { pad.undo(); };
+    grp.appendChild(undo);
+
+    if (drill.diagrams.length > 1) {
+      var rm = el("button", "chip danger", "Remove");
+      rm.onclick = function () {
+        if (!confirm("Remove court " + (i + 1) + " from this drill?")) return;
+        drill.diagrams.splice(i, 1); touch(drill); render();
+      };
+      grp.appendChild(rm);
+    }
+
+    head.appendChild(grp);
+    box.appendChild(head);
+
+    var holder = el("div", null);
+    box.appendChild(holder);
+    pad = Pad(holder, dg, function () { touch(drill); });
+    pads.push(pad);
+
+    return box;
+  }
+
+  /* ---------- tool rail ---------- */
+
+  var ICONS = {
+    pen: '<path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 0 1 3 3L8 19l-4 1z"/><path d="M14.5 6.5l3 3"/>',
+    marker: '<path d="M5 19h5l9-9a2.8 2.8 0 0 0-4-4l-9 9v4z"/><path d="M3 21h8"/>',
+    eraser: '<path d="M8 20l-4-4a1.8 1.8 0 0 1 0-2.5l8-8a1.8 1.8 0 0 1 2.5 0l4.5 4.5a1.8 1.8 0 0 1 0 2.5L14 20z"/><path d="M20 20h-9"/>'
+  };
+
+  function buildRail() {
+    var rail = el("nav", "rail");
+    rail.setAttribute("aria-label", "Drawing tools");
+
+    ["pen", "marker", "eraser"].forEach(function (t) {
+      var b = el("button", "tool");
+      b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + ICONS[t] + "</svg>";
+      b.title = t.charAt(0).toUpperCase() + t.slice(1);
+      b.setAttribute("aria-pressed", String(tool.name === t));
+      b.onclick = function () {
+        tool.name = t;
+        Array.prototype.forEach.call(rail.querySelectorAll(".tool"), function (x, i) {
+          x.setAttribute("aria-pressed", String(["pen", "marker", "eraser"][i] === t));
+        });
+      };
+      rail.appendChild(b);
+    });
+
+    rail.appendChild(el("hr"));
+    rail.appendChild(el("div", "cap label", "Ink"));
+    [["#22201C", "Black"], ["#C8322B", "Red"], ["#2563B0", "Blue"], ["#2E8B4F", "Green"]]
+      .forEach(function (c) {
+        var b = el("button", "swatch");
+        b.style.background = c[0]; b.title = c[1];
+        b.setAttribute("data-color", c[0]);
+        b.setAttribute("aria-pressed", String(tool.color === c[0]));
+        b.onclick = function () {
+          tool.color = c[0];
+          Array.prototype.forEach.call(rail.querySelectorAll(".swatch"), function (x) {
+            x.setAttribute("aria-pressed", String(x.getAttribute("data-color") === c[0]));
+          });
+        };
+        rail.appendChild(b);
+      });
+
+    rail.appendChild(el("hr"));
+    rail.appendChild(el("div", "cap label", "Size"));
+    [[4, 2], [7, 4], [12, 7]].forEach(function (s) {
+      var b = el("button", "size-btn");
+      b.innerHTML = '<i style="width:20px;height:' + s[1] + 'px"></i>';
+      b.setAttribute("data-size", String(s[0]));
+      b.setAttribute("aria-pressed", String(tool.size === s[0]));
+      b.onclick = function () {
+        tool.size = s[0];
+        Array.prototype.forEach.call(rail.querySelectorAll(".size-btn"), function (x) {
+          x.setAttribute("aria-pressed", String(parseInt(x.getAttribute("data-size"), 10) === s[0]));
+        });
+      };
+      rail.appendChild(b);
+    });
+
+    rail.appendChild(el("hr"));
+    var finger = el("button", "tool");
+    finger.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V11"/>' +
+      '<path d="M12 11V4.5a1.5 1.5 0 0 1 3 0V11"/><path d="M15 11V6.5a1.5 1.5 0 0 1 3 0V13a7 7 0 0 1-7 7h-1a6 6 0 0 1-5-3l-2-3.5a1.5 1.5 0 0 1 2.5-1.7L9 14"/></svg>';
+    finger.title = "Let a finger draw as well as the Pencil";
+    finger.setAttribute("aria-pressed", String(tool.fingerDraws));
+    finger.onclick = function () {
+      tool.fingerDraws = !tool.fingerDraws;
+      finger.setAttribute("aria-pressed", String(tool.fingerDraws));
+    };
+    rail.appendChild(finger);
+
+    return rail;
+  }
+
+  /* ================= backup ================= */
+
+  function stamp() {
+    var d = new Date(), p = function (n) { return (n < 10 ? "0" : "") + n; };
+    return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
+  }
+
+  document.getElementById("exportBtn").onclick = async function () {
+    var json = serialize(state);
+    var filename = "practise-organiser-backup-" + stamp() + ".json";
+    var downloads = null;
+    try { downloads = await window.claude.use("downloads"); } catch (e) { downloads = null; }
+    if (downloads) {
+      try { await downloads.save({ filename: filename, data: json }); chip("Backup saved", false); }
+      catch (e) { chip("Backup cancelled", false); }
+      return;
+    }
+    var blob = new Blob([json], { type: "application/json" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+  };
+
+  var fileInput = document.getElementById("importFile");
+  document.getElementById("importBtn").onclick = function () { fileInput.click(); };
+  fileInput.onchange = function () {
+    var f = fileInput.files && fileInput.files[0];
+    if (!f) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      try {
+        var incoming = deserialize(String(reader.result));
+        if (!incoming) throw new Error("shape");
+        var msg = "Import " + incoming.drills.length + " drill" +
+                  (incoming.drills.length === 1 ? "" : "s") + "?\n\n" +
+                  "This replaces what is in the app now (" + state.drills.length + ").";
+        if (!confirm(msg)) return;
+        state = incoming;
+        state.drills.forEach(function (d) { dirty[d.id] = 1; });
+        if (Store.kind === "idb") DB.clear().then(flush); else flush();
+        render();
+        chip("Imported", false);
+      } catch (e) {
+        alert("That file is not a Practise Organiser backup.");
+      }
+      fileInput.value = "";
+    };
+    reader.readAsText(f);
+  };
+
+  /* ================= boot ================= */
+
+  chip("Opening…");
+  initStore().then(function () {
+    chip("");
+    render();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(relayout);
+    if (!PREVIEW && "serviceWorker" in navigator) {
+      navigator.serviceWorker.register("sw.js").catch(function () {});
+    }
+  });
+})();
+</script>

@@ -1,0 +1,655 @@
+<title>Court Ink</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+  :root {
+    --ground:      #1B1A17;
+    --panel:       #24221D;
+    --panel-hi:    #2E2B24;
+    --line:        #3B372F;
+    --text:        #E9E4D8;
+    --dim:         #948C7C;
+    --accent:      #F2A413;
+    --accent-ink:  #1B1A17;
+    --court:       #EDE6D8;
+    --court-line:  #3A342A;
+    --rail: 68px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--text);
+    font-family: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior: none;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .label {
+    font-family: "Barlow Condensed", "Arial Narrow", sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    font-weight: 600;
+  }
+
+  /* ---------- shell ---------- */
+  .app {
+    display: grid;
+    grid-template-columns: var(--rail) 1fr;
+    grid-template-rows: auto 1fr;
+    height: 100dvh;
+  }
+
+  header {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--line);
+    background: var(--panel);
+  }
+
+  .wordmark {
+    font-family: "Barlow Condensed", sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 700;
+    font-size: 19px;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .wordmark span { color: var(--accent); }
+
+  .brief {
+    font-size: 12.5px;
+    color: var(--dim);
+    line-height: 1.45;
+    min-width: 0;
+  }
+  .brief b { color: var(--text); font-weight: 500; }
+
+  .header-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+
+  /* ---------- buttons ---------- */
+  button {
+    font: inherit;
+    color: var(--text);
+    background: var(--panel-hi);
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .chip {
+    padding: 7px 12px;
+    font-family: "Barlow Condensed", sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+  .chip[aria-pressed="true"] {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+  }
+
+  /* ---------- tool rail ---------- */
+  .rail {
+    background: var(--panel);
+    border-right: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 0;
+    overflow-y: auto;
+  }
+
+  .rail-label {
+    font-size: 9.5px;
+    color: var(--dim);
+    margin: 6px 0 2px;
+  }
+
+  .tool {
+    width: 46px; height: 46px;
+    display: grid; place-items: center;
+    border-radius: 10px;
+    background: transparent;
+    border: 1px solid transparent;
+  }
+  .tool svg { width: 24px; height: 24px; stroke: var(--text); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .tool[aria-pressed="true"] { background: var(--panel-hi); border-color: var(--accent); }
+  .tool[aria-pressed="true"] svg { stroke: var(--accent); }
+
+  .swatch {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.14);
+    padding: 0;
+  }
+  .swatch[aria-pressed="true"] { border-color: var(--accent); transform: scale(1.08); }
+
+  .rail hr { width: 34px; border: 0; border-top: 1px solid var(--line); margin: 8px 0; }
+
+  .size-btn {
+    width: 40px; height: 30px;
+    display: grid; place-items: center;
+    border-radius: 8px;
+    background: transparent; border: 1px solid transparent;
+  }
+  .size-btn i { display: block; background: var(--text); border-radius: 99px; }
+  .size-btn[aria-pressed="true"] { background: var(--panel-hi); border-color: var(--accent); }
+  .size-btn[aria-pressed="true"] i { background: var(--accent); }
+
+  /* ---------- stage ---------- */
+  .stage {
+    position: relative;
+    display: grid;
+    place-items: center;
+    padding: 16px;
+    min-width: 0; min-height: 0;
+    background:
+      radial-gradient(ellipse at 50% 0%, #22201B 0%, var(--ground) 70%);
+  }
+
+  .court-wrap {
+    position: relative;
+    background: var(--court);
+    border-radius: 4px;
+    box-shadow: 0 18px 50px rgba(0,0,0,.5), 0 0 0 1px rgba(0,0,0,.4);
+    max-width: 100%;
+    max-height: 100%;
+    touch-action: none;
+  }
+  .court-wrap svg, .court-wrap canvas {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    display: block;
+  }
+  .court-wrap svg { pointer-events: none; }
+  .court-wrap canvas { touch-action: none; cursor: crosshair; }
+  .court-wrap #base { pointer-events: none; }
+
+  .court-line { stroke: var(--court-line); fill: none; stroke-width: 4; }
+  .court-line.thick { stroke-width: 7; }
+  .court-line.dash { stroke-dasharray: 26 20; }
+  .rim { stroke: #C0552A; stroke-width: 6; fill: none; }
+
+  /* ---------- telemetry ---------- */
+  .telemetry {
+    position: absolute;
+    right: 20px; bottom: 20px;
+    background: rgba(27,26,23,.92);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 11px 14px;
+    display: grid;
+    grid-template-columns: auto auto;
+    gap: 3px 16px;
+    font-variant-numeric: tabular-nums;
+    font-size: 12.5px;
+    min-width: 178px;
+    backdrop-filter: blur(6px);
+  }
+  .telemetry dt { color: var(--dim); font-size: 10px; align-self: center; }
+  .telemetry dd { margin: 0; text-align: right; font-weight: 500; }
+  .telemetry dd.hot { color: var(--accent); }
+
+  .bar {
+    grid-column: 1 / -1;
+    height: 4px;
+    background: var(--line);
+    border-radius: 99px;
+    overflow: hidden;
+    margin-top: 4px;
+  }
+  .bar > i { display: block; height: 100%; width: 0%; background: var(--accent); transition: width .04s linear; }
+
+  @media (max-width: 700px) {
+    .brief { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+
+<div class="app">
+  <header>
+    <div class="wordmark">Court<span>Ink</span></div>
+    <p class="brief">
+      Pencil test for the practice organiser. Check three things:
+      <b>does the line keep up with your hand</b>, <b>does pressing harder thicken it</b>,
+      <b>does your resting palm stay off the court</b>.
+    </p>
+    <div class="header-right">
+      <button class="chip" id="courtToggle" aria-pressed="false">Full court</button>
+      <button class="chip" id="fingerToggle" aria-pressed="false">Finger draws</button>
+      <button class="chip" id="undoBtn">Undo</button>
+      <button class="chip" id="clearBtn">Clear</button>
+    </div>
+  </header>
+
+  <nav class="rail" aria-label="Drawing tools">
+    <button class="tool" data-tool="pen" aria-pressed="true" title="Pen">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 0 1 3 3L8 19l-4 1z"/><path d="M14.5 6.5l3 3"/></svg>
+    </button>
+    <button class="tool" data-tool="marker" aria-pressed="false" title="Marker">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19h5l9-9a2.8 2.8 0 0 0-4-4l-9 9v4z"/><path d="M3 21h8"/></svg>
+    </button>
+    <button class="tool" data-tool="eraser" aria-pressed="false" title="Eraser">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 20l-4-4a1.8 1.8 0 0 1 0-2.5l8-8a1.8 1.8 0 0 1 2.5 0l4.5 4.5a1.8 1.8 0 0 1 0 2.5L14 20z"/><path d="M20 20h-9"/></svg>
+    </button>
+
+    <hr>
+    <div class="rail-label label">Ink</div>
+    <button class="swatch" data-color="#22201C" aria-pressed="true"  style="background:#22201C" title="Black"></button>
+    <button class="swatch" data-color="#C8322B" aria-pressed="false" style="background:#C8322B" title="Red"></button>
+    <button class="swatch" data-color="#2563B0" aria-pressed="false" style="background:#2563B0" title="Blue"></button>
+    <button class="swatch" data-color="#2E8B4F" aria-pressed="false" style="background:#2E8B4F" title="Green"></button>
+
+    <hr>
+    <div class="rail-label label">Size</div>
+    <button class="size-btn" data-size="4"  aria-pressed="false"><i style="width:22px;height:2px"></i></button>
+    <button class="size-btn" data-size="7"  aria-pressed="true"><i style="width:22px;height:4px"></i></button>
+    <button class="size-btn" data-size="12" aria-pressed="false"><i style="width:22px;height:7px"></i></button>
+  </nav>
+
+  <main class="stage">
+    <div class="court-wrap" id="courtWrap">
+      <svg id="courtSvg" viewBox="0 0 1500 1400" preserveAspectRatio="none" aria-label="Basketball court"></svg>
+      <canvas id="base"></canvas>
+      <canvas id="live"></canvas>
+    </div>
+
+    <dl class="telemetry" aria-live="off">
+      <dt class="label">Input</dt>       <dd id="tInput">—</dd>
+      <dt class="label">Pressure</dt>    <dd id="tPressure">—</dd>
+      <dt class="label">Tilt</dt>        <dd id="tTilt">—</dd>
+      <dt class="label">Points / sec</dt><dd id="tRate">—</dd>
+      <dt class="label">Strokes</dt>     <dd id="tStrokes">0</dd>
+      <div class="bar"><i id="pBar"></i></div>
+    </dl>
+  </main>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* Artifacts supply their own <head>; make sure iPad Safari can't pinch-zoom the canvas away. */
+  var vp = document.querySelector('meta[name="viewport"]');
+  if (!vp) { vp = document.createElement("meta"); vp.name = "viewport"; document.head.appendChild(vp); }
+  vp.content = "width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no";
+
+  /* ---------------- court geometry (FIBA, centimetres) ---------------- */
+
+  // Half court drawn with the basket at the top: 1500 wide x 1400 long.
+  function halfCourtMarks() {
+    return [
+      '<rect class="court-line" x="505" y="0" width="490" height="580"/>',
+      '<path class="court-line" d="M 570 580 A 180 180 0 0 0 930 580"/>',
+      '<path class="court-line dash" d="M 570 580 A 180 180 0 0 1 930 580"/>',
+      '<path class="court-line" d="M 90 0 L 90 299 A 675 675 0 0 0 1410 299 L 1410 0"/>',
+      '<path class="court-line" d="M 625 157.5 A 125 125 0 0 0 875 157.5"/>',
+      '<path class="court-line thick" d="M 660 120 L 840 120"/>',
+      '<path class="court-line" d="M 750 120 L 750 135"/>',
+      '<circle class="rim" cx="750" cy="157.5" r="22.5"/>'
+    ].join("");
+  }
+
+  var COURTS = {
+    half: {
+      w: 1500, h: 1400,
+      svg: '<rect class="court-line thick" x="0" y="0" width="1500" height="1400"/>' +
+           halfCourtMarks() +
+           '<path class="court-line" d="M 570 1400 A 180 180 0 0 1 930 1400"/>'
+    },
+    full: {
+      w: 2800, h: 1500,
+      // (x,y) -> (y,x) puts the half-court marks on the left end; mirrored copy on the right.
+      svg: '<rect class="court-line thick" x="0" y="0" width="2800" height="1500"/>' +
+           '<g transform="matrix(0 1 1 0 0 0)">' + halfCourtMarks() + '</g>' +
+           '<g transform="matrix(0 1 -1 0 2800 0)">' + halfCourtMarks() + '</g>' +
+           '<path class="court-line" d="M 1400 0 L 1400 1500"/>' +
+           '<circle class="court-line" cx="1400" cy="750" r="180"/>'
+    }
+  };
+
+  /* ---------------- state ---------------- */
+
+  var wrap  = document.getElementById("courtWrap");
+  var svg   = document.getElementById("courtSvg");
+  var base  = document.getElementById("base");   // every finished stroke
+  var live  = document.getElementById("live");   // only the stroke in progress
+  var bctx  = base.getContext("2d");
+  var lctx  = live.getContext("2d");
+
+  var state = {
+    court: "half",
+    tool: "pen",
+    color: "#22201C",
+    size: 7,          // court units
+    fingerDraws: false
+  };
+
+  var strokes = [];   // finished: {tool, color, size, pts:[{x,y,p}]}  x/y normalised 0..1
+  var active  = null;
+
+  /* ---------------- rendering ----------------
+
+     Three tools, three different needs:
+
+       pen     alpha 1, width varies with pressure. Each segment is its own path,
+               and because it is opaque, overlaps are invisible - so we can append
+               just the newest segment as it arrives. Lowest possible latency.
+       marker  semi-transparent, so overlapping paths would darken each other and
+               the stroke would come out blotchy. Drawn instead as ONE path at a
+               constant width, repainted whole on the live layer each frame.
+       eraser  cuts holes in the finished work, so it has to act on the base layer.
+  */
+
+  function courtDims() { return COURTS[state.court]; }
+
+  function layoutCourt() {
+    var c = courtDims();
+
+    // Breathing room so the boundary lines are not sliced in half by the viewBox edge.
+    var B = 8;
+    var vw = c.w + B * 2, vh = c.h + B * 2;
+    svg.setAttribute("viewBox", -B + " " + -B + " " + vw + " " + vh);
+    svg.innerHTML = c.svg;
+
+    var stage  = wrap.parentElement;
+    var pad    = 32;
+    var scale  = Math.min((stage.clientWidth - pad) / vw, (stage.clientHeight - pad) / vh);
+    var cssW   = Math.max(160, Math.floor(vw * scale));
+    var cssH   = Math.max(160, Math.floor(vh * scale));
+
+    wrap.style.width  = cssW + "px";
+    wrap.style.height = cssH + "px";
+
+    var dpr = Math.min(window.devicePixelRatio || 1, 3);
+    [base, live].forEach(function (cv) {
+      cv.width  = Math.round(cssW * dpr);
+      cv.height = Math.round(cssH * dpr);
+    });
+
+    redrawBase();
+    lctx.clearRect(0, 0, live.width, live.height);
+  }
+
+  // Court units -> device pixels, so size 7 looks the same on any screen.
+  function unitScale() { return base.width / (courtDims().w + 16); }
+
+  function penWidth(s, pressure) {
+    return Math.max(0.6, s.size * unitScale() * (0.35 + 0.85 * pressure));
+  }
+  function flatWidth(s) {
+    var base_ = s.size * unitScale();
+    return s.tool === "marker" ? base_ * 3.2 : base_ * 5.5;
+  }
+
+  function styleFor(ctx, s) {
+    ctx.lineCap  = "round";
+    ctx.lineJoin = "round";
+    if (s.tool === "eraser") {
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = "#000";
+    } else {
+      ctx.globalCompositeOperation = "source-over";
+      ctx.globalAlpha = s.tool === "marker" ? 0.42 : 1;
+      ctx.strokeStyle = s.color;
+    }
+  }
+
+  function dot(ctx, s, p) {
+    var w = s.tool === "pen" ? penWidth(s, p.p) : flatWidth(s);
+    ctx.beginPath();
+    ctx.arc(p.x * ctx.canvas.width, p.y * ctx.canvas.height, w / 2, 0, Math.PI * 2);
+    ctx.fillStyle = s.tool === "eraser" ? "#000" : s.color;
+    ctx.fill();
+  }
+
+  // Smooth quadratic through segment midpoints, so corners do not show as facets.
+  function pathThrough(ctx, pts, from, to) {
+    var W = ctx.canvas.width, H = ctx.canvas.height;
+    var prev = pts[from - 2] || pts[from - 1];
+    var a = pts[from - 1];
+    ctx.moveTo((prev.x * W + a.x * W) / 2, (prev.y * H + a.y * H) / 2);
+    for (var i = from; i <= to; i++) {
+      var c = pts[i - 1], b = pts[i];
+      ctx.quadraticCurveTo(c.x * W, c.y * H, (c.x * W + b.x * W) / 2, (c.y * H + b.y * H) / 2);
+    }
+  }
+
+  function paintWhole(ctx, s) {
+    var pts = s.pts;
+    if (!pts.length) return;
+    ctx.save();
+    styleFor(ctx, s);
+
+    if (pts.length === 1) { dot(ctx, s, pts[0]); ctx.restore(); return; }
+
+    if (s.tool === "pen") {
+      for (var i = 1; i < pts.length; i++) {
+        ctx.beginPath();
+        ctx.lineWidth = penWidth(s, pts[i].p);
+        pathThrough(ctx, pts, i, i);
+        ctx.stroke();
+      }
+    } else {
+      ctx.beginPath();
+      ctx.lineWidth = flatWidth(s);
+      pathThrough(ctx, pts, 1, pts.length - 1);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // Append only the newest segment. Safe for opaque tools.
+  function paintNewestSegment(ctx, s) {
+    var pts = s.pts, n = pts.length;
+    if (n < 2) { ctx.save(); styleFor(ctx, s); dot(ctx, s, pts[0]); ctx.restore(); return; }
+    ctx.save();
+    styleFor(ctx, s);
+    ctx.beginPath();
+    ctx.lineWidth = s.tool === "pen" ? penWidth(s, pts[n - 1].p) : flatWidth(s);
+    pathThrough(ctx, pts, n - 1, n - 1);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function redrawBase() {
+    bctx.clearRect(0, 0, base.width, base.height);
+    for (var i = 0; i < strokes.length; i++) paintWhole(bctx, strokes[i]);
+    document.getElementById("tStrokes").textContent = strokes.length;
+  }
+
+  /* ---------------- telemetry ---------------- */
+
+  var tInput = document.getElementById("tInput"),
+      tPress = document.getElementById("tPressure"),
+      tTilt  = document.getElementById("tTilt"),
+      tRate  = document.getElementById("tRate"),
+      pBar   = document.getElementById("pBar");
+
+  var rateCount = 0, rateStamp = performance.now();
+
+  function telemetry(e, pressure, count) {
+    tInput.textContent = e.pointerType === "pen" ? "Apple Pencil"
+                       : e.pointerType === "touch" ? "Finger" : "Mouse";
+    tInput.className = e.pointerType === "pen" ? "hot" : "";
+    tPress.textContent = pressure.toFixed(2);
+    pBar.style.width = Math.round(pressure * 100) + "%";
+
+    var tilt = null;
+    if (typeof e.altitudeAngle === "number") {
+      tilt = 90 - e.altitudeAngle * 180 / Math.PI;
+    } else if (e.tiltX || e.tiltY) {
+      tilt = Math.sqrt(e.tiltX * e.tiltX + e.tiltY * e.tiltY);
+    }
+    tTilt.textContent = tilt === null ? "—" : Math.round(tilt) + "°";
+
+    rateCount += count;
+    var now = performance.now();
+    if (now - rateStamp > 250) {
+      tRate.textContent = Math.round(rateCount * 1000 / (now - rateStamp));
+      rateCount = 0; rateStamp = now;
+    }
+  }
+
+  /* ---------------- input ---------------- */
+
+  function accepts(e) {
+    if (e.pointerType === "pen")   return true;
+    if (e.pointerType === "touch") return state.fingerDraws;   // palm rejection
+    return true;                                               // mouse, for checking on a laptop
+  }
+
+  function toNorm(e) {
+    var r = live.getBoundingClientRect();
+    return { x: (e.clientX - r.left) / r.width, y: (e.clientY - r.top) / r.height };
+  }
+
+  function pressureOf(e) {
+    if (e.pointerType !== "pen") return 0.5;
+    return e.pressure > 0 ? e.pressure : 0.25;  // Safari reports 0 on a stroke's first sample
+  }
+
+  // The eraser writes straight onto the finished work; everything else onto the live layer.
+  function surface(s) { return s.tool === "eraser" ? bctx : lctx; }
+
+  live.addEventListener("pointerdown", function (e) {
+    if (!accepts(e)) return;
+    e.preventDefault();
+    live.setPointerCapture(e.pointerId);
+
+    var n = toNorm(e);
+    active = {
+      tool: state.tool, color: state.color, size: state.size,
+      pts: [{ x: n.x, y: n.y, p: pressureOf(e) }]
+    };
+    paintNewestSegment(surface(active), active);
+    telemetry(e, pressureOf(e), 1);
+  });
+
+  live.addEventListener("pointermove", function (e) {
+    if (!active) return;
+    e.preventDefault();
+
+    // Coalesced events hand back every Pencil sample, not just one per frame.
+    // This is the difference between a line that keeps up and one that trails the nib.
+    var evs = (typeof e.getCoalescedEvents === "function") ? e.getCoalescedEvents() : null;
+    if (!evs || !evs.length) evs = [e];
+
+    var added = false;
+    for (var i = 0; i < evs.length; i++) {
+      var n = toNorm(evs[i]);
+      var last = active.pts[active.pts.length - 1];
+      if (Math.abs(n.x - last.x) < 0.0004 && Math.abs(n.y - last.y) < 0.0004) continue;
+      active.pts.push({ x: n.x, y: n.y, p: pressureOf(evs[i]) });
+      added = true;
+      if (active.tool !== "marker") paintNewestSegment(surface(active), active);
+    }
+
+    // The marker is see-through, so it must be repainted whole or overlaps go blotchy.
+    if (added && active.tool === "marker") {
+      lctx.clearRect(0, 0, live.width, live.height);
+      paintWhole(lctx, active);
+    }
+
+    telemetry(e, pressureOf(e), evs.length);
+  });
+
+  function endStroke(e) {
+    if (!active) return;
+    var done = active;
+    active = null;
+    lctx.clearRect(0, 0, live.width, live.height);
+    if (done.pts.length) {
+      strokes.push(done);
+      if (done.tool !== "eraser") paintWhole(bctx, done);   // eraser already hit the base layer
+    }
+    document.getElementById("tStrokes").textContent = strokes.length;
+    if (e && live.hasPointerCapture && live.hasPointerCapture(e.pointerId)) {
+      live.releasePointerCapture(e.pointerId);
+    }
+  }
+
+  live.addEventListener("pointerup", endStroke);
+  live.addEventListener("pointercancel", endStroke);
+
+  // Stop Safari rubber-banding and double-tap zoom over the court.
+  ["touchstart", "touchmove", "gesturestart"].forEach(function (t) {
+    wrap.addEventListener(t, function (ev) { ev.preventDefault(); }, { passive: false });
+  });
+
+  /* ---------------- controls ---------------- */
+
+  function group(selector, attr, onPick) {
+    var nodes = Array.prototype.slice.call(document.querySelectorAll(selector));
+    nodes.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        nodes.forEach(function (b) { b.setAttribute("aria-pressed", String(b === btn)); });
+        onPick(btn.getAttribute(attr));
+      });
+    });
+  }
+
+  group(".tool", "data-tool", function (v) { state.tool = v; });
+  group(".swatch", "data-color", function (v) { state.color = v; });
+  group(".size-btn", "data-size", function (v) { state.size = parseInt(v, 10); });
+
+  var courtToggle = document.getElementById("courtToggle");
+  courtToggle.addEventListener("click", function () {
+    state.court = state.court === "half" ? "full" : "half";
+    var isFull = state.court === "full";
+    courtToggle.setAttribute("aria-pressed", String(isFull));
+    courtToggle.textContent = isFull ? "Half court" : "Full court";
+    layoutCourt();
+  });
+
+  var fingerToggle = document.getElementById("fingerToggle");
+  fingerToggle.addEventListener("click", function () {
+    state.fingerDraws = !state.fingerDraws;
+    fingerToggle.setAttribute("aria-pressed", String(state.fingerDraws));
+  });
+
+  document.getElementById("undoBtn").addEventListener("click", function () {
+    strokes.pop();
+    redrawBase();
+  });
+
+  document.getElementById("clearBtn").addEventListener("click", function () {
+    strokes = [];
+    redrawBase();
+  });
+
+  /* ---------------- boot ---------------- */
+
+  var resizeTimer;
+  window.addEventListener("resize", function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(layoutCourt, 90);
+  });
+
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(layoutCourt);
+  layoutCourt();
+})();
+</script>

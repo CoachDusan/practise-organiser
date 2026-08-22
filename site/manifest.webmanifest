@@ -1,0 +1,14 @@
+{
+  "name": "Practise Organiser",
+  "short_name": "Practise",
+  "description": "Drill library, practice sheets and season archive for a basketball coach.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#1B1A17",
+  "theme_color": "#1B1A17",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
