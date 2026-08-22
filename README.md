@@ -26,6 +26,9 @@ will keep serving the cached old copy.
     manifest.webmanifest      Home Screen install
     icon.svg                  app icon
     .nojekyll                 stops GitHub Pages processing the app as a blog
+    tools/
+      import-from-drill-management.py   converts the other app's library
+    private/                  club data — gitignored, never committed
     test/
       run.sh                  storage tests — run before shipping storage changes
       storage-test.js         headless, under JavaScriptCore

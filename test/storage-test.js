@@ -179,7 +179,8 @@ function appSource() {
     "           usageMap: usageMap, findDrill: findDrill, findPractice: findPractice,\n" +
     "           serialize: serialize, deserialize: deserialize,\n" +
     "           practiceMinutes: practiceMinutes, prettyDate: prettyDate,\n" +
-    "           openDrillPicker: openDrillPicker, route: route };\n";
+    "           openDrillPicker: openDrillPicker, route: route,\n" +
+    "           applyImport: applyImport };\n";
   return src.slice(0, at) + exported + src.slice(at);
 }
 
@@ -336,7 +337,47 @@ launch(backing, lsStore).then(function (po) {
   try { po.openDrillPicker(po.findPractice(practiceId)); } catch (e) { errors.push("drill picker: " + e); }
   ok("every screen built without throwing", errors.length === 0, errors.join(" | "));
 
-  print("\n8. the smaller store, for a browser that refuses IndexedDB");
+  print("\n8. the drills imported from drill-management");
+  var raw = null;
+  try { raw = readFile("private/drills-import.json"); } catch (e) { raw = null; }
+  if (!raw) {
+    print("  --   skipped: private/drills-import.json is not here");
+    print("       (club data, never committed — regenerate with tools/import-from-drill-management.py)");
+  } else {
+    var file = po.deserialize(raw);
+    ok("the file is a valid backup", !!file);
+    eq("all 43 drills are in it", file.drills.length, 43);
+
+    var fast = null, slow = null;
+    file.drills.forEach(function (d) {
+      if (d.name === "1 on 1 FC") fast = d;
+      if (d.name === "Shooting (spot-up)") slow = d;
+    });
+    ok("a full-court 1v1 came across", !!fast);
+    eq("its measured intensity is exact", fast.intensity, 10);
+    eq("and it got a full-court blank to draw on", fast.diagrams[0].court, "full");
+    ok("the lightest drill kept its decimals", slow && slow.intensity === 1.62, slow && slow.intensity);
+    eq("a half-court drill got a half-court blank", slow.diagrams[0].court, "half");
+    ok("the grid inputs rode along", fast.load && fast.load.court === 5 && fast.load.contact === true,
+       JSON.stringify(fast && fast.load));
+    eq("intensities stay on the 1-10 scale",
+       file.drills.filter(function (d) { return d.intensity > 5; }).length > 0, true);
+    eq("every drill has a tag", file.drills.filter(function (d) { return !d.tag; }).length, 0);
+    eq("no drill claims a format that was not in the data",
+       file.drills.filter(function (d) { return d.format; }).length, 0);
+
+    var beforeDrills = po.state.drills.length;
+    var beforePractices = po.state.practices.length;
+    po.applyImport(po.deserialize(raw), "merge");
+    eq("merging adds them without touching what was there", po.state.drills.length, beforeDrills + 43);
+    po.applyImport(po.deserialize(raw), "merge");
+    eq("importing the same file twice does not duplicate", po.state.drills.length, beforeDrills + 43);
+    eq("and the practices already logged are untouched", po.state.practices.length, beforePractices);
+
+    po.flush();
+  }
+
+  print("\n9. the smaller store, for a browser that refuses IndexedDB");
   var fresh = { version: 0, stores: [], data: {} };
   var lsOnly = lsStore;
   globalThis.__forceLocal = true;

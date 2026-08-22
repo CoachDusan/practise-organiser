@@ -232,6 +232,54 @@ Drill versioning (redraw in March: what does October show?) and a per-session
 scribble on top of a stored diagram. The practice log works without either, and
 neither should be guessed at before Dusan has run real sessions through this.
 
+## Importing the 43 drills from `drill-management` (2026-08-22)
+
+Dusan's other app, `~/Documents/GitHub/drill-management`, already held his real library:
+43 drills, 36 of them with **club-measured** intensity values, 7 derived from that app's
+validated grid. Converted by `tools/import-from-drill-management.py`.
+
+### The club's data is private, and this repo is public
+
+`drill-management/.gitignore` says of `private/`: *"The club's own data. Never committed,
+never published."* Practise Organiser is served from a **public** GitHub Pages repo, so
+committing the drills here would publish the measured values on the open internet.
+
+`private/` is therefore gitignored here too, and the import file is written into it. The
+file reaches the iPad by AirDrop, not by the web. **Consequence to remember: Export backup
+now produces a file containing club-measured values — it is club data, not a scratch file.**
+
+### Intensity widened from 1-5 to 1-10 — Dusan's call
+
+The two apps disagreed about the scale. Practise Organiser had five pips, chosen quickly in
+stage 1 and used by nothing. `drill-management` has 1-10, anchored to Borg CR-10, fitted to
+27 club measurements at R-squared 0.93. Squashing 8.59 into "4" would have destroyed the only
+part of either app that was measured rather than assumed.
+
+Presented as a choice; he took the wider scale. Measured values keep their decimals. The pips
+mark the **nearest whole number** and the exact figure is printed beside them with the word
+*measured* while it is untouched, so tapping a pip is always a deliberate change and never a
+silent rounding. Any drill created here before this change keeps its old 1-5 number, so the
+handful made while testing stage 1 are worth re-checking.
+
+### What else came across, and what deliberately did not
+
+| Source | Here | Why |
+|---|---|---|
+| `intensity` (1-10) | `intensity` | Untouched, decimals kept. |
+| `court` / `situation` / `rhythm` / `contact` / `measured` | `load` on the drill | Kept although no screen shows them. They were expensive to gather and a format conversion is the wrong place to lose them. |
+| `category` | `tag` | Mapped; `Offence` and `Live / scrimmage` added to `TAGS`, spellings normalised to `Defence`. |
+| `court` level | the blank diagram's half/full | Read from the data, not guessed: level 4-5 gets a full court to draw on, 3 and below a half. |
+| `typicalMinutes`, `notes`, `id` | `minutes`, `points`, `id` | Direct. Keeping the source id means re-importing updates rather than duplicates. |
+| — | `format` | **Left blank, deliberately.** Only 21 of 43 names map onto the app's list; the rest are compound ("5 on 0 & 3 on 2 & 2 on 1") or uneven ("3 on 2"). Half-filled reads as a bug, and the name already says it. Dusan's call. |
+| — | diagrams | Every drill gets one empty court. None of these drills has ever been drawn; that is now the work. |
+
+### Import is no longer replace-only
+
+Handing a coach a 43-drill file when the only import mode wipes the app was a footgun. Import
+now asks: **add to what is here**, or **replace everything** (with a second confirmation naming
+what would be destroyed). Merging matches on drill id, so the same file can be imported twice
+without doubling the library.
+
 ## The ink engine (first proved in `pencil-test.html`)
 
 Worth keeping whichever platform wins, because the reasoning carries over.

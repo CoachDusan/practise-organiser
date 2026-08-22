@@ -166,7 +166,12 @@
     gap: 14px; margin: 18px 0 8px;
   }
 
-  .pips { display: flex; gap: 5px; }
+  .int-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 5px; }
+  .int-read {
+    font-family: "Barlow Condensed", sans-serif; font-size: 13px; letter-spacing: .05em;
+    color: var(--accent); text-transform: uppercase;
+  }
+  .pips { display: flex; gap: 5px; flex-wrap: wrap; }
   .pips button {
     width: 34px; height: 34px; border-radius: 8px; background: transparent;
     font-variant-numeric: tabular-nums; font-size: 13px;
@@ -343,6 +348,24 @@
   }
   .mplus.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 
+  .modal.choice { max-width: 520px; border-radius: 16px; align-self: center; }
+  .modal-back:has(.choice) { align-items: center; padding: 16px; }
+  .choice-body { font-size: 13.5px; line-height: 1.7; color: var(--dim); margin-bottom: 16px; }
+  .choice-body b { color: var(--text); }
+  .choice-opts { display: grid; gap: 8px; }
+  .choice-btn {
+    text-align: left; padding: 12px 14px; display: grid; gap: 3px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+  }
+  .choice-btn:hover { border-color: var(--accent); }
+  .choice-btn b {
+    font-family: "Barlow Condensed", sans-serif; text-transform: uppercase;
+    letter-spacing: .05em; font-size: 16px; font-weight: 700;
+  }
+  .choice-btn span { font-size: 12px; color: var(--dim); line-height: 1.45; }
+  .choice-btn.danger-choice:hover { border-color: var(--danger); }
+  .choice-btn.danger-choice b { color: #E0A79E; }
+
   .usage {
     font-family: "Barlow Condensed", sans-serif; text-transform: uppercase;
     letter-spacing: .07em; font-size: 10px; color: #9CC47F;
@@ -461,8 +484,9 @@
 
   /* ================= state ================= */
 
-  var TAGS = ["Warm-up", "Shooting", "Transition", "Pick & roll", "Post play",
-              "Defence", "Rebounding", "Conditioning", "Set plays", "Ball handling"];
+  var TAGS = ["Warm-up", "Shooting", "Transition", "Offence", "Defence",
+              "Live / scrimmage", "Pick & roll", "Post play", "Rebounding",
+              "Conditioning", "Set plays", "Ball handling"];
   var FORMATS = ["Individual", "Pairs", "3v3", "4v4", "5v5", "5:0", "Whole team"];
   var SIZES = { S: 300, M: 460, L: 660 };   // css px, the court's drawn width
 
@@ -640,7 +664,7 @@
 
   function newDrill() {
     return {
-      id: uid(), name: "", tag: "", format: "", minutes: 10, intensity: 3,
+      id: uid(), name: "", tag: "", format: "", minutes: 10, intensity: 5,
       points: "", diagrams: [newDiagram()], createdAt: Date.now(), updatedAt: Date.now()
     };
   }
@@ -1691,25 +1715,9 @@
     mins.appendChild(mi);
     row.appendChild(mins);
 
-    var inten = el("div", "field");
-    inten.appendChild(el("div", "label", "Intensity"));
-    var pips = el("div", "pips");
-    for (var i = 1; i <= 5; i++) (function (n) {
-      var b = el("button", null, String(n));
-      b.setAttribute("aria-pressed", String(drill.intensity === n));
-      b.onclick = function () {
-        drill.intensity = n; touch(drill);
-        Array.prototype.forEach.call(pips.children, function (c, k) {
-          c.setAttribute("aria-pressed", String(k + 1 === n));
-        });
-      };
-      pips.appendChild(b);
-    })(i);
-    inten.appendChild(pips);
-    row.appendChild(inten);
-
     var wrapper = document.createElement("div");
     wrapper.appendChild(row);
+    wrapper.appendChild(buildIntensity(drill));
 
     var pts = el("div", "field");
     pts.style.marginTop = "14px";
@@ -1725,6 +1733,49 @@
   }
 
   // A select that also accepts a value it has never seen, so the lists grow with use.
+  /* Intensity runs 1-10, not 1-5, because that is the scale the club's own
+     measurements were taken on — 36 of the imported drills carry a real tracked
+     number. Measured values have a decimal (8.59); the pips mark the nearest
+     whole number and the exact figure is shown beside them, so tapping a pip is
+     always a deliberate change rather than a silent rounding. The untouched
+     original stays in `load.measured` either way. */
+
+  function buildIntensity(drill) {
+    var f = el("div", "field");
+    f.style.marginTop = "14px";
+
+    var head = el("div", "int-head");
+    head.appendChild(el("div", "label", "Intensity"));
+    var readout = el("div", "int-read");
+    var measured = drill.load && typeof drill.load.measured === "number";
+    function say() {
+      var v = Number(drill.intensity) || 0;
+      readout.textContent = (Math.round(v * 100) % 100 ? v.toFixed(2) : String(v)) + " / 10" +
+        (measured && Math.abs(v - drill.load.measured) < 1e-9 ? "  ·  measured" : "");
+    }
+    head.appendChild(readout);
+    f.appendChild(head);
+
+    var pips = el("div", "pips");
+    var lit = Math.round(Number(drill.intensity) || 0);
+    for (var i = 1; i <= 10; i++) (function (n) {
+      var b = el("button", null, String(n));
+      b.setAttribute("aria-pressed", String(lit === n));
+      b.onclick = function () {
+        drill.intensity = n; touch(drill);
+        measured = false;
+        Array.prototype.forEach.call(pips.children, function (c, k) {
+          c.setAttribute("aria-pressed", String(k + 1 === n));
+        });
+        say();
+      };
+      pips.appendChild(b);
+    })(i);
+    f.appendChild(pips);
+    say();
+    return f;
+  }
+
   function pickerField(label, options, value, onSet) {
     var f = el("div", "field");
     f.appendChild(el("div", "label", label));
@@ -1912,6 +1963,102 @@
     setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
   };
 
+  /* Import used to be replace-only, which is a bad thing to hand a coach whose
+     season is already in the app. Merging by id means the same file can be
+     imported twice without doubling the library. */
+
+  function applyImport(incoming, mode) {
+    if (mode === "replace") {
+      state = incoming;
+      state.drills.forEach(function (d) { dirty[d.id] = "drills"; });
+      state.practices.forEach(function (p) { dirty[p.id] = "practices"; });
+      if (Store.kind === "idb") {
+        Promise.all([DB.clear("drills"), DB.clear("practices")]).then(flush);
+      } else flush();
+    } else {
+      incoming.drills.forEach(function (d) {
+        var at = -1;
+        for (var i = 0; i < state.drills.length; i++) if (state.drills[i].id === d.id) at = i;
+        if (at >= 0) state.drills[at] = d; else state.drills.push(d);
+        dirty[d.id] = "drills";
+      });
+      incoming.practices.forEach(function (p) {
+        var at = -1;
+        for (var i = 0; i < state.practices.length; i++) if (state.practices[i].id === p.id) at = i;
+        if (at >= 0) state.practices[at] = p; else state.practices.push(p);
+        dirty[p.id] = "practices";
+      });
+      state.drills.sort(function (a, b) { return (b.updatedAt || 0) - (a.updatedAt || 0); });
+      state.practices.sort(byDateDesc);
+      flush();
+    }
+    render();
+    chip("Imported", false);
+  }
+
+  function askImportMode(incoming, then) {
+    var fresh = incoming.drills.filter(function (d) { return !findDrill(d.id); }).length;
+    var again = incoming.drills.length - fresh;
+
+    var back = el("div", "modal-back");
+    var panel = el("div", "modal choice");
+
+    var head = el("div", "modal-head");
+    head.appendChild(el("div", "mtitle", "Import"));
+    panel.appendChild(head);
+
+    var lines = [];
+    lines.push("<b>" + incoming.drills.length + "</b> drill" +
+               (incoming.drills.length === 1 ? "" : "s") +
+               (incoming.practices.length ? " and <b>" + incoming.practices.length +
+                "</b> practice" + (incoming.practices.length === 1 ? "" : "s") : "") +
+               " in this file.");
+    if (again) {
+      lines.push("<b>" + again + "</b> of them " + (again === 1 ? "is" : "are") +
+                 " already here and would be updated to the version in the file.");
+    }
+    lines.push("This app currently holds <b>" + state.drills.length + "</b> drill" +
+               (state.drills.length === 1 ? "" : "s") + " and <b>" +
+               state.practices.length + "</b> practice" +
+               (state.practices.length === 1 ? "" : "s") + ".");
+    var body = el("div", "choice-body");
+    body.innerHTML = lines.join("<br>");
+    panel.appendChild(body);
+
+    function close() { back.remove(); }
+
+    var opts = el("div", "choice-opts");
+
+    var merge = el("button", "choice-btn");
+    merge.innerHTML = "<b>Add to what is here</b>" +
+      "<span>Keeps everything already in the app. Nothing is lost.</span>";
+    merge.onclick = function () { close(); then(incoming, "merge"); };
+    opts.appendChild(merge);
+
+    var replace = el("button", "choice-btn danger-choice");
+    replace.innerHTML = "<b>Replace everything</b>" +
+      "<span>Deletes what is in the app now and leaves only this file.</span>";
+    replace.onclick = function () {
+      if (!confirm("Delete the " + state.drills.length + " drill" +
+                   (state.drills.length === 1 ? "" : "s") + " and " +
+                   state.practices.length + " practice" +
+                   (state.practices.length === 1 ? "" : "s") +
+                   " in the app now? This cannot be undone.")) return;
+      close(); then(incoming, "replace");
+    };
+    opts.appendChild(replace);
+
+    var cancel = el("button", "choice-btn");
+    cancel.innerHTML = "<b>Cancel</b><span>Change nothing.</span>";
+    cancel.onclick = close;
+    opts.appendChild(cancel);
+
+    panel.appendChild(opts);
+    back.onclick = function (e) { if (e.target === back) close(); };
+    back.appendChild(panel);
+    document.body.appendChild(back);
+  }
+
   var fileInput = document.getElementById("importFile");
   document.getElementById("importBtn").onclick = function () { fileInput.click(); };
   fileInput.onchange = function () {
@@ -1922,21 +2069,7 @@
       try {
         var incoming = deserialize(String(reader.result));
         if (!incoming) throw new Error("shape");
-        var msg = "Import " + incoming.drills.length + " drill" +
-                  (incoming.drills.length === 1 ? "" : "s") + " and " +
-                  incoming.practices.length + " practice" +
-                  (incoming.practices.length === 1 ? "" : "s") + "?\n\n" +
-                  "This replaces what is in the app now (" + state.drills.length +
-                  " drills, " + state.practices.length + " practices).";
-        if (!confirm(msg)) return;
-        state = incoming;
-        state.drills.forEach(function (d) { dirty[d.id] = "drills"; });
-        state.practices.forEach(function (p) { dirty[p.id] = "practices"; });
-        if (Store.kind === "idb") {
-          Promise.all([DB.clear("drills"), DB.clear("practices")]).then(flush);
-        } else flush();
-        render();
-        chip("Imported", false);
+        askImportMode(incoming, applyImport);
       } catch (e) {
         alert("That file is not a Practise Organiser backup.");
       }
