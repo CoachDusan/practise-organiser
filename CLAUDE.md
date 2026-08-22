@@ -126,9 +126,17 @@ Current design:
   once, silence has to mean "genuinely saved".
 - Export / import of a JSON backup via the `downloads` capability, always available.
 
-Deployment is `site/` dragged to Netlify Drop — chosen over GitHub Pages because this machine has
-no `gh` CLI, no SSH key and no credential helper, so Pages would have meant Dusan setting up auth.
-**Bump `VERSION` in `site/sw.js` on every deploy** or iPads keep serving the cached old shell.
+Deployment is **GitHub Pages from the root of `main`** — live at
+<https://coachdusan.github.io/practise-organiser/>. Push is the deploy; there is no separate step.
+**Bump `VERSION` in `sw.js` on every deploy** or iPads keep serving the cached old shell.
+
+The app files sit at the **repo root**, not in a `site/` subfolder (2026-08-22). Pages only offers
+the root or `/docs` as a publish source, and with the app one level down the short, memorable URL
+served the README through Jekyll instead of the app. Moving the files up made the link Dusan
+already had be the app, with no GitHub settings for him to touch. `.nojekyll` at the root stops
+Pages treating the app as a blog. Every path inside the app is relative, so nothing broke — and
+Safari scopes IndexedDB per *origin*, so the drills saved under the old `/site/` address were
+still there at the new one.
 
 Measured: ~590 KB for 20 drills x 2 diagrams. IndexedDB has room for far more than the stated ~20.
 
