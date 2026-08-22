@@ -131,7 +131,7 @@ function makeDom() {
     byId[id] = Node("div");
   });
   // the two nav buttons the chrome iterates over
-  ["library", "practices", "schedule"].forEach(function (v) {
+  ["library", "practices", "schedule", "roster"].forEach(function (v) {
     var b = Node("button");
     b.setAttribute("data-view", v);
     byId.tabs.appendChild(b);
@@ -183,6 +183,10 @@ function appSource() {
     "           dayItems: dayItems, startOfWeek: startOfWeek, addDays: addDays,\n" +
     "           addMonths: addMonths, gameResult: gameResult,\n" +
     "           openDayMenu: openDayMenu, openEventEditor: openEventEditor,\n" +
+    "           newPlayer: newPlayer, touchPlayer: touchPlayer, findPlayer: findPlayer,\n" +
+    "           removePlayer: removePlayer, newAssessment: newAssessment,\n" +
+    "           attendanceFor: attendanceFor, attendanceTaken: attendanceTaken,\n" +
+    "           latestAssessment: latestAssessment, AREAS: AREAS,\n" +
     "           practiceMinutes: practiceMinutes, prettyDate: prettyDate,\n" +
     "           openDrillPicker: openDrillPicker, route: route,\n" +
     "           applyImport: applyImport };\n";
@@ -206,9 +210,18 @@ function launch(backing, storage) {
   globalThis.print_ = function () {};
   globalThis.addEventListener = function () {};
   globalThis.claude = undefined;
+  globalThis.Option = fakeOption;
   globalThis.__po = null;
   eval(SRC);
   return globalThis.__po.boot.then(function () { return globalThis.__po; });
+}
+
+// <select> is built with the browser's Option constructor; stand one in.
+function fakeOption(text, value) {
+  var n = document.createElement("option");
+  n.textContent = text;
+  n.value = value === undefined ? text : value;
+  return n;
 }
 
 /* ================================ the run ================================ */
@@ -243,9 +256,10 @@ print("\n1. a version 1 library survives the upgrade to version 2");
 launch(backing, lsStore).then(function (po) {
   eq("storage is IndexedDB", po.Store.kind, "idb");
   eq("both drills came back", po.state.drills.length, 2);
-  eq("database is now at version 3", backing.version, 3);
+  eq("database is now at version 4", backing.version, 4);
   ok("the practices store was created", backing.stores.indexOf("practices") >= 0);
   ok("the events store was created", backing.stores.indexOf("events") >= 0);
+  ok("the players store was created", backing.stores.indexOf("players") >= 0);
   var shell = po.findDrill("d-shell");
   ok("the drill kept its name", shell && shell.name === "Shell defence");
   ok("its ink was unpacked into points",
@@ -338,7 +352,7 @@ launch(backing, lsStore).then(function (po) {
 
   print("\n7. the screens render");
   var errors = [];
-  ["library", "practices", "schedule"].forEach(function (v) {
+  ["library", "practices", "schedule", "roster"].forEach(function (v) {
     try { po.go(v); } catch (e) { errors.push(v + ": " + e); }
   });
   try { po.go("practice", practiceId); } catch (e) { errors.push("practice editor: " + e); }
@@ -414,7 +428,105 @@ launch(backing, lsStore).then(function (po) {
   var older = po.deserialize(JSON.stringify({ version: 2, drills: [], practices: [] }));
   eq("a backup written before the schedule existed still imports", older.events.length, 0);
 
-  print("\n9. the drills imported from drill-management");
+  print("\n9. the roster");
+  var pl = po.newPlayer();
+  pl.name = "Nikola"; pl.number = "7"; pl.position = "1 · Point guard";
+  pl.birthYear = 2008; pl.heightCm = 188;
+  po.state.players.push(pl);
+
+  var other = po.newPlayer();
+  other.name = "Stefan"; other.number = "12";
+  po.state.players.push(other);
+
+  var sep = po.newAssessment();
+  sep.date = "2026-09-01";
+  sep.physical = 5; sep.tactical = 4; sep.technical = 6; sep.psychological = 5;
+  var dec = po.newAssessment();
+  dec.date = "2026-12-01";
+  dec.physical = 7; dec.tactical = 6; dec.technical = 6; dec.psychological = null;
+  pl.assessments.push(dec);
+  pl.assessments.push(sep);
+  pl.assessments.sort(function (a, b) { return String(a.date).localeCompare(String(b.date)); });
+  po.touchPlayer(pl);
+  po.touchPlayer(other);
+
+  eq("assessments are held in date order", po.latestAssessment(pl).date, "2026-12-01");
+  ok("a rating that was never given stays null, not zero",
+     po.latestAssessment(pl).psychological === null);
+
+  // attendance: three completed practices, one with no register taken
+  var done1 = po.state.practices[0];
+  var done2 = po.state.practices[1];
+  [done1, done2].forEach(function (pr) { pr.status = "done"; });
+  done1.attendance[pl.id] = "in";
+  done1.attendance[other.id] = "out";
+  done2.attendance[pl.id] = "part";
+  po.touchPractice(done1);
+  po.touchPractice(done2);
+
+  var noRegister = po.state.practices[2];
+  noRegister.status = "done";
+  po.touchPractice(noRegister);
+
+  ok("a practice with no marks counts as no register", !po.attendanceTaken(noRegister));
+
+  var a1 = po.attendanceFor(pl.id);
+  eq("only sessions with a register count", a1.sessions, 2);
+  eq("in is worth a full session and partial is worth half", a1.credit, 1.5);
+  eq("which reads as a percentage", a1.pct, 75);
+
+  var a2 = po.attendanceFor(other.id);
+  eq("being marked out counts as a session attended none of", a2.credit, 0);
+  eq("and it is only the one he was marked on", a2.sessions, 1);
+  eq("an unmarked player is not counted absent", a2.missed, 1);
+
+  var never = po.newPlayer();
+  po.state.players.push(never);
+  po.touchPlayer(never);
+  eq("a player never marked has no percentage at all", po.attendanceFor(never.id).pct, null);
+
+  // a planned practice must not reach anyone's attendance
+  var planned2 = po.newPractice();
+  planned2.date = "2026-09-20";
+  planned2.attendance[pl.id] = "in";
+  po.state.practices.push(planned2);
+  po.touchPractice(planned2);
+  eq("a planned practice is not counted", po.attendanceFor(pl.id).sessions, 2);
+
+  var drew2 = [];
+  try { po.go("roster"); } catch (e) { drew2.push("roster: " + e); }
+  try { po.go("player", pl.id); } catch (e) { drew2.push("player with a chart: " + e); }
+  try { po.go("player", other.id); } catch (e) { drew2.push("player with no assessments: " + e); }
+  var one = po.newPlayer();
+  one.name = "Luka";
+  var only = po.newAssessment();
+  only.physical = 6; only.tactical = 5; only.technical = 7; only.psychological = 6;
+  one.assessments.push(only);
+  po.state.players.push(one);
+  po.touchPlayer(one);
+  try { po.go("player", one.id); } catch (e) { drew2.push("player with one assessment: " + e); }
+  try { po.go("practice", practiceId); } catch (e) { drew2.push("practice with a register: " + e); }
+  ok("every roster screen built without throwing", drew2.length === 0, drew2.join(" | "));
+
+  po.flush();
+  return Promise.resolve().then(function () { return launch(backing, lsStore); });
+})
+.then(function (po) {
+  eq("the players came back after a restart", po.state.players.length, 4);
+  var nikola = null;
+  po.state.players.forEach(function (x) { if (x.name === "Nikola") nikola = x; });
+  ok("with their details", nikola && nikola.number === "7" && nikola.heightCm === 188);
+  eq("and both assessments", nikola.assessments.length, 2);
+  eq("in date order", nikola.assessments[0].date, "2026-09-01");
+  eq("the attendance survived", po.attendanceFor(nikola.id).pct, 75);
+
+  var json = po.serialize(po.state);
+  var round = po.deserialize(json);
+  eq("players survive export and import", round.players.length, 4);
+  var older = po.deserialize(JSON.stringify({ version: 3, drills: [], practices: [], events: [] }));
+  eq("a backup written before the roster existed still imports", older.players.length, 0);
+
+  print("\n10. the drills imported from drill-management");
   var raw = null;
   try { raw = readFile("private/drills-import.json"); } catch (e) { raw = null; }
   if (!raw) {
@@ -454,7 +566,7 @@ launch(backing, lsStore).then(function (po) {
     po.flush();
   }
 
-  print("\n10. the smaller store, for a browser that refuses IndexedDB");
+  print("\n11. the smaller store, for a browser that refuses IndexedDB");
   var fresh = { version: 0, stores: [], data: {} };
   var lsOnly = lsStore;
   globalThis.__forceLocal = true;
@@ -500,6 +612,7 @@ function launchLocal(_ignored, storage) {
   globalThis.scrollTo = function () {};
   globalThis.addEventListener = function () {};
   globalThis.claude = undefined;
+  globalThis.Option = fakeOption;
   globalThis.__po = null;
   eval(SRC);
   return globalThis.__po.boot.then(function () { return globalThis.__po; });

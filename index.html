@@ -306,6 +306,102 @@
   }
   .hint b { color: var(--text); }
 
+  /* ---------- roster ---------- */
+  .prow.player { grid-template-columns: 62px 1fr; }
+  .prow.inactive { opacity: .55; }
+  .shirt {
+    font-family: "Barlow Condensed", sans-serif; font-size: 26px; font-weight: 700;
+    line-height: 1; font-variant-numeric: tabular-nums; color: var(--accent);
+    width: 52px; height: 52px; border-radius: 50%;
+    border: 2px solid var(--line); display: grid; place-items: center;
+  }
+  .shirt.small { width: 34px; height: 34px; font-size: 16px; border-width: 1px; }
+
+  .mini-areas { display: flex; gap: 12px; flex-wrap: wrap; margin: 3px 0 1px; }
+  .ma { display: flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--dim); }
+  .ma-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: none; }
+  .ma-label { color: var(--dim); }
+  .ma-val { color: var(--text); font-variant-numeric: tabular-nums; font-weight: 600; }
+
+  .att-summary {
+    display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 12px 14px; margin: 18px 0 4px;
+  }
+  .att-big {
+    font-family: "Barlow Condensed", sans-serif; font-size: 30px; font-weight: 700;
+    line-height: 1; font-variant-numeric: tabular-nums;
+  }
+  .att-detail { font-size: 12.5px; color: var(--dim); line-height: 1.5; }
+
+  .assess { margin-top: 26px; }
+  .assess-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+  .assess-head .chip { padding: 6px 12px; font-size: 13px; }
+
+  .arow {
+    display: grid; grid-template-columns: 138px 1fr 150px 38px; gap: 10px;
+    align-items: center; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 10px; padding: 9px 11px; margin-bottom: 7px;
+  }
+  .adate { padding: 7px 9px; }
+  .agrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .afield { display: grid; gap: 3px; min-width: 0; }
+  .alab {
+    display: flex; align-items: center; gap: 4px; font-size: 10px; color: var(--dim);
+    white-space: nowrap; overflow: hidden;
+  }
+  .afield input { text-align: center; padding: 6px 4px; font-variant-numeric: tabular-nums; }
+  .anote { padding: 7px 9px; font-size: 13px; }
+
+  /* ---------- chart ---------- */
+  .chart-box {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 12px 14px 10px; margin-bottom: 14px;
+  }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 6px; }
+  .leg { display: flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--dim); }
+  .chart-holder { width: 100%; overflow-x: auto; }
+  .chart { width: 100%; height: auto; display: block; min-width: 380px; }
+  .chart .grid { stroke: var(--line); stroke-width: 1; }
+  .chart .ax { fill: var(--dim); font-size: 11px; font-family: "IBM Plex Sans", sans-serif; }
+  .chart .ser {
+    fill: var(--text); font-size: 11.5px; font-family: "Barlow Condensed", sans-serif;
+    text-transform: uppercase; letter-spacing: .05em;
+  }
+  .chart-cap { font-size: 11.5px; color: var(--dim); line-height: 1.5; margin-top: 8px; }
+
+  .bars {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 14px; margin-bottom: 14px; display: grid; gap: 10px;
+  }
+  .bar-row { display: grid; grid-template-columns: 128px 1fr 78px; gap: 10px; align-items: center; }
+  .bar-lab { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--dim); }
+  .bar-track { height: 10px; background: var(--ground); border-radius: 99px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 99px; }
+  .bar-val { font-size: 11.5px; color: var(--dim); text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* ---------- attendance on a practice ---------- */
+  .attend { margin-top: 26px; }
+  .att-row {
+    display: grid; grid-template-columns: 34px 1fr auto; gap: 11px; align-items: center;
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 10px; padding: 7px 11px; margin-bottom: 6px;
+  }
+  .att-name {
+    font-family: "Barlow Condensed", sans-serif; font-size: 17px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .03em; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+
+  @media (max-width: 720px) {
+    .arow { grid-template-columns: 1fr 38px; row-gap: 8px; }
+    .arow .agrid { grid-column: 1 / -1; }
+    .arow .anote { grid-column: 1 / -1; }
+    .att-row { grid-template-columns: 30px 1fr; row-gap: 7px; }
+    .att-row .pips { grid-column: 1 / -1; }
+    .bar-row { grid-template-columns: 108px 1fr 62px; }
+  }
+
   /* ---------- schedule ---------- */
   .cal-nav { display: flex; align-items: center; gap: 8px; margin: 16px 0 14px; flex-wrap: wrap; }
   .cal-nav .chip { padding: 7px 13px; }
@@ -494,6 +590,11 @@
     textarea { min-height: 0; height: auto; }
     .pbadge { border-color: #999; color: #000; background: #fff; }
     .day, .mg-cell, .chip-item, .mg-item { background: #fff; border-color: #bbb; break-inside: avoid; }
+    .chart-box, .bars, .att-summary, .arow, .att-row { background: #fff; border-color: #bbb; break-inside: avoid; }
+    .chart .ax, .chart-cap, .leg, .att-detail, .ma-label { fill: #555; color: #555; }
+    .chart .ser { fill: #000; }
+    .chart .grid { stroke: #ddd; }
+    .shirt { color: #000; border-color: #999; }
     .ci-sub, .dempty, .mg-num, .dday { color: #555; }
     .cal-nav { margin-top: 0; }
   }
@@ -506,6 +607,7 @@
     <button class="chip" data-view="schedule">Schedule</button>
     <button class="chip" data-view="practices">Practices</button>
     <button class="chip" data-view="library">Drills</button>
+    <button class="chip" data-view="roster">Roster</button>
   </div>
   <div id="crumb" class="label" style="font-size:12px;color:var(--dim)"></div>
   <div class="spacer"></div>
@@ -590,7 +692,7 @@
   var FORMATS = ["Individual", "Pairs", "3v3", "4v4", "5v5", "5:0", "Whole team"];
   var SIZES = { S: 300, M: 460, L: 660 };   // css px, the court's drawn width
 
-  var state = { version: 3, drills: [], practices: [], events: [] };
+  var state = { version: 4, drills: [], practices: [], events: [], players: [] };
   var PREVIEW = !!(window.claude);   // running inside the claude.ai preview sandbox
 
   /* ================= storage =================
@@ -603,19 +705,21 @@
   var LS_KEY = "practise-organiser/v1";
 
   /* One object store per kind of record. Practices arrived at DB version 2 and
-     schedule events at version 3; each upgrade only creates what is missing, so
-     data written under an older version is carried across untouched. */
+     schedule events at version 3 and players at version 4; each upgrade only
+     creates what is missing, so data written under an older version is carried
+     across untouched. */
   var DB = (function () {
     var opening = null;
     function open() {
       if (opening) return opening;
       opening = new Promise(function (resolve, reject) {
-        var req = indexedDB.open("practise-organiser", 3);
+        var req = indexedDB.open("practise-organiser", 4);
         req.onupgradeneeded = function () {
           var db = req.result;
           if (!db.objectStoreNames.contains("drills")) db.createObjectStore("drills", { keyPath: "id" });
           if (!db.objectStoreNames.contains("practices")) db.createObjectStore("practices", { keyPath: "id" });
           if (!db.objectStoreNames.contains("events")) db.createObjectStore("events", { keyPath: "id" });
+          if (!db.objectStoreNames.contains("players")) db.createObjectStore("players", { keyPath: "id" });
         };
         req.onsuccess = function () { resolve(req.result); };
         req.onerror = function () { reject(req.error); };
@@ -646,10 +750,12 @@
     return Promise.resolve()
       .then(function () {
         if (!window.indexedDB) throw new Error("no idb");
-        return Promise.all([DB.all("drills"), DB.all("practices"), DB.all("events")])
+        return Promise.all([DB.all("drills"), DB.all("practices"),
+                            DB.all("events"), DB.all("players")])
           .then(function (r) {
             Store.kind = "idb";
-            return { drills: r[0] || [], practices: r[1] || [], events: r[2] || [] };
+            return { drills: r[0] || [], practices: r[1] || [],
+                     events: r[2] || [], players: r[3] || [] };
           });
       })
       .catch(function () {
@@ -663,10 +769,11 @@
           var saved = raw ? JSON.parse(raw) : null;
           return { drills: (saved && saved.drills) || [],
                    practices: (saved && saved.practices) || [],
-                   events: (saved && saved.events) || [] };
+                   events: (saved && saved.events) || [],
+                   players: (saved && saved.players) || [] };
         } catch (e) {
           Store.kind = "memory";
-          return { drills: [], practices: [], events: [] };
+          return { drills: [], practices: [], events: [], players: [] };
         }
       })
       .then(function (rows) {
@@ -674,6 +781,7 @@
           .sort(function (a, b) { return (b.updatedAt || 0) - (a.updatedAt || 0); });
         state.practices = rows.practices.map(inflatePractice).sort(byDateDesc);
         state.events = rows.events.map(inflateEvent).sort(byDateDesc);
+        state.players = rows.players.map(inflatePlayer).sort(bySquadNumber);
         // Ask Safari not to evict this data when space runs low.
         if (navigator.storage && navigator.storage.persist) {
           navigator.storage.persist().catch(function () {});
@@ -685,9 +793,10 @@
     if (Store.kind === "local") {
       try {
         localStorage.setItem(LS_KEY, JSON.stringify({
-          version: 3, drills: state.drills.map(deflateDrill),
+          version: 4, drills: state.drills.map(deflateDrill),
           practices: state.practices.map(deflatePractice),
-          events: state.events.map(deflateEvent)
+          events: state.events.map(deflateEvent),
+          players: state.players.map(deflatePlayer)
         }));
         return Promise.resolve();
       } catch (e) { return Promise.reject(e); }
@@ -717,6 +826,12 @@
     schedule();
   }
 
+  function touchPlayer(pl) {
+    pl.updatedAt = Date.now();
+    dirty[pl.id] = "players";
+    schedule();
+  }
+
   function schedule() {
     clearTimeout(saveTimer);
     saveTimer = setTimeout(flush, 400);
@@ -738,6 +853,10 @@
         if (queued[id] === "events") {
           var ev = findEvent(id);
           return ev ? DB.put("events", deflateEvent(ev)) : DB.del("events", id);
+        }
+        if (queued[id] === "players") {
+          var pl = findPlayer(id);
+          return pl ? DB.put("players", deflatePlayer(pl)) : DB.del("players", id);
         }
         var d = findDrill(id);
         return d ? DB.put("drills", deflateDrill(d)) : DB.del("drills", id);
@@ -768,6 +887,12 @@
     state.events = state.events.filter(function (e) { return e.id !== id; });
     if (Store.kind === "idb") DB.del("events", id).then(flashSaved).catch(function () {});
     else { dirty[id] = "events"; schedule(); }
+  }
+
+  function removePlayer(id) {
+    state.players = state.players.filter(function (p) { return p.id !== id; });
+    if (Store.kind === "idb") DB.del("players", id).then(flashSaved).catch(function () {});
+    else { dirty[id] = "players"; schedule(); }
   }
 
   var chipEl = document.getElementById("saveChip");
@@ -809,7 +934,8 @@
 
   function newPractice() {
     return {
-      id: uid(), date: todayISO(), time: "", status: "planned", items: [], note: "",
+      id: uid(), date: todayISO(), time: "", status: "planned", items: [],
+      attendance: {}, note: "",
       createdAt: Date.now(), updatedAt: Date.now()
     };
   }
@@ -833,6 +959,7 @@
   function inflatePractice(p) {
     if (!Array.isArray(p.items)) p.items = [];
     if (p.status !== "done") p.status = "planned";
+    if (!p.attendance || typeof p.attendance !== "object") p.attendance = {};
     p.items.forEach(function (it) { it.minutes = Number(it.minutes) || 0; });
     return p;
   }
@@ -869,6 +996,111 @@
       });
     });
     return m;
+  }
+
+  /* ================= roster =================
+     A player is a record that outlives a season, so the profile is split in two:
+     the facts that rarely change (name, number, position) and a list of dated
+     **assessments**. An assessment is a snapshot, never an edit-in-place — Dusan's
+     call, and the only version that can answer "is he better than in September".
+
+     Ratings run 1-10, the same scale as drill intensity, so there is one number
+     scale in the app rather than two. `null` means not rated, which is different
+     from a low rating and is drawn as a gap, never as a zero. */
+
+  var AREAS = [
+    { id: "physical",      label: "Physical",      hue: "#3987e5" },
+    { id: "tactical",      label: "Tactical",      hue: "#d95926" },
+    { id: "technical",     label: "Technical",     hue: "#199e70" },
+    { id: "psychological", label: "Psychological", hue: "#c98500" }
+  ];
+
+  var POSITIONS = ["1 · Point guard", "2 · Shooting guard", "3 · Small forward",
+                   "4 · Power forward", "5 · Centre"];
+
+  function newPlayer() {
+    return {
+      id: uid(), name: "", number: "", position: "", birthYear: null,
+      heightCm: null, note: "", assessments: [], active: true,
+      createdAt: Date.now(), updatedAt: Date.now()
+    };
+  }
+
+  function newAssessment() {
+    var a = { id: uid(), date: todayISO(), note: "" };
+    AREAS.forEach(function (x) { a[x.id] = null; });
+    return a;
+  }
+
+  function findPlayer(id) {
+    for (var i = 0; i < state.players.length; i++) if (state.players[i].id === id) return state.players[i];
+    return null;
+  }
+
+  function deflatePlayer(p) { return p; }
+
+  function inflatePlayer(p) {
+    if (!Array.isArray(p.assessments)) p.assessments = [];
+    p.assessments.forEach(function (a) {
+      AREAS.forEach(function (x) { a[x.id] = numOrNull(a[x.id]); });
+    });
+    p.assessments.sort(function (a, b) { return String(a.date).localeCompare(String(b.date)); });
+    p.birthYear = numOrNull(p.birthYear);
+    p.heightCm = numOrNull(p.heightCm);
+    if (p.active !== false) p.active = true;
+    return p;
+  }
+
+  // Squad order: numbered players first in numeric order, then the rest by name.
+  function bySquadNumber(a, b) {
+    var na = parseInt(a.number, 10), nb = parseInt(b.number, 10);
+    var ha = !isNaN(na), hb = !isNaN(nb);
+    if (ha && hb && na !== nb) return na - nb;
+    if (ha !== hb) return ha ? -1 : 1;
+    return String(a.name || "").localeCompare(String(b.name || ""));
+  }
+
+  function latestAssessment(p) {
+    return p.assessments.length ? p.assessments[p.assessments.length - 1] : null;
+  }
+
+  /* ---------- attendance ----------
+     Three states, matching the scale the other app already used: in (1),
+     partial (0.5), out (0). A player with no mark is **not recorded** — which is
+     not the same as absent, and is never counted as one. A practice nobody was
+     marked on simply does not appear in anyone's attendance. */
+
+  var ATTEND = [
+    { id: "in",   label: "In",      weight: 1 },
+    { id: "part", label: "Partial", weight: 0.5 },
+    { id: "out",  label: "Out",     weight: 0 }
+  ];
+
+  function attendWeight(mark) {
+    for (var i = 0; i < ATTEND.length; i++) if (ATTEND[i].id === mark) return ATTEND[i].weight;
+    return null;
+  }
+
+  function attendanceTaken(p) {
+    for (var k in p.attendance) if (p.attendance[k]) return true;
+    return false;
+  }
+
+  /* Attendance over completed practices where a register was actually taken. */
+  function attendanceFor(playerId) {
+    var sessions = 0, credit = 0, missed = 0;
+    state.practices.forEach(function (p) {
+      if (p.status !== "done" || !attendanceTaken(p)) return;
+      var w = attendWeight(p.attendance[playerId]);
+      if (w === null) return;
+      sessions++;
+      credit += w;
+      if (w === 0) missed++;
+    });
+    return {
+      sessions: sessions, credit: credit, missed: missed,
+      pct: sessions ? Math.round((credit / sessions) * 100) : null
+    };
   }
 
   /* ================= schedule events =================
@@ -1134,10 +1366,11 @@
 
   function serialize(st) {
     return JSON.stringify({
-      version: 3, updatedAt: st.updatedAt,
+      version: 4, updatedAt: st.updatedAt,
       drills: st.drills.map(deflateDrill),
       practices: st.practices.map(deflatePractice),
-      events: st.events.map(deflateEvent)
+      events: st.events.map(deflateEvent),
+      players: st.players.map(deflatePlayer)
     });
   }
 
@@ -1151,6 +1384,8 @@
     st.practices.sort(byDateDesc);
     st.events = Array.isArray(st.events) ? st.events.map(inflateEvent) : [];
     st.events.sort(byDateDesc);
+    st.players = Array.isArray(st.players) ? st.players.map(inflatePlayer) : [];
+    st.players.sort(bySquadNumber);
     return st;
   }
 
@@ -1391,7 +1626,7 @@
   // takes over as the way back, so both are never on screen at once.
   function setChrome() {
     var onList = route.view === "library" || route.view === "practices" ||
-                 route.view === "schedule";
+                 route.view === "schedule" || route.view === "roster";
     tabsEl.style.display = onList ? "" : "none";
     Array.prototype.forEach.call(tabsEl.children, function (b) {
       b.setAttribute("aria-pressed", String(b.getAttribute("data-view") === route.view));
@@ -1419,6 +1654,8 @@
     else if (route.view === "schedule") renderSchedule();
     else if (route.view === "practices") renderPractices();
     else if (route.view === "practice") renderPracticeEditor();
+    else if (route.view === "roster") renderRoster();
+    else if (route.view === "player") renderPlayer();
     else renderLibrary();
     relayout();
   }
@@ -1533,6 +1770,501 @@
       wrap.appendChild(e);
     }
     app.appendChild(wrap);
+  }
+
+  /* ---------- roster ---------- */
+
+  function renderRoster() {
+    var wrap = el("div", "wrap");
+
+    var banner = storageBanner();
+    if (banner) wrap.appendChild(banner);
+
+    var head = el("div", "lib-head");
+    head.appendChild(el("h1", null, "Roster"));
+    var active = state.players.filter(function (p) { return p.active; });
+    head.appendChild(el("span", "count",
+      active.length ? active.length + (active.length === 1 ? " player" : " players") : ""));
+    var gap = el("div"); gap.style.marginLeft = "auto";
+    head.appendChild(gap);
+    var add = el("button", "chip primary", "+  New player");
+    add.onclick = function () {
+      var p = newPlayer();
+      state.players.push(p);
+      touchPlayer(p);
+      go("player", p.id);
+    };
+    head.appendChild(add);
+    wrap.appendChild(head);
+
+    var list = state.players.slice().sort(bySquadNumber);
+
+    list.forEach(function (p) {
+      wrap.appendChild(playerRow(p));
+    });
+
+    if (!state.players.length) {
+      var e = el("div", "empty");
+      e.innerHTML = "No players yet.<br>Add the squad, then take the register after a practice.";
+      wrap.appendChild(e);
+    }
+
+    app.appendChild(wrap);
+  }
+
+  function playerRow(p) {
+    var row = el("button", "prow player" + (p.active ? "" : " inactive"));
+
+    var left = el("div", "pwhen");
+    left.appendChild(el("div", "shirt", p.number === "" || p.number === null ? "–" : String(p.number)));
+    row.appendChild(left);
+
+    var right = el("div", "pwhat");
+    var nameLine = el("div", "pdate", p.name || "Unnamed");
+    right.appendChild(nameLine);
+
+    var sub = [];
+    if (p.position) sub.push(p.position);
+    if (p.birthYear) sub.push(String(p.birthYear));
+    if (p.heightCm) sub.push(p.heightCm + " cm");
+    if (!p.active) sub.push("not in the squad");
+    if (sub.length) right.appendChild(el("div", "psub", sub.join(" · ")));
+
+    var a = latestAssessment(p);
+    if (a) {
+      var bars = el("div", "mini-areas");
+      AREAS.forEach(function (x) {
+        var cell = el("div", "ma");
+        var dot = el("span", "ma-dot");
+        dot.style.background = x.hue;
+        cell.appendChild(dot);
+        cell.appendChild(el("span", "ma-label", x.label));
+        cell.appendChild(el("span", "ma-val", a[x.id] === null ? "–" : String(a[x.id])));
+        bars.appendChild(cell);
+      });
+      right.appendChild(bars);
+      right.appendChild(el("div", "psub", "assessed " + prettyDate(a.date) +
+        (p.assessments.length > 1 ? "  ·  " + p.assessments.length + " assessments" : "")));
+    } else {
+      right.appendChild(el("div", "pnames dim", "Not assessed yet"));
+    }
+
+    var att = attendanceFor(p.id);
+    if (att.sessions) {
+      right.appendChild(el("div", "psub",
+        att.pct + "% attendance over " + att.sessions +
+        (att.sessions === 1 ? " session" : " sessions")));
+    }
+
+    row.appendChild(right);
+    row.onclick = function () { go("player", p.id); };
+    return row;
+  }
+
+  /* ---------- one player ---------- */
+
+  function renderPlayer() {
+    var p = findPlayer(route.id);
+    if (!p) { go("roster"); return; }
+
+    backTo("roster", "Roster");
+
+    var wrap = el("div", "wrap narrow");
+
+    var name = document.createElement("input");
+    name.type = "text"; name.className = "name-input"; name.value = p.name;
+    name.placeholder = "Player name";
+    name.oninput = function () { p.name = name.value; touchPlayer(p); };
+    wrap.appendChild(name);
+
+    var row = el("div", "metarow");
+
+    var numF = el("div", "field");
+    numF.appendChild(el("div", "label", "Number"));
+    var ni = document.createElement("input");
+    ni.type = "number"; ni.min = "0"; ni.max = "99"; ni.value = p.number;
+    ni.oninput = function () { p.number = ni.value; touchPlayer(p); };
+    numF.appendChild(ni);
+    row.appendChild(numF);
+
+    row.appendChild(pickerField("Position", POSITIONS, p.position, function (v) {
+      p.position = v; touchPlayer(p);
+    }));
+
+    var byF = el("div", "field");
+    byF.appendChild(el("div", "label", "Born"));
+    var bi = document.createElement("input");
+    bi.type = "number"; bi.min = "1950"; bi.max = "2030";
+    bi.value = p.birthYear === null ? "" : p.birthYear;
+    bi.oninput = function () { p.birthYear = numOrNull(bi.value); touchPlayer(p); };
+    byF.appendChild(bi);
+    row.appendChild(byF);
+
+    var htF = el("div", "field");
+    htF.appendChild(el("div", "label", "Height (cm)"));
+    var hi = document.createElement("input");
+    hi.type = "number"; hi.min = "100"; hi.max = "260";
+    hi.value = p.heightCm === null ? "" : p.heightCm;
+    hi.oninput = function () { p.heightCm = numOrNull(hi.value); touchPlayer(p); };
+    htF.appendChild(hi);
+    row.appendChild(htF);
+
+    wrap.appendChild(row);
+
+    // attendance, read straight off the practices
+    var att = attendanceFor(p.id);
+    var attBox = el("div", "att-summary");
+    if (att.sessions) {
+      attBox.appendChild(el("div", "att-big", att.pct + "%"));
+      var d = el("div", "att-detail");
+      d.textContent = "attendance over " + att.sessions +
+        (att.sessions === 1 ? " completed session" : " completed sessions") +
+        (att.missed ? "  ·  missed " + att.missed : "");
+      attBox.appendChild(d);
+    } else {
+      attBox.appendChild(el("div", "att-detail",
+        "No attendance recorded yet. Take the register on a practice and it appears here."));
+    }
+    wrap.appendChild(attBox);
+
+    // the four areas over time
+    wrap.appendChild(assessmentSection(p));
+
+    var noteField = el("div", "field");
+    noteField.style.marginTop = "24px";
+    noteField.appendChild(el("div", "label", "Notes"));
+    var ta = document.createElement("textarea");
+    ta.value = p.note || "";
+    ta.placeholder = "Anything that does not fit a number.";
+    ta.oninput = function () { p.note = ta.value; touchPlayer(p); };
+    noteField.appendChild(ta);
+    wrap.appendChild(noteField);
+
+    var foot = el("div", "prac-foot");
+    var buttons = el("div", "foot-row");
+
+    var squad = el("button", "chip ghost", p.active ? "Remove from squad" : "Back in the squad");
+    squad.onclick = function () { p.active = !p.active; touchPlayer(p); render(); };
+    buttons.appendChild(squad);
+
+    var print = el("button", "chip ghost", "Print");
+    print.onclick = function () { window.print(); };
+    buttons.appendChild(print);
+
+    var del = el("button", "chip danger", "Delete player");
+    del.onclick = function () {
+      var seen = 0;
+      state.practices.forEach(function (pr) { if (pr.attendance[p.id]) seen++; });
+      var msg = "Delete " + (p.name || "this player") + "? This cannot be undone.";
+      if (seen) msg += "\n\nTheir attendance on " + seen + " practice" +
+                      (seen === 1 ? "" : "s") + " goes with them.";
+      if (!confirm(msg)) return;
+      state.practices.forEach(function (pr) {
+        if (pr.attendance[p.id]) { delete pr.attendance[p.id]; touchPractice(pr); }
+      });
+      removePlayer(p.id);
+      go("roster");
+    };
+    buttons.appendChild(del);
+
+    foot.appendChild(buttons);
+    wrap.appendChild(foot);
+    app.appendChild(wrap);
+  }
+
+  function assessmentSection(p) {
+    var box = el("div", "assess");
+
+    var head = el("div", "assess-head");
+    head.appendChild(el("div", "label", "Assessments"));
+    var gap = el("div"); gap.style.marginLeft = "auto";
+    head.appendChild(gap);
+    var add = el("button", "chip primary", "+  Assess today");
+    add.onclick = function () {
+      var a = newAssessment();
+      var last = latestAssessment(p);
+      // start from where he was — an assessment is a fresh judgement, but
+      // retyping four unchanged numbers is how assessments stop happening.
+      if (last) AREAS.forEach(function (x) { a[x.id] = last[x.id]; });
+      p.assessments.push(a);
+      p.assessments.sort(function (m, n) { return String(m.date).localeCompare(String(n.date)); });
+      touchPlayer(p);
+      render();
+    };
+    head.appendChild(add);
+    box.appendChild(head);
+
+    if (!p.assessments.length) {
+      box.appendChild(el("div", "empty",
+        "Not assessed yet. Each assessment is a dated snapshot, so the ones you take now are what the progress line is made of."));
+      return box;
+    }
+
+    if (p.assessments.length >= 2) box.appendChild(progressChart(p));
+    else box.appendChild(currentBars(p.assessments[0]));
+
+    p.assessments.slice().reverse().forEach(function (a) {
+      box.appendChild(assessmentRow(p, a));
+    });
+
+    return box;
+  }
+
+  function assessmentRow(p, a) {
+    var row = el("div", "arow");
+
+    var di = document.createElement("input");
+    di.type = "date"; di.value = a.date; di.className = "adate";
+    di.onchange = function () {
+      a.date = di.value;
+      p.assessments.sort(function (m, n) { return String(m.date).localeCompare(String(n.date)); });
+      touchPlayer(p); render();
+    };
+    row.appendChild(di);
+
+    var grid = el("div", "agrid");
+    AREAS.forEach(function (x) {
+      var f = el("div", "afield");
+      var lab = el("div", "alab");
+      var dot = el("span", "ma-dot");
+      dot.style.background = x.hue;
+      lab.appendChild(dot);
+      lab.appendChild(el("span", null, x.label));
+      f.appendChild(lab);
+      var i = document.createElement("input");
+      i.type = "number"; i.min = "1"; i.max = "10";
+      i.value = a[x.id] === null ? "" : a[x.id];
+      i.placeholder = "–";
+      i.oninput = function () {
+        var v = numOrNull(i.value);
+        a[x.id] = v === null ? null : Math.max(1, Math.min(10, v));
+        touchPlayer(p);
+      };
+      i.onblur = function () { render(); };
+      f.appendChild(i);
+      grid.appendChild(f);
+    });
+    row.appendChild(grid);
+
+    var note = document.createElement("input");
+    note.type = "text"; note.value = a.note || ""; note.placeholder = "Note";
+    note.className = "anote";
+    note.oninput = function () { a.note = note.value; touchPlayer(p); };
+    row.appendChild(note);
+
+    var rm = el("button", "mini rm", "×");
+    rm.title = "Delete this assessment";
+    rm.onclick = function () {
+      if (!confirm("Delete the assessment from " + prettyDate(a.date) + "?")) return;
+      p.assessments = p.assessments.filter(function (x) { return x.id !== a.id; });
+      touchPlayer(p); render();
+    };
+    row.appendChild(rm);
+
+    return row;
+  }
+
+  /* One assessment is not a trend. Show it as what it is: four current values. */
+  function currentBars(a) {
+    var box = el("div", "bars");
+    AREAS.forEach(function (x) {
+      var r = el("div", "bar-row");
+      var lab = el("div", "bar-lab");
+      var dot = el("span", "ma-dot");
+      dot.style.background = x.hue;
+      lab.appendChild(dot);
+      lab.appendChild(el("span", null, x.label));
+      r.appendChild(lab);
+      var track = el("div", "bar-track");
+      if (a[x.id] !== null) {
+        var fill = el("div", "bar-fill");
+        fill.style.width = (a[x.id] / 10 * 100) + "%";
+        fill.style.background = x.hue;
+        track.appendChild(fill);
+      }
+      r.appendChild(track);
+      r.appendChild(el("div", "bar-val", a[x.id] === null ? "not rated" : a[x.id] + " / 10"));
+      box.appendChild(r);
+    });
+    var cap = el("div", "chart-cap",
+      "One assessment so far — assess again later and this becomes a progress line.");
+    box.appendChild(cap);
+    return box;
+  }
+
+  /* Four areas over time.
+     Decisions worth keeping:
+     - The y axis is pinned to the full 1-10 scale. Auto-scaling to the data would
+       turn a one-point drift into a cliff, which is exactly the lie a coach would
+       act on.
+     - x is real elapsed time, not one step per assessment, so two ratings a week
+       apart sit a week apart.
+     - A rating that was never given breaks the line instead of interpolating.
+     - The rows below the chart carry every number, so nothing is readable only
+       as a colour. */
+  function progressChart(p) {
+    var W = 620, H = 250;
+    var L = 30, R = 104, T = 12, B = 30;
+    var pw = W - L - R, ph = H - T - B;
+
+    var xs = p.assessments.map(function (a) { return dateFromISO(a.date).getTime(); });
+    var t0 = Math.min.apply(null, xs), t1 = Math.max.apply(null, xs);
+    var span = t1 - t0 || 1;
+
+    function px(t) { return L + ((t - t0) / span) * pw; }
+    function py(v) { return T + (1 - (v - 1) / 9) * ph; }
+
+    var svg = ['<svg viewBox="0 0 ' + W + ' ' + H + '" class="chart" role="img" ' +
+               'aria-label="Assessment ratings over time, 1 to 10">'];
+
+    // recessive grid
+    [1, 4, 7, 10].forEach(function (v) {
+      svg.push('<line x1="' + L + '" y1="' + py(v).toFixed(1) + '" x2="' + (L + pw) +
+               '" y2="' + py(v).toFixed(1) + '" class="grid"/>');
+      svg.push('<text x="' + (L - 7) + '" y="' + (py(v) + 3.5).toFixed(1) +
+               '" class="ax" text-anchor="end">' + v + '</text>');
+    });
+
+    // one date label per assessment, thinned if they would collide
+    var lastX = -999;
+    p.assessments.forEach(function (a, i) {
+      var x = px(xs[i]);
+      if (x - lastX < 54) return;
+      lastX = x;
+      svg.push('<text x="' + x.toFixed(1) + '" y="' + (H - 10) +
+               '" class="ax" text-anchor="middle">' + shortDate(a.date) + '</text>');
+    });
+
+    AREAS.forEach(function (area) {
+      var run = [];
+      var segments = [];
+      p.assessments.forEach(function (a, i) {
+        if (a[area.id] === null) {
+          if (run.length) segments.push(run);
+          run = [];
+          return;
+        }
+        run.push([px(xs[i]), py(a[area.id])]);
+      });
+      if (run.length) segments.push(run);
+
+      segments.forEach(function (seg) {
+        if (seg.length < 2) return;
+        var d = seg.map(function (pt, i) {
+          return (i ? "L" : "M") + pt[0].toFixed(1) + " " + pt[1].toFixed(1);
+        }).join(" ");
+        svg.push('<path d="' + d + '" fill="none" stroke="' + area.hue +
+                 '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>');
+      });
+
+      segments.forEach(function (seg) {
+        seg.forEach(function (pt) {
+          svg.push('<circle cx="' + pt[0].toFixed(1) + '" cy="' + pt[1].toFixed(1) +
+                   '" r="4" fill="' + area.hue + '" stroke="var(--panel)" stroke-width="2"/>');
+        });
+      });
+
+      // direct label at the last point it has a value for
+      var lastSeg = segments.length ? segments[segments.length - 1] : null;
+      if (lastSeg && lastSeg.length) {
+        var end = lastSeg[lastSeg.length - 1];
+        svg.push('<circle cx="' + (L + pw + 12) + '" cy="' + end[1].toFixed(1) +
+                 '" r="3.5" fill="' + area.hue + '"/>');
+        svg.push('<text x="' + (L + pw + 21) + '" y="' + (end[1] + 3.5).toFixed(1) +
+                 '" class="ser">' + area.label + '</text>');
+      }
+    });
+
+    svg.push('</svg>');
+
+    var box = el("div", "chart-box");
+    var legend = el("div", "legend");
+    AREAS.forEach(function (x) {
+      var item = el("div", "leg");
+      var dot = el("span", "ma-dot");
+      dot.style.background = x.hue;
+      item.appendChild(dot);
+      item.appendChild(el("span", null, x.label));
+      legend.appendChild(item);
+    });
+    box.appendChild(legend);
+    var holder = el("div", "chart-holder");
+    holder.innerHTML = svg.join("");
+    box.appendChild(holder);
+    box.appendChild(el("div", "chart-cap",
+      "Rated 1-10. The scale is fixed, so a small change looks small. " +
+      "Every number is in the rows below."));
+    return box;
+  }
+
+  /* ---------- attendance, on a practice ---------- */
+
+  function attendanceBlock(p) {
+    var box = el("div", "attend");
+
+    var head = el("div", "assess-head");
+    head.appendChild(el("div", "label", "Attendance"));
+    var gap = el("div"); gap.style.marginLeft = "auto";
+    head.appendChild(gap);
+
+    var squad = state.players.filter(function (x) { return x.active; }).sort(bySquadNumber);
+
+    if (squad.length) {
+      var allIn = el("button", "chip ghost", "Everyone in");
+      allIn.onclick = function () {
+        squad.forEach(function (x) { p.attendance[x.id] = "in"; });
+        touchPractice(p); render();
+      };
+      head.appendChild(allIn);
+
+      var clear = el("button", "chip ghost", "Clear");
+      clear.onclick = function () {
+        squad.forEach(function (x) { delete p.attendance[x.id]; });
+        touchPractice(p); render();
+      };
+      head.appendChild(clear);
+    }
+    box.appendChild(head);
+
+    if (!squad.length) {
+      box.appendChild(el("div", "empty", "No players in the squad yet."));
+      return box;
+    }
+
+    squad.forEach(function (pl) {
+      var row = el("div", "att-row");
+      row.appendChild(el("div", "shirt small",
+        pl.number === "" || pl.number === null ? "–" : String(pl.number)));
+      row.appendChild(el("div", "att-name", pl.name || "Unnamed"));
+
+      var pips = el("div", "pips");
+      ATTEND.forEach(function (a) {
+        var b = el("button", null, a.label);
+        b.style.width = "auto";
+        b.style.padding = "0 11px";
+        b.setAttribute("aria-pressed", String(p.attendance[pl.id] === a.id));
+        b.onclick = function () {
+          if (p.attendance[pl.id] === a.id) delete p.attendance[pl.id];
+          else p.attendance[pl.id] = a.id;
+          touchPractice(p);
+          Array.prototype.forEach.call(pips.children, function (c, k) {
+            c.setAttribute("aria-pressed", String(p.attendance[pl.id] === ATTEND[k].id));
+          });
+        };
+        pips.appendChild(b);
+      });
+      row.appendChild(pips);
+      box.appendChild(row);
+    });
+
+    var taken = attendanceTaken(p);
+    var note = el("div", "chart-cap");
+    note.textContent = taken
+      ? "Anyone left unmarked is not counted at all — not counted as absent."
+      : "No register taken for this practice, so it counts towards nobody's attendance.";
+    box.appendChild(note);
+
+    return box;
   }
 
   /* ---------- schedule ----------
@@ -2041,6 +2773,8 @@
     var addBtn = el("button", "add-row", "+  Add drill from library");
     addBtn.onclick = function () { openDrillPicker(p); };
     wrap.appendChild(addBtn);
+
+    wrap.appendChild(attendanceBlock(p));
 
     var noteField = el("div", "field");
     noteField.style.marginTop = "24px";

@@ -333,6 +333,69 @@ The tabs are now **Schedule · Practices · Drills**, and the app **opens on the
 than the drill library. A season diary's front page is what is happening, not the reference
 book. Both are one line to change back if he prefers.
 
+## Stage 4: roster and attendance (2026-08-22)
+
+Chosen over session load for one reason, stated to Dusan before he chose: **load can wait
+at no cost, attendance cannot.** Load is computed from intensity and minutes, both already
+stored, so building it in November would still cover every practice back to today. Who was
+in the gym is only knowable on the night.
+
+### Assessments are dated snapshots, not a rating you overwrite — Dusan's call
+
+A player holds facts that rarely change (name, number, position, born, height) and a list
+of **assessments**, each with a date and a 1-10 rating for physical, tactical, technical and
+psychological. Rating in place would have meant every update erased what he thought before,
+leaving a present state and no progress. He took the snapshot version.
+
+`null` means *not rated*, which is not a low rating. It is drawn as a gap in the line and
+never as a zero.
+
+Ratings are 1-10 — the same scale as drill intensity, so the app has one number scale rather
+than two.
+
+### Attendance is per practice, three states — Dusan's call
+
+`in` (1), `part` (0.5), `out` (0), matching the participation scale `drill-management`
+already used, but taken once per session rather than per drill. Offered per-drill accuracy;
+he took per-practice, on the same reasoning that made practice logging taps-only: attendance
+that does not get recorded is worth nothing.
+
+**The honesty rule, and it matters more than the arithmetic:** a player with no mark is *not
+recorded*, which is not the same as absent. They are excluded from the calculation entirely.
+A practice where nobody was marked counts towards nobody's attendance, and a **planned**
+practice never counts at all. The screen says both of these in as many words.
+
+### The progress chart
+
+Four series over time. Built against the `dataviz` skill's procedure rather than by eye:
+
+- Palette is the reference categorical theme's dark steps, slots 1-4
+  (`#3987e5 #d95926 #199e70 #c98500`), **validated by running the skill's checker** against
+  this app's own panel surface `#24221D` under JavaScriptCore, since there is no node here.
+  All five computable checks pass: lightness band, chroma floor, CVD separation
+  (worst adjacent ΔE 8.4), normal-vision floor (19.8), contrast (all ≥ 3:1).
+- **The y axis is pinned to the full 1-10 scale.** Auto-scaling to the data would turn a
+  one-point drift into a cliff — exactly the lie a coach would act on.
+- **x is real elapsed time**, not one step per assessment, so two ratings a week apart sit a
+  week apart and three months of nothing looks like three months of nothing.
+- A null rating **breaks the line** rather than interpolating through it.
+- Series names are direct-labelled at the line ends in text ink with a coloured dot beside
+  them, never in the series colour; a legend is present as well.
+- The assessment rows below the chart carry every number, so nothing is readable only as a
+  colour — that is the table view.
+- **One assessment is not a trend.** With a single assessment the chart is replaced by four
+  bars showing current values, and a line only appears from the second assessment on.
+
+### Storage: database version 3 → 4
+
+A `players` store; attendance lives on the practice as `{ playerId: mark }` rather than in a
+store of its own, because it is a property of that session. Same upgrade rule as ever.
+
+`test/run.sh` is now **92 checks**. It caught a real bug on the way: `newPractice()` did not
+create the attendance object, so the first practice made after this change would have thrown
+when the register tried to render. It parsed fine. Only running it found it — the second time
+that has been true in this project.
+
 ## The ink engine (first proved in `pencil-test.html`)
 
 Worth keeping whichever platform wins, because the reasoning carries over.
