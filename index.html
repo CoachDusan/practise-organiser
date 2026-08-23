@@ -261,8 +261,8 @@
   }
 
   .prac-head {
-    display: grid; grid-template-columns: minmax(150px, 200px) auto auto auto;
-    gap: 18px; align-items: end; margin: 6px 0 22px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(126px, 1fr));
+    gap: 16px; align-items: start; margin: 6px 0 22px;
   }
   .ptotal {
     font-family: "Barlow Condensed", sans-serif; font-size: 24px; font-weight: 700;
@@ -305,6 +305,34 @@
     border-radius: 8px; padding: 11px 14px; font-size: 13px; line-height: 1.55; color: var(--dim);
   }
   .hint b { color: var(--text); }
+
+  /* ---------- typed fields ---------- */
+  .field-note { font-size: 11px; color: var(--dim); line-height: 1.35; min-height: 14px; }
+  input.bad { border-color: var(--danger); }
+  input.bad + .field-note { color: #C08A80; }
+
+  /* ---------- categories that open ---------- */
+  .sect-tools { display: flex; align-items: center; gap: 10px; margin: 16px 0 10px; }
+  .sect-tools .chip { padding: 6px 12px; font-size: 13px; }
+
+  .sect {
+    border: 1px solid var(--line); border-radius: 12px;
+    margin-bottom: 8px; background: var(--panel); overflow: hidden;
+  }
+  .sect.on { background: transparent; border-color: #4C463C; }
+  .sect-head {
+    width: 100%; display: flex; align-items: center; gap: 10px;
+    padding: 12px 14px; background: transparent; border: 0; border-radius: 0;
+    text-align: left;
+  }
+  .sect-head:hover .sect-title { color: var(--accent); }
+  .sect-caret { color: var(--dim); font-size: 11px; width: 12px; flex: none; }
+  .sect-title {
+    font-family: "Barlow Condensed", sans-serif; text-transform: uppercase;
+    letter-spacing: .05em; font-size: 19px; font-weight: 700; line-height: 1.1;
+  }
+  .sect-count { font-size: 11.5px; color: var(--dim); margin-left: auto; white-space: nowrap; }
+  .sect-body { padding: 2px 14px 16px; }
 
   /* ---------- tactics ---------- */
   .cat-head {
@@ -601,8 +629,8 @@
 
   @media print {
     .topbar, .rail, .add-court, .add-row, .diagram-head .grp, .filters,
-    .tabs, .modal-back, .prac-foot, .imoves, .hint, .dadd, .cal-nav .chip
-      { display: none !important; }
+    .tabs, .modal-back, .prac-foot, .imoves, .hint, .dadd, .cal-nav .chip,
+    .sect-tools, .sect-caret { display: none !important; }
     body { background: #fff; color: #000; }
     .editor { grid-template-columns: 1fr; }
     .diagram { break-inside: avoid; border-color: #bbb; background: #fff; }
@@ -622,7 +650,9 @@
     .chart-box, .bars, .att-summary, .arow, .att-row { background: #fff; border-color: #bbb; break-inside: avoid; }
     .option { background: #fff; border-color: #bbb; break-inside: avoid; }
     .option .diagram { background: #fff; }
-    .cat-head { color: #000; }
+    .cat-head, .sect-title { color: #000; }
+    .sect { background: #fff; border-color: #bbb; break-inside: avoid; }
+    .sect-count, .field-note { color: #555; }
     .chart .ax, .chart-cap, .leg, .att-detail, .ma-label { fill: #555; color: #555; }
     .chart .ser { fill: #000; }
     .chart .grid { stroke: #ddd; }
@@ -736,6 +766,59 @@
 
   var Store = { kind: "memory" };
   var LS_KEY = "practise-organiser/v1";
+
+  /* Which categories are open is a preference of this iPad, not something that
+     belongs in the season's record — so it lives in localStorage and is never
+     part of a backup. It survives a restart, so the library opens the way he
+     left it. Storage being unavailable must never break a screen: every access
+     is guarded and the app falls back to "closed". */
+  var UI_KEY = "practise-organiser/ui";
+  var ui = { open: {} };
+
+  function loadUI() {
+    try {
+      var raw = localStorage.getItem(UI_KEY);
+      var saved = raw ? JSON.parse(raw) : null;
+      if (saved && saved.open) ui.open = saved.open;
+    } catch (e) { ui.open = {}; }
+  }
+
+  function saveUI() {
+    try { localStorage.setItem(UI_KEY, JSON.stringify(ui)); } catch (e) {}
+  }
+
+  function isOpen(key) { return !!ui.open[key]; }
+
+  function setOpen(key, on) {
+    if (on) ui.open[key] = 1; else delete ui.open[key];
+    saveUI();
+  }
+
+  function setOpenAll(keys, on) {
+    keys.forEach(function (k) { if (on) ui.open[k] = 1; else delete ui.open[k]; });
+    saveUI();
+  }
+
+  /* A category that opens. The body is only built when it is open, so a library
+     of forty drills does not draw forty thumbnails to show six headings. */
+  function section(key, title, countText, buildBody) {
+    var box = el("div", "sect" + (isOpen(key) ? " on" : ""));
+
+    var head = el("button", "sect-head");
+    head.setAttribute("aria-expanded", String(isOpen(key)));
+    head.appendChild(el("span", "sect-caret", isOpen(key) ? "\u25be" : "\u25b8"));
+    head.appendChild(el("span", "sect-title", title));
+    head.appendChild(el("span", "sect-count", countText));
+    head.onclick = function () { setOpen(key, !isOpen(key)); render(); };
+    box.appendChild(head);
+
+    if (isOpen(key)) {
+      var body = el("div", "sect-body");
+      buildBody(body);
+      box.appendChild(body);
+    }
+    return box;
+  }
 
   /* One object store per kind of record. Practices arrived at DB version 2 and
      schedule events at version 3, players at version 4 and tactics at version 5;
@@ -988,8 +1071,8 @@
 
   function newPractice() {
     return {
-      id: uid(), date: todayISO(), time: "", status: "planned", items: [],
-      attendance: {}, note: "",
+      id: uid(), date: todayISO(), time: "", timeEnd: "", status: "planned",
+      items: [], attendance: {}, note: "",
       createdAt: Date.now(), updatedAt: Date.now()
     };
   }
@@ -1181,12 +1264,11 @@
     { id: "psychological", label: "Psychological", hue: "#c98500" }
   ];
 
-  var POSITIONS = ["1 · Point guard", "2 · Shooting guard", "3 · Small forward",
-                   "4 · Power forward", "5 · Centre"];
+  var POSITIONS = ["G", "F", "C"];
 
   function newPlayer() {
     return {
-      id: uid(), name: "", number: "", position: "", birthYear: null,
+      id: uid(), name: "", number: "", position: "", birthDate: "",
       heightCm: null, note: "", assessments: [], active: true,
       createdAt: Date.now(), updatedAt: Date.now()
     };
@@ -1211,7 +1293,9 @@
       AREAS.forEach(function (x) { a[x.id] = numOrNull(a[x.id]); });
     });
     p.assessments.sort(function (a, b) { return String(a.date).localeCompare(String(b.date)); });
-    p.birthYear = numOrNull(p.birthYear);
+    // birthYear was all the roster held at first. It is never thrown away: if a
+    // full date has not been typed yet the year is still shown beside the field.
+    if (!p.birthDate || !isoParts(p.birthDate)) p.birthDate = "";
     p.heightCm = numOrNull(p.heightCm);
     if (p.active !== false) p.active = true;
     return p;
@@ -1407,6 +1491,70 @@
     var d = dateFromISO(iso);
     d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
     return isoFromDate(d);
+  }
+
+  /* Typed, not scrolled. A wheel picker costs several seconds per field and
+     the coach already knows the number; these parse what he types and are
+     forgiving about how he types it. */
+
+  var DMY_RE = /^\s*(\d{1,2})[.\/\-\s](\d{1,2})[.\/\-\s](\d{4})\s*$/;
+
+  // "5.3.2008", "05.03.2008", "5/3/2008" -> ISO. null if it is not a real date.
+  function parseDMY(text) {
+    var m = DMY_RE.exec(text || "");
+    if (!m) return null;
+    var d = +m[1], mo = +m[2], y = +m[3];
+    var dt = new Date(y, mo - 1, d);
+    if (dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d) return null;
+    return isoFromDate(dt);
+  }
+
+  function formatDMY(iso) {
+    var p = isoParts(iso);
+    if (!p) return "";
+    var z = function (n) { return (n < 10 ? "0" : "") + n; };
+    return z(p.d) + "." + z(p.m) + "." + p.y;
+  }
+
+  // Age today, from a full date of birth. Not guessed from a year alone.
+  function ageFrom(iso) {
+    var p = isoParts(iso);
+    if (!p) return null;
+    var now = new Date();
+    var years = now.getFullYear() - p.y;
+    var hadBirthday = (now.getMonth() + 1 > p.m) ||
+                      (now.getMonth() + 1 === p.m && now.getDate() >= p.d);
+    return hadBirthday ? years : years - 1;
+  }
+
+  // "18", "18:00", "18.00", "1800" -> "18:00". "" clears it, null is a typo.
+  function parseTime(text) {
+    var t = String(text || "").trim();
+    if (!t) return "";
+    var m = /^(\d{1,2})[:.hH]?(\d{2})?$/.exec(t);
+    if (!m) return null;
+    var h = +m[1], mi = m[2] === undefined ? 0 : +m[2];
+    if (h > 23 || mi > 59) return null;
+    var z = function (n) { return (n < 10 ? "0" : "") + n; };
+    return z(h) + ":" + z(mi);
+  }
+
+  function minutesOfDay(hhmm) {
+    var m = /^(\d{2}):(\d{2})$/.exec(hhmm || "");
+    return m ? (+m[1]) * 60 + (+m[2]) : null;
+  }
+
+  // Length of a session from its start and end. Null unless both are real and
+  // the end is after the start — never a negative or a guessed duration.
+  function spanMinutes(from, to) {
+    var a = minutesOfDay(from), b = minutesOfDay(to);
+    if (a === null || b === null || b <= a) return null;
+    return b - a;
+  }
+
+  function timeRange(from, to) {
+    if (from && to) return from + "\u2013" + to;
+    return from || to || "";
   }
 
   function shortDay(iso) { return DAY_NAMES[dateFromISO(iso).getDay()]; }
@@ -1778,7 +1926,7 @@
 
   var app = document.getElementById("app");
   var crumb = document.getElementById("crumb");
-  var route = { view: "schedule", id: null, filter: "", pfilter: "",
+  var route = { view: "schedule", id: null, pfilter: "",
                 anchor: null, smode: "week", side: "" };
   var pads = [];
 
@@ -1870,77 +2018,92 @@
     if (banner) wrap.appendChild(banner);
 
     var head = el("div", "lib-head");
-    var h1 = el("h1", null, "Drill Library");
-    var count = el("span", "count",
-      state.drills.length ? state.drills.length + (state.drills.length === 1 ? " drill" : " drills") : "");
-    head.appendChild(h1); head.appendChild(count);
-    wrap.appendChild(head);
-
-    // tag filters, built from what is actually in the library
-    var used = {};
-    state.drills.forEach(function (d) { if (d.tag) used[d.tag] = (used[d.tag] || 0) + 1; });
-    var tagNames = Object.keys(used).sort();
-    if (tagNames.length > 1) {
-      var f = el("div", "filters");
-      var all = el("button", null, "All");
-      all.setAttribute("aria-pressed", String(!route.filter));
-      all.onclick = function () { route.filter = ""; render(); };
-      f.appendChild(all);
-      tagNames.forEach(function (t) {
-        var b = el("button", null, t + " (" + used[t] + ")");
-        b.setAttribute("aria-pressed", String(route.filter === t));
-        b.onclick = function () { route.filter = (route.filter === t ? "" : t); render(); };
-        f.appendChild(b);
-      });
-      wrap.appendChild(f);
-    }
-
-    var grid = el("div", "grid");
-
-    var add = el("button", "card new");
-    add.innerHTML = '<div><div class="plus">+</div><div class="label" style="font-size:12px;margin-top:6px">New drill</div></div>';
+    head.appendChild(el("h1", null, "Drill Library"));
+    head.appendChild(el("span", "count",
+      state.drills.length ? state.drills.length + (state.drills.length === 1 ? " drill" : " drills") : ""));
+    var gap = el("div"); gap.style.marginLeft = "auto";
+    head.appendChild(gap);
+    var add = el("button", "chip primary", "+  New drill");
     add.onclick = function () {
       var d = newDrill();
       state.drills.unshift(d);
       touch(d);
       go("drill", d.id);
     };
-    grid.appendChild(add);
-
-    var list = state.drills.filter(function (d) { return !route.filter || d.tag === route.filter; });
-    list.forEach(function (d) {
-      var card = el("button", "card");
-      var thumb = el("div", "thumb");
-      thumb.innerHTML = thumbFor(d);
-      var meta = el("div", "meta");
-      meta.appendChild(el("div", "name", d.name || "Untitled"));
-      var sub = el("div", "sub");
-      if (d.tag) { var t = el("span", "tag", d.tag); sub.appendChild(t); }
-      var bits = [];
-      if (d.format) bits.push(d.format);
-      if (d.minutes) bits.push(d.minutes + " min");
-      var n = d.diagrams.length;
-      bits.push(n + (n === 1 ? " court" : " courts"));
-      sub.appendChild(el("span", null, bits.join(" · ")));
-      meta.appendChild(sub);
-      // The countable fact the library exists to produce.
-      if (usage[d.id]) {
-        meta.appendChild(el("div", "usage",
-          "Run in " + usage[d.id] + (usage[d.id] === 1 ? " practice" : " practices")));
-      }
-      card.appendChild(thumb); card.appendChild(meta);
-      card.onclick = function () { go("drill", d.id); };
-      grid.appendChild(card);
-    });
-
-    wrap.appendChild(grid);
+    head.appendChild(add);
+    wrap.appendChild(head);
 
     if (!state.drills.length) {
       var e = el("div", "empty");
       e.innerHTML = "Nothing here yet.<br>Draw a drill once, then reuse it all season.";
       wrap.appendChild(e);
+      app.appendChild(wrap);
+      return;
     }
+
+    // grouped by focus tag; untagged drills gather at the end rather than hide
+    var groups = {};
+    state.drills.forEach(function (d) {
+      var t = d.tag || "Untagged";
+      (groups[t] = groups[t] || []).push(d);
+    });
+    var names = Object.keys(groups).sort(function (a, b) {
+      if (a === "Untagged") return 1;
+      if (b === "Untagged") return -1;
+      return a.localeCompare(b);
+    });
+    var keys = names.map(function (t) { return "drill:" + t; });
+
+    wrap.appendChild(openAllRow(keys, names.length));
+
+    names.forEach(function (t) {
+      var list = groups[t];
+      wrap.appendChild(section("drill:" + t, t,
+        list.length + (list.length === 1 ? " drill" : " drills"),
+        function (body) {
+          var grid = el("div", "grid");
+          list.forEach(function (d) { grid.appendChild(drillCard(d, usage)); });
+          body.appendChild(grid);
+        }));
+    });
+
     app.appendChild(wrap);
+  }
+
+  function openAllRow(keys, howMany) {
+    var row = el("div", "sect-tools");
+    var anyOpen = keys.some(isOpen);
+    var b = el("button", "chip ghost", anyOpen ? "Close all" : "Open all");
+    b.onclick = function () { setOpenAll(keys, !anyOpen); render(); };
+    row.appendChild(b);
+    row.appendChild(el("span", "count",
+      howMany + (howMany === 1 ? " category" : " categories")));
+    return row;
+  }
+
+  function drillCard(d, usage) {
+    var card = el("button", "card");
+    var thumb = el("div", "thumb");
+    thumb.innerHTML = thumbFor(d);
+    var meta = el("div", "meta");
+    meta.appendChild(el("div", "name", d.name || "Untitled"));
+    var sub = el("div", "sub");
+    var bits = [];
+    if (d.format) bits.push(d.format);
+    if (d.minutes) bits.push(d.minutes + " min");
+    if (d.intensity) bits.push((Math.round(d.intensity * 10) / 10) + "/10");
+    var n = d.diagrams.length;
+    bits.push(n + (n === 1 ? " court" : " courts"));
+    sub.appendChild(el("span", null, bits.join(" · ")));
+    meta.appendChild(sub);
+    // The countable fact the library exists to produce.
+    if (usage[d.id]) {
+      meta.appendChild(el("div", "usage",
+        "Run in " + usage[d.id] + (usage[d.id] === 1 ? " practice" : " practices")));
+    }
+    card.appendChild(thumb); card.appendChild(meta);
+    card.onclick = function () { go("drill", d.id); };
+    return card;
   }
 
   /* ---------- tactics ---------- */
@@ -1993,22 +2156,36 @@
       return !route.side || t.side === route.side;
     });
 
+    var allKeys = [];
+    var blocks = [];
     SIDES.forEach(function (side) {
       var mine = shown.filter(function (t) { return t.side === side; });
       if (!mine.length) return;
-      wrap.appendChild(el("div", "month label", side));
 
       var byCat = {};
       mine.forEach(function (t) {
         var c = t.category || "Uncategorised";
         (byCat[c] = byCat[c] || []).push(t);
       });
+      // the side's own categories first, in the order they are offered
       var cats = categoriesFor(side).filter(function (c) { return byCat[c]; });
       Object.keys(byCat).forEach(function (c) { if (cats.indexOf(c) === -1) cats.push(c); });
 
-      cats.forEach(function (c) {
-        wrap.appendChild(el("div", "cat-head", c));
-        byCat[c].forEach(function (t) { wrap.appendChild(tacticRow(t, use)); });
+      blocks.push({ side: side, cats: cats, byCat: byCat });
+      cats.forEach(function (c) { allKeys.push("tactic:" + side + "/" + c); });
+    });
+
+    if (allKeys.length) wrap.appendChild(openAllRow(allKeys, allKeys.length));
+
+    blocks.forEach(function (b) {
+      wrap.appendChild(el("div", "month label", b.side));
+      b.cats.forEach(function (c) {
+        var list = b.byCat[c];
+        wrap.appendChild(section("tactic:" + b.side + "/" + c, c,
+          list.length + (list.length === 1 ? " set" : " sets"),
+          function (body) {
+            list.forEach(function (t) { body.appendChild(tacticRow(t, use)); });
+          }));
       });
     });
 
@@ -2271,7 +2448,9 @@
 
     var sub = [];
     if (p.position) sub.push(p.position);
-    if (p.birthYear) sub.push(String(p.birthYear));
+    var yrs = ageFrom(p.birthDate);
+    if (yrs !== null) sub.push(formatDMY(p.birthDate) + "  ·  " + yrs);
+    else if (p.birthYear) sub.push(String(p.birthYear));
     if (p.heightCm) sub.push(p.heightCm + " cm");
     if (!p.active) sub.push("not in the squad");
     if (sub.length) right.appendChild(el("div", "psub", sub.join(" · ")));
@@ -2337,14 +2516,13 @@
       p.position = v; touchPlayer(p);
     }));
 
-    var byF = el("div", "field");
-    byF.appendChild(el("div", "label", "Born"));
-    var bi = document.createElement("input");
-    bi.type = "number"; bi.min = "1950"; bi.max = "2030";
-    bi.value = p.birthYear === null ? "" : p.birthYear;
-    bi.oninput = function () { p.birthYear = numOrNull(bi.value); touchPlayer(p); };
-    byF.appendChild(bi);
-    row.appendChild(byF);
+    var age = ageFrom(p.birthDate);
+    var hint = age === null
+      ? (p.birthYear ? "Year recorded before: " + p.birthYear : "")
+      : age + " years old";
+    row.appendChild(typedField("Date of birth", p.birthDate, "DD.MM.YYYY",
+      parseDMY, formatDMY,
+      function (v) { p.birthDate = v; touchPlayer(p); render(); }, hint));
 
     var htF = el("div", "field");
     htF.appendChild(el("div", "label", "Height (cm)"));
@@ -2835,8 +3013,9 @@
       var line = el("div", "ci-title", "Practice");
       b.appendChild(line);
       var bits = [];
-      if (p.time) bits.push(p.time);
-      bits.push(p.items.length + (p.items.length === 1 ? " drill" : " drills"));
+      var when = timeRange(p.time, p.timeEnd);
+      if (when) bits.push(when);
+      bits.push(p.items.length + (p.items.length === 1 ? " item" : " items"));
       var mins = practiceMinutes(p);
       if (mins) bits.push(mins + " min");
       bits.push(p.status === "done" ? "done" : "planned");
@@ -2983,10 +3162,9 @@
     };
     whenRow.appendChild(field("Date", di));
 
-    var ti = document.createElement("input");
-    ti.type = "time"; ti.value = e.time || "";
-    ti.onchange = function () { e.time = ti.value; touchEvent(e); };
-    whenRow.appendChild(field("Time", ti));
+    whenRow.appendChild(typedField("Time", e.time, "19:00", parseTime,
+      function (v) { return v; },
+      function (v) { e.time = v; touchEvent(e); }, ""));
     form.appendChild(whenRow);
 
     if (e.kind === "game") {
@@ -3183,13 +3361,12 @@
     dateField.appendChild(di);
     head.appendChild(dateField);
 
-    var timeField = el("div", "field");
-    timeField.appendChild(el("div", "label", "Time"));
-    var ti = document.createElement("input");
-    ti.type = "time"; ti.value = p.time || "";
-    ti.onchange = function () { p.time = ti.value; touchPractice(p); };
-    timeField.appendChild(ti);
-    head.appendChild(timeField);
+    var span = spanMinutes(p.time, p.timeEnd);
+    head.appendChild(typedField("From", p.time, "18:00", parseTime, function (v) { return v; },
+      function (v) { p.time = v; touchPractice(p); render(); },
+      span === null ? "" : "on court " + span + " min"));
+    head.appendChild(typedField("To", p.timeEnd, "19:30", parseTime, function (v) { return v; },
+      function (v) { p.timeEnd = v; touchPractice(p); render(); }, ""));
 
     var statusField = el("div", "field");
     statusField.appendChild(el("div", "label", "Status"));
@@ -3654,6 +3831,40 @@
     return f;
   }
 
+  /* A typed field that validates on blur: good input is normalised and saved,
+     a typo turns the box red and is not saved over the last good value. */
+  function typedField(label, value, placeholder, parse, format, onSet, hint) {
+    var f = el("div", "field");
+    f.appendChild(el("div", "label", label));
+    var i = document.createElement("input");
+    i.type = "text";
+    i.setAttribute("inputmode", "numeric");
+    i.autocomplete = "off";
+    i.placeholder = placeholder;
+    i.value = value ? format(value) : "";
+    var note = el("div", "field-note");
+    if (hint) note.textContent = hint;
+    function commit() {
+      var raw = i.value.trim();
+      if (raw === "") { onSet(""); i.classList.remove("bad"); note.textContent = hint || ""; return; }
+      var parsed = parse(raw);
+      if (parsed === null) {
+        i.classList.add("bad");
+        note.textContent = "Not a " + label.toLowerCase() + " — expected " + placeholder;
+        return;
+      }
+      i.classList.remove("bad");
+      i.value = format(parsed);
+      note.textContent = hint || "";
+      onSet(parsed);
+    }
+    i.onblur = commit;
+    i.onkeydown = function (e) { if (e.key === "Enter") { commit(); i.blur(); } };
+    f.appendChild(i);
+    f.appendChild(note);
+    return f;
+  }
+
   function pickerField(label, options, value, onSet) {
     var f = el("div", "field");
     f.appendChild(el("div", "label", label));
@@ -3961,6 +4172,7 @@
   /* ================= boot ================= */
 
   chip("Opening…");
+  loadUI();
   initStore().then(function () {
     chip("");
     render();

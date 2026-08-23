@@ -211,6 +211,10 @@ function appSource() {
     "           newTacticItem: newTacticItem, tacticUsage: tacticUsage,\n" +
     "           optionLabel: optionLabel, itemLabel: itemLabel, SIDES: SIDES,\n" +
     "           categoriesFor: categoriesFor,\n" +
+    "           parseDMY: parseDMY, formatDMY: formatDMY, ageFrom: ageFrom,\n" +
+    "           parseTime: parseTime, spanMinutes: spanMinutes, timeRange: timeRange,\n" +
+    "           isOpen: isOpen, setOpen: setOpen, setOpenAll: setOpenAll,\n" +
+    "           POSITIONS: POSITIONS,\n" +
     "           practiceMinutes: practiceMinutes, prettyDate: prettyDate,\n" +
     "           openDrillPicker: openDrillPicker, route: route,\n" +
     "           applyImport: applyImport };\n";
@@ -649,7 +653,66 @@ launch(backing, lsStore).then(function (po) {
   eq("a backup written before tactics existed still imports", older.tactics.length, 0);
   eq("and its practice items are read as drills", older.practices[0].items[0].kind, "drill");
 
-  print("\n11. the drills imported from drill-management");
+  print("\n11. what he types, and how it is read back");
+  eq("a padded date parses", po.parseDMY("05.03.2008"), "2008-03-05");
+  eq("so does an unpadded one", po.parseDMY("5.3.2008"), "2008-03-05");
+  eq("slashes are accepted", po.parseDMY("5/3/2008"), "2008-03-05");
+  eq("and dashes", po.parseDMY("5-3-2008"), "2008-03-05");
+  eq("a day that does not exist is refused", po.parseDMY("31.02.2008"), null);
+  eq("so is the 32nd", po.parseDMY("32.01.2008"), null);
+  eq("and a month past twelve", po.parseDMY("01.13.2008"), null);
+  eq("and American order is not silently accepted", po.parseDMY("03.25.2008"), null);
+  eq("a two-digit year is refused rather than guessed", po.parseDMY("05.03.08"), null);
+  eq("it comes back in the same format", po.formatDMY("2008-03-05"), "05.03.2008");
+  eq("a date typed and read back is unchanged",
+     po.formatDMY(po.parseDMY("5.3.2008")), "05.03.2008");
+
+  eq("a birthday already had this year", po.ageFrom("2008-01-01"), 18);
+  eq("one still to come has not counted yet", po.ageFrom("2008-12-31"), 17);
+  eq("no date of birth means no age", po.ageFrom(""), null);
+
+  eq("an hour on its own is a time", po.parseTime("18"), "18:00");
+  eq("with a colon", po.parseTime("18:30"), "18:30");
+  eq("with a dot", po.parseTime("18.30"), "18:30");
+  eq("with nothing between", po.parseTime("1830"), "18:30");
+  eq("a single digit hour", po.parseTime("9"), "09:00");
+  eq("an empty box clears it", po.parseTime(""), "");
+  eq("a 25th hour is refused", po.parseTime("25:00"), null);
+  eq("so are 61 minutes", po.parseTime("18:61"), null);
+  eq("and anything that is not a time", po.parseTime("evening"), null);
+
+  eq("a session length is the gap between the two", po.spanMinutes("18:00", "19:30"), 90);
+  eq("an end before the start is not a negative session", po.spanMinutes("19:00", "18:00"), null);
+  eq("nor is an end equal to the start", po.spanMinutes("18:00", "18:00"), null);
+  eq("one time alone is not a length", po.spanMinutes("18:00", ""), null);
+  eq("a start alone still shows", po.timeRange("18:00", ""), "18:00");
+  eq("both show as a range", po.timeRange("18:00", "19:30"), "18:00\u201319:30");
+
+  eq("positions are the general three", po.POSITIONS.join(","), "G,F,C");
+
+  print("\n12. categories that open");
+  eq("a category starts closed", po.isOpen("drill:Shooting"), false);
+  po.setOpen("drill:Shooting", true);
+  eq("opening one is remembered", po.isOpen("drill:Shooting"), true);
+  po.setOpenAll(["drill:Shooting", "drill:Defence"], true);
+  ok("and so is opening several", po.isOpen("drill:Defence"));
+
+  var drew4 = [];
+  try { po.go("library"); } catch (e) { drew4.push("library with an open category: " + e); }
+  po.setOpenAll(["drill:Shooting", "drill:Defence"], false);
+  try { po.go("library"); } catch (e) { drew4.push("library all closed: " + e); }
+  try { po.setOpen("tactic:Defence/Defending the pick & roll", true); po.go("tactics"); }
+  catch (e) { drew4.push("tactics with an open category: " + e); }
+  ok("the library draws open and closed", drew4.length === 0, drew4.join(" | "));
+
+  return launch(backing, lsStore);
+})
+.then(function (po) {
+  ok("an open category is still open after a restart",
+     po.isOpen("tactic:Defence/Defending the pick & roll"));
+  eq("and a closed one is still closed", po.isOpen("drill:Shooting"), false);
+
+  print("\n13. the drills imported from drill-management");
   var raw = null;
   try { raw = readFile("private/drills-import.json"); } catch (e) { raw = null; }
   if (!raw) {
@@ -689,7 +752,7 @@ launch(backing, lsStore).then(function (po) {
     po.flush();
   }
 
-  print("\n12. the smaller store, for a browser that refuses IndexedDB");
+  print("\n14. the smaller store, for a browser that refuses IndexedDB");
   var fresh = { version: 0, stores: [], data: {} };
   var lsOnly = lsStore;
   globalThis.__forceLocal = true;

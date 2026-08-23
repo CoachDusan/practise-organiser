@@ -452,6 +452,64 @@ same way drills do — verified by round-tripping real ink through a restart.
 
 `test/run.sh` is now **117 checks**.
 
+## Changes after Dusan used it (2026-08-23)
+
+Four things, all from actually holding the iPad. Every one is a case of the app asking him
+to work its way instead of his.
+
+### Typed, not scrolled
+
+A wheel picker costs seconds per field and he already knows the number. Date of birth and
+both practice times are now plain text boxes that parse what he types:
+
+- **Date of birth: `DD.MM.YYYY`**, and it is forgiving — `5.3.2008`, `05.03.2008`, `5/3/2008`
+  and `5-3-2008` all land on the same day. Age is shown beside it, computed from the full
+  date rather than guessed from a year.
+- **Times: `18`, `18:00`, `18.00`, `1830`** all normalise to `18:00`.
+
+Validation happens on blur. A typo turns the box red and **is not saved over the last good
+value** — the field never silently keeps something wrong. Refusals are deliberate:
+`31.02.2008` is not a day, `03.25.2008` is not quietly read as American order, and `05.03.08`
+is refused rather than guessing a century.
+
+`birthYear` was what the roster held for a day. It is **never deleted**: until a full date is
+typed, the old year is shown beside the field.
+
+### Positions are G / F / C
+
+`1 · Point guard` through `5 · Centre` was more precision than he wanted. The picker still
+offers "Add new…", so anything more specific is one tap away.
+
+### Practice time is from–to
+
+A session now has a start and an end, and the app shows the length between them — but only
+when both are real and the end is after the start. It never reports a negative or guessed
+session length. The schedule shows `18:00–19:30` on the day.
+
+The same typed control replaced the time picker on schedule events, since it was the same
+widget and the same complaint.
+
+### Categories open and close
+
+*"Not just to see everything, and to have option to choose what I want to see."*
+
+The drill library is now grouped by focus tag, and tactics by category within each side.
+Every heading is a section that opens, with its count on the right, and a **Close all /
+Open all** control above.
+
+- **Closed is the default**, so forty-three drills open as six headings rather than a wall.
+- The body of a closed section is **not built at all**, so nothing is drawn to show a heading.
+- Which sections are open is remembered across restarts. It lives in `localStorage` under
+  `practise-organiser/ui`, not in IndexedDB and **not in a backup** — it is a preference of
+  this iPad, not part of the season's record. Every access is guarded, and storage being
+  refused falls back to "closed" rather than breaking a screen.
+
+The tag filter chips went with this: with the tag as the section heading, filtering to one
+tag and collapsing the rest were the same act done twice.
+
+`test/run.sh` is now **153 checks**, including every accepted and refused spelling of a date
+and a time above, and that an open category is still open after a restart.
+
 ## The ink engine (first proved in `pencil-test.html`)
 
 Worth keeping whichever platform wins, because the reasoning carries over.
