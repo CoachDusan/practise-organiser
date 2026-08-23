@@ -335,6 +335,25 @@
   input.bad { border-color: var(--danger); }
   input.bad + .field-note { color: #C08A80; }
 
+  /* ---------- what an assessment is ---------- */
+  .help-areas { display: grid; gap: 10px; margin-bottom: 14px; }
+  .help-area { display: grid; grid-template-columns: 132px 1fr; gap: 12px; align-items: baseline; }
+  .help-lab {
+    display: flex; align-items: center; gap: 6px;
+    font-family: "Barlow Condensed", sans-serif; text-transform: uppercase;
+    letter-spacing: .05em; font-size: 14px; font-weight: 600;
+  }
+  .help-what { font-size: 13px; color: var(--dim); line-height: 1.5; }
+  .help-note {
+    font-size: 12.5px; color: var(--dim); line-height: 1.6;
+    padding-top: 10px; border-top: 1px solid var(--line); margin-top: 10px;
+  }
+  .help-note b { color: var(--text); }
+
+  @media (max-width: 620px) {
+    .help-area { grid-template-columns: 1fr; gap: 3px; }
+  }
+
   /* ---------- categories that open ---------- */
   .sect-tools { display: flex; align-items: center; gap: 10px; margin: 16px 0 10px; }
   .sect-tools .chip { padding: 6px 12px; font-size: 13px; }
@@ -811,32 +830,39 @@
     try { localStorage.setItem(UI_KEY, JSON.stringify(ui)); } catch (e) {}
   }
 
-  function isOpen(key) { return !!ui.open[key]; }
+  /* Stored as an explicit 1 or 0 rather than "present means open", so a section
+     that starts open can still be closed for good. Keys that were never touched
+     fall back to the caller's default. */
+  function isOpen(key, fallback) {
+    if (Object.prototype.hasOwnProperty.call(ui.open, key)) return !!ui.open[key];
+    return !!fallback;
+  }
 
   function setOpen(key, on) {
-    if (on) ui.open[key] = 1; else delete ui.open[key];
+    ui.open[key] = on ? 1 : 0;
     saveUI();
   }
 
   function setOpenAll(keys, on) {
-    keys.forEach(function (k) { if (on) ui.open[k] = 1; else delete ui.open[k]; });
+    keys.forEach(function (k) { ui.open[k] = on ? 1 : 0; });
     saveUI();
   }
 
   /* A category that opens. The body is only built when it is open, so a library
      of forty drills does not draw forty thumbnails to show six headings. */
-  function section(key, title, countText, buildBody) {
-    var box = el("div", "sect" + (isOpen(key) ? " on" : ""));
+  function section(key, title, countText, buildBody, startOpen) {
+    var open = isOpen(key, startOpen);
+    var box = el("div", "sect" + (open ? " on" : ""));
 
     var head = el("button", "sect-head");
-    head.setAttribute("aria-expanded", String(isOpen(key)));
-    head.appendChild(el("span", "sect-caret", isOpen(key) ? "\u25be" : "\u25b8"));
+    head.setAttribute("aria-expanded", String(open));
+    head.appendChild(el("span", "sect-caret", open ? "\u25be" : "\u25b8"));
     head.appendChild(el("span", "sect-title", title));
     head.appendChild(el("span", "sect-count", countText));
-    head.onclick = function () { setOpen(key, !isOpen(key)); render(); };
+    head.onclick = function () { setOpen(key, !open); render(); };
     box.appendChild(head);
 
-    if (isOpen(key)) {
+    if (open) {
       var body = el("div", "sect-body");
       buildBody(body);
       box.appendChild(body);
@@ -1281,11 +1307,18 @@
      scale in the app rather than two. `null` means not rated, which is different
      from a low rating and is drawn as a gap, never as a zero. */
 
+  /* The four areas are Dusan's own words from the roster pillar. The `what` line
+     is on the record rather than in a help page, because the question he asked
+     was "what should I write here" and the answer belongs next to the box. */
   var AREAS = [
-    { id: "physical",      label: "Physical",      hue: "#3987e5" },
-    { id: "tactical",      label: "Tactical",      hue: "#d95926" },
-    { id: "technical",     label: "Technical",     hue: "#199e70" },
-    { id: "psychological", label: "Psychological", hue: "#c98500" }
+    { id: "physical",      label: "Physical",      hue: "#3987e5",
+      what: "Speed, strength, jumping, conditioning, size for his position." },
+    { id: "tactical",      label: "Tactical",      hue: "#d95926",
+      what: "Reading the game: spacing, decisions, running the sets, defensive rotations." },
+    { id: "technical",     label: "Technical",     hue: "#199e70",
+      what: "The skills themselves: shooting, handling, passing, footwork, finishing." },
+    { id: "psychological", label: "Psychological", hue: "#c98500",
+      what: "Competitiveness, coachability, composure late in a close game, consistency." }
   ];
 
   var POSITIONS = ["G", "F", "C"];
@@ -2642,9 +2675,14 @@
     head.appendChild(add);
     box.appendChild(head);
 
+    // Open until he closes it. Someone opening this screen for the first time
+    // should not have to find the explanation.
+    box.appendChild(section("assess:help", "What these mean, and how to score", "",
+      buildAssessHelp, true));
+
     if (!p.assessments.length) {
       box.appendChild(el("div", "empty",
-        "Not assessed yet. Each assessment is a dated snapshot, so the ones you take now are what the progress line is made of."));
+        "Not assessed yet. Each one is a dated snapshot — the line is the difference between them."));
       return box;
     }
 
@@ -2656,6 +2694,44 @@
     });
 
     return box;
+  }
+
+  function buildAssessHelp(body) {
+    var list = el("div", "help-areas");
+    AREAS.forEach(function (x) {
+      var r = el("div", "help-area");
+      var lab = el("div", "help-lab");
+      var dot = el("span", "ma-dot");
+      dot.style.background = x.hue;
+      lab.appendChild(dot);
+      lab.appendChild(el("span", null, x.label));
+      r.appendChild(lab);
+      r.appendChild(el("div", "help-what", x.what));
+      list.appendChild(r);
+    });
+    body.appendChild(list);
+
+    var scale = el("div", "help-note");
+    scale.innerHTML =
+      "<b>1 to 10, and the scale is yours.</b> There is no standard behind these numbers — " +
+      "a 6 here means nothing except beside another number you gave. So pick what 10 means " +
+      "and keep it. The most useful choice is <b>the best player you would expect at this " +
+      "level</b>, because it survives players coming and going; scoring against your own " +
+      "squad is easier to judge but stops meaning anything when the squad changes.";
+    body.appendChild(scale);
+
+    var often = el("div", "help-note");
+    often.innerHTML =
+      "<b>Three or four times a season is enough</b> — preseason, once it settles, mid-season, " +
+      "end. The value is not in tonight's number, it is in having September's to hold December's " +
+      "against. Rate every week and you are recording mood, not development.";
+    body.appendChild(often);
+
+    var blank = el("div", "help-note");
+    blank.innerHTML =
+      "Leaving a box empty means <b>not rated</b>, which is not the same as a low score. " +
+      "It shows as a gap in the line rather than a drop.";
+    body.appendChild(blank);
   }
 
   function assessmentRow(p, a) {
@@ -2674,6 +2750,7 @@
     AREAS.forEach(function (x) {
       var f = el("div", "afield");
       var lab = el("div", "alab");
+      lab.title = x.label + " — " + x.what;
       var dot = el("span", "ma-dot");
       dot.style.background = x.hue;
       lab.appendChild(dot);

@@ -697,6 +697,14 @@ launch(backing, lsStore).then(function (po) {
   po.setOpenAll(["drill:Shooting", "drill:Defence"], true);
   ok("and so is opening several", po.isOpen("drill:Defence"));
 
+  eq("a section can start open", po.isOpen("assess:help", true), true);
+  po.setOpen("assess:help", false);
+  eq("and closing one that starts open sticks", po.isOpen("assess:help", true), false);
+
+  var missing = po.AREAS.filter(function (a) { return !a.what || a.what.length < 20; });
+  eq("every area says what it covers", missing.length, 0);
+  eq("there are four of them", po.AREAS.length, 4);
+
   var drew4 = [];
   try { po.go("library"); } catch (e) { drew4.push("library with an open category: " + e); }
   po.setOpenAll(["drill:Shooting", "drill:Defence"], false);
@@ -710,6 +718,7 @@ launch(backing, lsStore).then(function (po) {
 .then(function (po) {
   ok("an open category is still open after a restart",
      po.isOpen("tactic:Defence/Defending the pick & roll"));
+  eq("and a help block closed by hand stays closed", po.isOpen("assess:help", true), false);
   eq("and a closed one is still closed", po.isOpen("drill:Shooting"), false);
 
   print("\n13. the drills imported from drill-management");

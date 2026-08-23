@@ -536,6 +536,38 @@ the *other* fields stretched their inputs to match. The neighbours were wrong, n
 `.field { align-content: start; }` — contents keep their natural height and every box in a
 row now lines up at the top. Same fix covers the practice From/To boxes.
 
+### The assessment screen now explains itself (2026-08-23)
+
+Dusan asked what "Assessments" meant and what to write in it. Fair question, and the answer
+being only in a conversation was the actual bug — in six months the conversation is gone and
+the boxes are still there.
+
+Each area now carries its own one-line description **on the record**, shown in a
+"What these mean, and how to score" block at the top of the section, and as a hover title on
+the label in each row:
+
+| Area | What it covers |
+|---|---|
+| Physical | Speed, strength, jumping, conditioning, size for his position |
+| Tactical | Reading the game: spacing, decisions, running the sets, defensive rotations |
+| Technical | The skills: shooting, handling, passing, footwork, finishing |
+| Psychological | Competitiveness, coachability, composure late in a close game, consistency |
+
+The block also states the three things that decide whether the numbers are worth anything,
+and they are the honest ones:
+
+- **The scale is his own.** There is no standard behind a 6. It only means something beside
+  another number he gave — the same rule as the load AU in `drill-management`. Recommended
+  anchor: the best player he would expect *at this level*, because that survives players
+  coming and going, where scoring against the current squad does not.
+- **Three or four times a season.** The value is in having September's number to hold
+  December's against. Weekly ratings record mood, not development.
+- **An empty box is "not rated", not a low score** — a gap in the line, never a drop.
+
+The block starts **open** and stays closed once closed. That needed `ui.open` to store an
+explicit 1 or 0 rather than "present means open", so a section with a default can still be
+dismissed for good.
+
 ## The ink engine (first proved in `pencil-test.html`)
 
 Worth keeping whichever platform wins, because the reasoning carries over.
