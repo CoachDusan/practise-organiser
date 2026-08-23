@@ -17,7 +17,24 @@
     --court-line: #3A342A;
     --danger:     #C8574B;
     --rail: 64px;
+    /* The app is installed with a translucent status bar, so iPadOS draws the
+       clock and battery OVER the page. These are the strips the system owns;
+       they are 0 in a browser tab. */
+    --safe-top:   env(safe-area-inset-top, 0px);
+    --safe-left:  env(safe-area-inset-left, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
+    --bar: 49px;                                  /* the top bar's own height */
+    --bar-total: calc(var(--bar) + var(--safe-top));
   }
+  /* Belt and braces. env() is the right answer and adapts to the device, but
+     if it ever reports 0 while installed, the clock lands on the menu again —
+     so when running off the Home Screen there is a floor under it. In a normal
+     browser tab the browser's own chrome is already above us and this does
+     nothing. */
+  @media (display-mode: standalone) {
+    :root { --safe-top: max(env(safe-area-inset-top, 0px), 22px); }
+  }
+
   * { box-sizing: border-box; }
 
   body {
@@ -38,7 +55,8 @@
   .topbar {
     position: sticky; top: 0; z-index: 30;
     display: flex; align-items: center; gap: 14px; flex-wrap: wrap; row-gap: 8px;
-    padding: 10px 16px;
+    padding: calc(10px + var(--safe-top)) calc(16px + var(--safe-right))
+             10px calc(16px + var(--safe-left));
     background: var(--panel);
     border-bottom: 1px solid var(--line);
   }
@@ -78,11 +96,17 @@
   }
   textarea { resize: vertical; min-height: 84px; line-height: 1.5; }
 
-  .field { display: grid; gap: 5px; min-width: 0; }
+  /* align-content:start matters: without it a field that carries a hint line
+     makes every other box in the row stretch to match, which is what made the
+     date of birth look like a different control from the ones beside it. */
+  .field { display: grid; gap: 5px; min-width: 0; align-content: start; }
   .field > .label { font-size: 10px; color: var(--dim); }
 
   /* ---------- library ---------- */
-  .wrap { max-width: 1180px; margin: 0 auto; padding: 20px 16px 80px; }
+  .wrap {
+    max-width: 1180px; margin: 0 auto;
+    padding: 20px calc(16px + var(--safe-right)) 80px calc(16px + var(--safe-left));
+  }
 
   .lib-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
   .lib-head h1 { font-family: "Barlow Condensed", sans-serif; text-transform: uppercase;
@@ -128,8 +152,8 @@
   /* ---------- editor ---------- */
   .editor { display: grid; grid-template-columns: var(--rail) 1fr; min-height: 100dvh; }
   .rail {
-    position: sticky; top: 49px; align-self: start;
-    height: calc(100dvh - 49px);
+    position: sticky; top: var(--bar-total); align-self: start;
+    height: calc(100dvh - var(--bar-total));
     background: var(--panel); border-right: 1px solid var(--line);
     display: flex; flex-direction: column; align-items: center; gap: 5px;
     padding: 12px 0; overflow-y: auto; z-index: 20;
@@ -3322,12 +3346,15 @@
     row.appendChild(left);
 
     var right = el("div", "pwhat");
-    var n = p.items.length;
+    var drills = p.items.filter(function (it) { return it.kind !== "tactic"; }).length;
+    var tactics = p.items.length - drills;
     var mins = practiceMinutes(p);
-    var sub = [n + (n === 1 ? " drill" : " drills")];
+    var sub = [];
+    if (drills || !tactics) sub.push(drills + (drills === 1 ? " drill" : " drills"));
+    if (tactics) sub.push(tactics + (tactics === 1 ? " tactic" : " tactics"));
     if (mins) sub.push(mins + " min");
     right.appendChild(el("div", "psub", sub.join(" · ")));
-    right.appendChild(n
+    right.appendChild(p.items.length
       ? el("div", "pnames", p.items.map(itemLabel).join("   ·   "))
       : el("div", "pnames dim", "Nothing added yet"));
     if (p.note) right.appendChild(el("div", "pnote", p.note));

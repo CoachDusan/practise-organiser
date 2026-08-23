@@ -510,6 +510,32 @@ tag and collapsing the rest were the same act done twice.
 `test/run.sh` is now **153 checks**, including every accepted and refused spelling of a date
 and a time above, and that an open category is still open after a restart.
 
+### The iPad clock was sitting on the menu (2026-08-23)
+
+Reported from the device with a screenshot: the status bar was drawn over the top bar, so
+the tabs could only be tapped on their lower half.
+
+Cause: the app installs with `apple-mobile-web-app-status-bar-style: black-translucent`,
+which is what makes it look full-screen — iPadOS then draws the clock and battery **over**
+the page. `viewport-fit=cover` was already set; nothing ever padded for the inset.
+
+The top bar and every page now pad by `env(safe-area-inset-top / left / right)`, and the ink
+rail's sticky offset is `calc(49px + safe-top)` instead of a hardcoded 49. There is also a
+**22px floor under the top inset while in standalone mode** — belt and braces, because if
+`env()` ever reports 0 on an installed app the clock lands back on the menu, and in a browser
+tab the media query does not apply at all.
+
+### Why the date box looked like a different control (2026-08-23)
+
+Also from a screenshot: date of birth sat higher and shorter than Number and Height beside it.
+
+Nothing was wrong with the box. `.field` is a grid, and its rows stretched: the date field
+carries a hint line under it ("17 years old", or the error), which made the row taller, so
+the *other* fields stretched their inputs to match. The neighbours were wrong, not the date.
+
+`.field { align-content: start; }` — contents keep their natural height and every box in a
+row now lines up at the top. Same fix covers the practice From/To boxes.
+
 ## The ink engine (first proved in `pencil-test.html`)
 
 Worth keeping whichever platform wins, because the reasoning carries over.
