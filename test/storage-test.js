@@ -1047,6 +1047,42 @@ launch(backing, lsStore).then(function (po) {
   eq("and its touchmove, so scrolling still works",
      touchAt("touchmove", "direct"), false);
 
+  /* Pillar 5. A practice sheet, a player and a tactic could already reach paper;
+     the week, the month and a drill sheet could not. */
+  print("\n21. everything he carries into the gym can be printed");
+
+  function buttonsOn(view, id) {
+    po.go(view, id);
+    return document.getElementById("app").querySelectorAll("button")
+             .map(function (b) { return b.textContent; });
+  }
+  function hasPrint(labels) { return labels.indexOf("Print") >= 0; }
+
+  po.route.smode = "week";
+  ok("the week prints", hasPrint(buttonsOn("schedule")));
+  po.route.smode = "month";
+  ok("the month prints", hasPrint(buttonsOn("schedule")));
+  po.route.smode = "week";
+  ok("a drill sheet prints", hasPrint(buttonsOn("drill", drill.id)));
+  ok("a practice sheet still prints", hasPrint(buttonsOn("practice", po.state.practices[0].id)));
+  var tac = po.newTactic();
+  tac.name = "Print test";
+  po.state.tactics.unshift(tac);
+  po.touchTactic(tac);
+  ok("and a tactic sheet, whose footer was re-classed", hasPrint(buttonsOn("tactic", tac.id)));
+
+  /* The action buttons must not print with the sheet. Two of these footers
+     carried no class at all, so Done and Delete would have come out on paper. */
+  po.go("drill", drill.id);
+  var foots = document.getElementById("app").querySelectorAll(".sheet-foot");
+  eq("the drill sheet's buttons are marked not to print", foots.length, 1);
+  ok("and the schedule's Print button is too",
+     (function () {
+       po.route.smode = "week"; po.go("schedule");
+       var n = document.getElementById("app").querySelectorAll(".noprint");
+       return n.length > 0;
+     })());
+
   var pid = po.state.practices[0].id;
   po.go("practice", pid, "schedule");
   ok("a practice opened from the schedule goes back to the schedule",

@@ -203,6 +203,8 @@
   .name-input:focus { border-bottom-color: var(--accent); outline: none; }
   .name-input::placeholder { color: #4E483E; }
 
+  .sheet-foot { margin-top: 26px; display: flex; gap: 8px; flex-wrap: wrap; }
+
   .metarow {
     display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 14px; margin: 18px 0 8px;
@@ -687,10 +689,50 @@
     .item .imunit { display: none; }
   }
 
+  /* A4 with a real margin. Everything printed here is carried into a gym or
+     filed, so it needs an edge to hold and a hole-punch to miss. */
+  @page { margin: 14mm; }
+
   @media print {
     .topbar, .rail, .add-court, .add-row, .diagram-head .grp, .filters,
     .tabs, .modal-back, .prac-foot, .imoves, .hint, .dadd, .cal-nav .chip,
-    .sect-tools, .sect-caret { display: none !important; }
+    .sect-tools, .sect-caret, .sheet-foot, .noprint { display: none !important; }
+
+    /* A select prints its own chrome and an arrow otherwise, which on paper is
+       just a box round a word. The typed fields already do this; selects did not. */
+    select {
+      background: #fff !important; color: #000 !important; border: 0 !important;
+      padding: 0 !important; -webkit-appearance: none; appearance: none;
+    }
+
+    /* The week is the sheet he plans from, so it prints as seven rows that each
+       stay whole. The "+" and the arrows go; the date range stays, because with
+       the top bar hidden it is the only thing saying which week this is. */
+    .week { gap: 4px; }
+    .day { grid-template-columns: 54px 1fr; padding: 7px 9px; }
+    .day.today { border-color: #000; }
+    .chip-item { padding: 5px 8px; }
+    .ci-title { font-size: 12px; }
+    .ci-sub { font-size: 10px; }
+
+    /* Six rows of a month have to fit one page, so the cells lose their screen
+       breathing room rather than the month losing a week. */
+    .month-grid { gap: 3px; }
+    .mg-cell { min-height: 62px; padding: 3px; }
+    .mg-cell.outside { opacity: .45; }
+    .mg-item { font-size: 9px; padding: 1px 3px; }
+    .mg-num { font-size: 10px; }
+    .cal-title { font-size: 16px; }
+    .cal-nav { margin: 6px 0 10px; }
+
+    /* A drill sheet: the name leads, the diagrams stay whole. The court's cream
+       is a screen colour and browsers drop backgrounds when printing anyway, so
+       it goes to paper white with a thin edge. `outline` rather than `border`
+       because the canvases are positioned to the wrap's box - a border would
+       shrink them by 2px and slide the ink off the lines. */
+    .court-wrap { box-shadow: none !important; outline: 1px solid #bbb; }
+    .name-input { font-size: 26px !important; }
+    .metarow { margin: 10px 0 6px; }
     body { background: #fff; color: #000; }
     .editor { grid-template-columns: 1fr; }
     .diagram { break-inside: avoid; border-color: #bbb; background: #fff; }
@@ -2476,8 +2518,7 @@
     };
     sheet.appendChild(addOpt);
 
-    var footer = el("div", null);
-    footer.style.cssText = "margin-top:26px;display:flex;gap:8px;flex-wrap:wrap";
+    var footer = el("div", "sheet-foot");
 
     var done = el("button", "chip primary", "Done");
     done.onclick = function () { go("tactics"); };
@@ -3137,6 +3178,10 @@
       modes.appendChild(b);
     });
     head.appendChild(modes);
+
+    var sprint = el("button", "chip ghost noprint", "Print");
+    sprint.onclick = function () { window.print(); };
+    head.appendChild(sprint);
     wrap.appendChild(head);
 
     // moving through the season
@@ -3950,8 +3995,7 @@
     };
     sheet.appendChild(add);
 
-    var footer = el("div", null);
-    footer.style.cssText = "margin-top:26px;display:flex;gap:8px;flex-wrap:wrap";
+    var footer = el("div", "sheet-foot");
     var del = el("button", "chip danger", "Delete drill");
     del.onclick = function () {
       // Practices keep a name snapshot, so history survives — but say so plainly
@@ -3971,7 +4015,9 @@
     };
     var done = el("button", "chip primary", "Done");
     done.onclick = function () { go("library"); };
-    footer.appendChild(done); footer.appendChild(del);
+    var dprint = el("button", "chip ghost", "Print");
+    dprint.onclick = function () { window.print(); };
+    footer.appendChild(done); footer.appendChild(dprint); footer.appendChild(del);
     sheet.appendChild(footer);
 
     shell.appendChild(sheet);

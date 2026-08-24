@@ -12,7 +12,8 @@ Six pillars, in Dusan's own framing:
 3. **Tactics** — the current team's complete tactical package and how each option is executed.
 4. **Roster** — a profile per player: physical, tactical, technical, psychological;
    individual workout plans and their progress.
-5. **Print / export** — practices and schedules out to paper or PDF.
+5. **Print / export** — practices and schedules out to paper or PDF. *(Built — see
+   "Stage 6: print".)*
 6. **Archive** — nothing is deleted at season end. The whole thing is a personal,
    transferable knowledge book that travels from team to team, season to season.
 
@@ -846,6 +847,46 @@ can be placed on a diagram would sidestep the broken path entirely for the case 
 about, and would be searchable besides, where handwritten digits never can be.
 
 **Offered, not started — his call, and he has not made it.**
+
+## Stage 6: print (2026-08-24)
+
+Pillar 5, chosen over typed labels, the archive, and simply using it for a few weeks.
+
+### What could already reach paper, and what could not
+
+A practice sheet, a player and a tactic each had a Print button. **The week, the month and
+a drill sheet did not** — which meant the two screens he plans *from* were the two he could
+not carry into the gym.
+
+Both now print, and printing goes through the browser, so "print" and "save as PDF" are the
+same button. That is the whole of pillar 5's "out to paper or PDF"; no export format to
+maintain.
+
+### Two footers were printing their own buttons
+
+`renderTacticEditor` and `renderEditor` built their action footers as a bare `div` with an
+inline style and no class, so **Done, Delete and Print would have come out on the paper**.
+They are `.sheet-foot` now and hidden in print, alongside a `.noprint` class for one-off
+controls like the schedule's own Print button. There is a test asserting the footers carry
+the class, because this is invisible until someone actually prints.
+
+### Decisions in the print stylesheet
+
+- **`@page { margin: 14mm }`** — an edge to hold and a hole-punch to miss.
+- **The week keeps its date range.** With the top bar hidden, `.cal-title` is the only thing
+  on the page saying *which* week this is. The `‹ › Today` chips go; the title stays.
+- **Six rows of a month fit one page.** Cells drop from 92px to 62px and lose their padding,
+  so the month loses breathing room rather than losing a week.
+- **`select` prints as plain text.** The typed fields already did; selects were still drawing
+  their own box and arrow around a single word.
+- **The court prints white with a thin edge.** Its cream `--court` is a screen colour and
+  browsers drop backgrounds when printing anyway. The edge is an `outline`, not a `border`:
+  the ink canvases are positioned to the wrap's box, so a border would shrink them by 2px
+  and slide every stroke off the court lines.
+- Court lines are `#3A342A` on a light court, so they print as-is. This was checked rather
+  than assumed — light lines on a dark court would have printed invisible.
+
+`test/run.sh` is now **214 checks**.
 
 ## The ink engine (first proved in `pencil-test.html`)
 
