@@ -5,17 +5,83 @@
 
 <style>
   :root {
-    --ground:     #1B1A17;
-    --panel:      #24221D;
-    --panel-hi:   #2E2B24;
-    --line:       #3B372F;
-    --text:       #E9E4D8;
-    --dim:        #948C7C;
-    --accent:     #F2A413;
-    --accent-ink: #1B1A17;
+    /* ---- PAPER AND COURT (the default) ----
+       Dusan's call: the base is the same warm cream as the court, so the app and
+       the thing he draws on are the same material and a diagram stops looking
+       like a window cut into a different app. Orange stays the accent; light
+       blue is the second colour.
+
+       Every value here was measured, not chosen by eye. Picking tints by eye had
+       already shipped two invisible ones. Rules used: small text 4.5:1, large
+       text and borders 3:1, and a visible step between stacked surfaces. */
+    --ground:     #E7DFCD;   /* the desk */
+    --panel:      #F8F4EA;   /* paper - cards sit on the desk */
+    --panel-hi:   #FFFDF6;   /* raised */
+    --line:       #D5CBB4;
+    --line-hi:    #B5A78B;   /* hover */
+    --text:       #221F19;
+    --dim:        #6B6252;
+    --faint:      #8C816B;   /* placeholders, empty days */
+
+    /* Three oranges, because one cannot do all three jobs on a light ground:
+       a vivid orange is unreadable as small text, and a text-dark orange is
+       muddy as a fill. --accent-fill keeps the app's identity colour. */
+    --accent:      #C2700A;  /* borders and large text - 3.4:1 */
+    --accent-text: #8F5104;  /* small text - 5.7:1 */
+    --accent-fill: #F2A413;  /* filled chips */
+    --accent-ink:  #221F19;  /* on the fill - 7.9:1 */
+
+    --blue:       #1F6392;
+
+    /* The iPad draws its clock in WHITE over this app (the status bar is
+       black-translucent, which is what makes it look full-screen). A cream top
+       bar would hide the clock completely, so the bar is deep blue - which is
+       also where the second colour belongs. White clock on it: 11.2:1. */
+    --topbar-bg:   #1D3E57;
+    --topbar-text: #F3EFE5;
+    --topbar-dim:  #A9BECD;
+    --topbar-line: #2E5876;
+    --topbar-chip: #27506E;
+    --court-shadow: 0 2px 10px rgba(74,58,32,.16), 0 0 0 1px rgba(74,58,32,.16);
+
     --court:      #EDE6D8;
     --court-line: #3A342A;
-    --danger:     #C8574B;
+    --rim:        #C0552A;
+
+    --pill-bg:    #EBE4D4;
+    --pill-line:  #D5CBB4;
+    --pill-text:  #6B6252;
+
+    --good:       #2E7D4F;
+    --good-bg:    #DDEEE2;
+    --good-line:  #A9CDB6;
+
+    --danger:      #B3372B;
+    --danger-line: #E0B0A8;
+    --danger-soft: #8C3A30;
+    --danger-ink:  #8C3A30;
+
+    --warn-bg:     #FCE9DF;
+    --warn-line:   #E0B49E;
+    --warn-text:   #6B3A22;
+    --warn-strong: #4A2415;
+
+    /* Schedule kinds. Colour says which; size and fill say how much it counts. */
+    --k-game:       #B33F22;
+    --k-tournament: #7B4A9E;
+    --k-travel:     #2E7BA6;
+    --k-off:        #8A8272;
+    --k-gym:        #8A6F2E;
+    --k-note:       #8E8574;
+    --loud-game-bg: #F6DED3;
+    --loud-tourn-bg:#EBDDF4;
+    --loud-sub:     #6B6252;
+
+    --pos-g: #1D5A80; --pos-g-bg: #DCEAF3; --pos-g-line: #A9CEE4;
+    --pos-f: #2C5E2A; --pos-f-bg: #DFEEDA; --pos-f-line: #AFD3A6;
+    --pos-c: #5E3576; --pos-c-bg: #EDE0F5; --pos-c-line: #CDAFDF;
+
+    --chart-1: #2F6FBF; --chart-2: #BE4A1E; --chart-3: #15805C; --chart-4: #9C6A00;
     --rail: 64px;
     /* The app is installed with a translucent status bar, so iPadOS draws the
        clock and battery OVER the page. These are the strips the system owns;
@@ -26,6 +92,75 @@
     --bar: 49px;                                  /* the top bar's own height */
     --bar-total: calc(var(--bar) + var(--safe-top));
   }
+  /* ---- the original dark theme, kept and switchable ----
+     A gym at 21:00 and a gym at 10:00 are different rooms. Rather than decide
+     that from a description, both are here and the toggle is in the top bar;
+     the choice is remembered on this iPad. Same token names throughout, so a
+     screen built once works in both. */
+  [data-theme="dark"] {
+    --ground:     #1B1A17;
+    --panel:      #24221D;
+    --panel-hi:   #2E2B24;
+    --line:       #3B372F;
+    --line-hi:    #4C463C;
+    --text:       #E9E4D8;
+    --dim:        #948C7C;
+    --faint:      #4E483E;
+
+    --accent:      #F2A413;
+    --accent-text: #F2A413;
+    --accent-fill: #F2A413;
+    --accent-ink:  #1B1A17;
+
+    --blue:       #6FA8C7;
+
+    --topbar-bg:   #24221D;
+    --topbar-text: #E9E4D8;
+    --topbar-dim:  #948C7C;
+    --topbar-line: #3B372F;
+    --topbar-chip: #2E2B24;
+    --court-shadow: 0 8px 26px rgba(0,0,0,.38), 0 0 0 1px rgba(0,0,0,.35);
+
+    --court:      #EDE6D8;
+    --court-line: #3A342A;
+    --rim:        #C0552A;
+
+    --pill-bg:    #332F27;
+    --pill-line:  #433D33;
+    --pill-text:  #A49B8A;
+
+    --good:       #9CC47F;
+    --good-bg:    #2A3326;
+    --good-line:  #3E4C36;
+
+    --danger:      #C8574B;
+    --danger-line: #4A342F;
+    --danger-soft: #C08A80;
+    --danger-ink:  #E0A79E;
+
+    --warn-bg:     #33231E;
+    --warn-line:   #593B33;
+    --warn-text:   #E8C9BF;
+    --warn-strong: #FFFFFF;
+
+    --k-game:       #DC6D4B;   /* lifted from #D2603F: a loud title in this
+                                  colour sat at 2.85:1 on its own tint */
+    --k-tournament: #C08BD8;
+    --k-travel:     #6FA8C7;
+    --k-off:        #6B655A;
+    --k-gym:        #8C7A55;
+    --k-note:       #575149;
+    --loud-game-bg: #52362B;
+    --loud-tourn-bg:#413553;
+    --loud-sub:     #B5AD9C;
+
+    --pos-g: #8FC4E0; --pos-g-bg: #1F2C33; --pos-g-line: #334B59;
+    --pos-f: #B0D694; --pos-f-bg: #212C1E; --pos-f-line: #384C31;
+    --pos-c: #D0A5E4; --pos-c-bg: #2B2431; --pos-c-line: #443850;
+
+    --chart-1: #3987e5; --chart-2: #d95926; --chart-3: #199e70; --chart-4: #c98500;
+  }
+
   /* Belt and braces. env() is the right answer and adapts to the device, but
      if it ever reports 0 while installed, the clock lands on the menu again —
      so when running off the Home Screen there is a floor under it. In a normal
@@ -66,15 +201,31 @@
     display: flex; align-items: center; gap: 14px; flex-wrap: wrap; row-gap: 8px;
     padding: calc(10px + var(--safe-top)) calc(16px + var(--safe-right))
              10px calc(16px + var(--safe-left));
-    background: var(--panel);
-    border-bottom: 1px solid var(--line);
+    background: var(--topbar-bg);
+    color: var(--topbar-text);
+    border-bottom: 1px solid var(--topbar-line);
   }
+  /* The bar carries its own colours so it works over a cream body as well as a
+     dark one; everything inside it inherits from the bar, not from the page. */
+  .topbar .chip {
+    background: var(--topbar-chip); border-color: var(--topbar-line);
+    color: var(--topbar-text);
+  }
+  .topbar .chip.ghost { background: transparent; }
+  .topbar .chip:hover { border-color: var(--topbar-dim); }
+  .topbar .chip[aria-pressed="true"] {
+    background: var(--accent-fill); border-color: var(--accent-fill);
+    color: var(--accent-ink);
+  }
+  .topbar .savechip { color: var(--topbar-dim); }
+  .topbar .label { color: var(--topbar-dim); }
+
   .wordmark {
     font-family: "Barlow Condensed", sans-serif;
     text-transform: uppercase; letter-spacing: .12em;
     font-weight: 700; font-size: 18px; line-height: 1; white-space: nowrap;
   }
-  .wordmark span { color: var(--accent); }
+  .wordmark span { color: var(--accent-text); }
   .spacer { margin-left: auto; }
 
   button, input, select, textarea {
@@ -93,10 +244,10 @@
     text-transform: uppercase; letter-spacing: .08em; font-weight: 600;
     font-size: 14px; white-space: nowrap;
   }
-  .chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
-  .chip.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .chip[aria-pressed="true"] { background: var(--accent-fill); border-color: var(--accent-fill); color: var(--accent-ink); }
+  .chip.primary { background: var(--accent-fill); border-color: var(--accent-fill); color: var(--accent-ink); }
   .chip.ghost { background: transparent; }
-  .chip.danger { color: var(--danger); border-color: #4A342F; background: transparent; }
+  .chip.danger { color: var(--danger); border-color: var(--danger-line); background: transparent; }
 
   input, textarea { -webkit-user-select: text; user-select: text; }
 
@@ -132,7 +283,7 @@
 
   .filters { display: flex; gap: 7px; flex-wrap: wrap; margin: 16px 0 20px; }
   .filters button { padding: 6px 11px; font-size: 13px; border-radius: 99px; background: transparent; }
-  .filters button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .filters button[aria-pressed="true"] { background: var(--accent-fill); border-color: var(--accent-fill); color: var(--accent-ink); }
 
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
 
@@ -141,7 +292,7 @@
     padding: 0; overflow: hidden; text-align: left; display: grid;
     grid-template-rows: auto 1fr; min-height: 168px;
   }
-  .card:hover { border-color: #4C463C; }
+  .card:hover { border-color: var(--line-hi); }
   .card .thumb {
     background: var(--court); height: 92px; position: relative; overflow: hidden;
     display: grid; place-items: center;
@@ -155,7 +306,7 @@
   .card .sub { font-size: 11.5px; color: var(--dim); display: flex; gap: 8px; flex-wrap: wrap; }
   .tag {
     display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 99px;
-    background: #332F27; color: var(--accent); border: 1px solid #433D33;
+    background: var(--pill-bg); color: var(--accent-text); border: 1px solid var(--pill-line);
     font-family: "Barlow Condensed", sans-serif; text-transform: uppercase; letter-spacing: .07em;
   }
 
@@ -201,7 +352,7 @@
     border-radius: 0; padding: 4px 2px; width: 100%;
   }
   .name-input:focus { border-bottom-color: var(--accent); outline: none; }
-  .name-input::placeholder { color: #4E483E; }
+  .name-input::placeholder { color: var(--faint); }
 
   .sheet-foot { margin-top: 26px; display: flex; gap: 8px; flex-wrap: wrap; }
 
@@ -213,14 +364,14 @@
   .int-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 5px; }
   .int-read {
     font-family: "Barlow Condensed", sans-serif; font-size: 13px; letter-spacing: .05em;
-    color: var(--accent); text-transform: uppercase;
+    color: var(--accent-text); text-transform: uppercase;
   }
   .pips { display: flex; gap: 5px; flex-wrap: wrap; }
   .pips button {
     width: 34px; height: 34px; border-radius: 8px; background: transparent;
     font-variant-numeric: tabular-nums; font-size: 13px;
   }
-  .pips button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .pips button[aria-pressed="true"] { background: var(--accent-fill); border-color: var(--accent-fill); color: var(--accent-ink); }
 
   .diagrams { display: grid; gap: 18px; margin-top: 22px; }
 
@@ -228,7 +379,7 @@
   .diagram-head { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
   .diagram-head .num {
     font-family: "Barlow Condensed", sans-serif; font-size: 12px; letter-spacing: .09em;
-    text-transform: uppercase; color: var(--accent); white-space: nowrap;
+    text-transform: uppercase; color: var(--accent-text); white-space: nowrap;
   }
   .diagram-head input[type="text"] { flex: 1 1 180px; min-width: 120px; background: var(--ground); }
   .diagram-head .grp { display: flex; gap: 5px; margin-left: auto; }
@@ -236,7 +387,7 @@
 
   .court-wrap {
     position: relative; background: var(--court); border-radius: 5px; margin: 0 auto;
-    box-shadow: 0 8px 26px rgba(0,0,0,.38), 0 0 0 1px rgba(0,0,0,.35);
+    box-shadow: var(--court-shadow);
     max-width: 100%;
   }
   .court-wrap svg, .court-wrap canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
@@ -249,20 +400,22 @@
   .court-line { stroke: var(--court-line); fill: none; stroke-width: 4; }
   .court-line.thick { stroke-width: 7; }
   .court-line.dash { stroke-dasharray: 26 20; }
-  .rim { stroke: #C0552A; stroke-width: 6; fill: none; }
+  .rim { stroke: var(--rim); stroke-width: 6; fill: none; }
 
   .add-court, .add-row { width: 100%; padding: 15px; border-style: dashed; background: transparent; color: var(--dim); }
   .add-court:hover, .add-row:hover { color: var(--accent); border-color: var(--accent); }
 
+  .themebtn { font-size: 15px; line-height: 1; padding: 7px 10px; }
+
   .savechip { font-size: 11.5px; color: var(--dim); white-space: nowrap; }
-  .savechip.on { color: var(--accent); }
+  .savechip.on { color: var(--accent-text); }
 
   .warn {
-    background: #33231E; border: 1px solid #593B33; color: #E8C9BF;
+    background: var(--warn-bg); border: 1px solid var(--warn-line); color: var(--warn-text);
     border-radius: 10px; padding: 11px 14px; font-size: 13px; line-height: 1.5;
     margin: 0 0 18px;
   }
-  .warn b { color: #fff; }
+  .warn b { color: var(--warn-strong); }
 
   /* ---------- practices ---------- */
   .tabs { display: flex; gap: 6px; }
@@ -280,7 +433,7 @@
     align-items: start; text-align: left; padding: 13px 15px; margin-bottom: 8px;
     background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
   }
-  .prow:hover { border-color: #4C463C; }
+  .prow:hover { border-color: var(--line-hi); }
   .pwhen { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
   .pdate {
     font-family: "Barlow Condensed", sans-serif; font-size: 19px; font-weight: 700;
@@ -290,9 +443,9 @@
     display: inline-block; font-family: "Barlow Condensed", sans-serif;
     text-transform: uppercase; letter-spacing: .09em; font-size: 10px;
     padding: 3px 8px; border-radius: 99px;
-    background: #332F27; color: var(--dim); border: 1px solid #433D33;
+    background: var(--pill-bg); color: var(--dim); border: 1px solid var(--pill-line);
   }
-  .pbadge.done { background: #2A3326; color: #9CC47F; border-color: #3E4C36; }
+  .pbadge.done { background: var(--good-bg); color: var(--good); border-color: var(--good-line); }
   .pwhat { display: grid; gap: 5px; min-width: 0; }
   .psub { font-size: 11.5px; color: var(--dim); }
   .pnames { font-size: 13.5px; line-height: 1.5; }
@@ -320,7 +473,7 @@
     border-radius: 10px; padding: 9px 12px;
   }
   .inum {
-    font-family: "Barlow Condensed", sans-serif; font-size: 15px; color: var(--accent);
+    font-family: "Barlow Condensed", sans-serif; font-size: 15px; color: var(--accent-text);
     text-align: center; font-variant-numeric: tabular-nums;
   }
   .ibody { min-width: 0; display: grid; gap: 3px; }
@@ -329,7 +482,7 @@
     text-transform: uppercase; letter-spacing: .03em; line-height: 1.15;
   }
   .isub { font-size: 11px; color: var(--dim); }
-  .isub.gone { color: #C08A80; }
+  .isub.gone { color: var(--danger-soft); }
   .imin { text-align: right; padding: 7px 8px; font-variant-numeric: tabular-nums; }
   .imunit { font-size: 11px; color: var(--dim); }
   .imoves { display: flex; gap: 4px; }
@@ -337,9 +490,9 @@
     width: 38px; height: 38px; border-radius: 8px; background: transparent;
     display: grid; place-items: center; font-size: 15px; line-height: 1; color: var(--dim);
   }
-  .mini:hover:not(:disabled) { color: var(--text); border-color: #4C463C; }
+  .mini:hover:not(:disabled) { color: var(--text); border-color: var(--line-hi); }
   .mini:disabled { opacity: .3; cursor: default; }
-  .mini.rm:hover { color: var(--danger); border-color: #4A342F; }
+  .mini.rm:hover { color: var(--danger); border-color: var(--danger-line); }
 
   .prac-foot { margin-top: 28px; display: grid; gap: 14px; }
   .foot-row { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -352,7 +505,7 @@
   /* ---------- typed fields ---------- */
   .field-note { font-size: 11px; color: var(--dim); line-height: 1.35; min-height: 14px; }
   input.bad { border-color: var(--danger); }
-  input.bad + .field-note { color: #C08A80; }
+  input.bad + .field-note { color: var(--danger-soft); }
 
   /* ---------- what an assessment is ---------- */
   .help-areas { display: grid; gap: 10px; margin-bottom: 14px; }
@@ -381,7 +534,7 @@
     border: 1px solid var(--line); border-radius: 12px;
     margin-bottom: 8px; background: var(--panel); overflow: hidden;
   }
-  .sect.on { background: transparent; border-color: #4C463C; }
+  .sect.on { background: transparent; border-color: var(--line-hi); }
   .sect-head {
     width: 100%; display: flex; align-items: center; gap: 10px;
     padding: 12px 14px; background: transparent; border: 0; border-radius: 0;
@@ -399,7 +552,7 @@
   /* ---------- tactics ---------- */
   .cat-head {
     font-family: "Barlow Condensed", sans-serif; text-transform: uppercase;
-    letter-spacing: .07em; font-size: 12px; color: var(--accent);
+    letter-spacing: .07em; font-size: 12px; color: var(--accent-text);
     margin: 14px 0 7px;
   }
   .prow.tactic { grid-template-columns: 108px 1fr; }
@@ -415,7 +568,7 @@
   .option-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
   .option-head .num {
     font-family: "Barlow Condensed", sans-serif; font-size: 12px; letter-spacing: .09em;
-    text-transform: uppercase; color: var(--accent); white-space: nowrap;
+    text-transform: uppercase; color: var(--accent-text); white-space: nowrap;
   }
   .option-head input[type="text"] {
     flex: 1 1 200px; min-width: 140px; background: var(--ground);
@@ -440,11 +593,11 @@
     font-family: "Barlow Condensed", sans-serif; font-weight: 700;
     font-size: 15px; letter-spacing: .09em; text-transform: uppercase;
     padding: 2px 10px; border-radius: 6px;
-    background: #332F27; color: #A49B8A; border: 1px solid #433D33;
+    background: var(--pill-bg); color: var(--pill-text); border: 1px solid var(--pill-line);
   }
-  .posbadge.pg { background: #1F2C33; color: #8FC4E0; border-color: #334B59; }
-  .posbadge.pf { background: #212C1E; color: #B0D694; border-color: #384C31; }
-  .posbadge.pc { background: #2B2431; color: #D0A5E4; border-color: #443850; }
+  .posbadge.pg { background: var(--pos-g-bg); color: var(--pos-g); border-color: var(--pos-g-line); }
+  .posbadge.pf { background: var(--pos-f-bg); color: var(--pos-f); border-color: var(--pos-f-line); }
+  .posbadge.pc { background: var(--pos-c-bg); color: var(--pos-c); border-color: var(--pos-c-line); }
   .prow.player .psub { font-size: 12px; }
   .prow.inactive { opacity: .55; }
   .shirt {
@@ -557,13 +710,13 @@
   .day.today { border-color: var(--accent); }
   .dwhen { display: grid; gap: 1px; justify-items: center; padding-top: 2px; }
   .dday { font-size: 10px; color: var(--dim); }
-  .day.today .dday { color: var(--accent); }
+  .day.today .dday { color: var(--accent-text); }
   .dnum {
     font-family: "Barlow Condensed", sans-serif; font-size: 24px; font-weight: 700;
     line-height: 1; font-variant-numeric: tabular-nums;
   }
   .dbody { display: grid; gap: 6px; min-width: 0; }
-  .dempty { color: #4E483E; font-size: 13px; padding: 5px 0; }
+  .dempty { color: var(--faint); font-size: 13px; padding: 5px 0; }
   .dadd {
     width: 38px; height: 38px; border-radius: 10px; background: transparent;
     color: var(--dim); font-size: 19px; line-height: 1; display: grid; place-items: center;
@@ -577,7 +730,7 @@
     background: var(--panel-hi); border: 1px solid var(--line);
     border-left: 3px solid var(--dim); border-radius: 8px; width: 100%;
   }
-  .chip-item:hover { border-color: #4C463C; }
+  .chip-item:hover { border-color: var(--line-hi); }
   .ci-title {
     font-family: "Barlow Condensed", sans-serif; font-size: 16px; font-weight: 600;
     text-transform: uppercase; letter-spacing: .03em; line-height: 1.15;
@@ -589,41 +742,48 @@
      Only the loud tier gets a tinted ground, so a busy week does not turn into
      seven competing colours — the point was to make the week readable, not
      to decorate it. */
+  /* Louder than the first attempt: he said it was not loud enough. The kind's
+     own colour now runs the full left edge as a solid bar and colours the title,
+     and the card is taller. A game should be findable without reading. */
   .chip-item.loud {
-    padding: 11px 13px; border-left-width: 5px;
+    padding: 14px 16px; border-left-width: 9px;
   }
   .chip-item.loud .ci-title {
-    font-size: 23px; letter-spacing: .045em; line-height: 1.1;
+    font-size: 27px; letter-spacing: .045em; line-height: 1.05;
   }
-  .chip-item.loud .ci-sub { font-size: 12.5px; color: #B5AD9C; }
-  .chip-item.game.loud       { background: #52362B; }
-  .chip-item.tournament.loud { background: #413553; }
+  .chip-item.loud .ci-sub { font-size: 13px; color: var(--loud-sub); }
+  .chip-item.game.loud .ci-title       { color: var(--k-game); }
+  .chip-item.tournament.loud .ci-title { color: var(--k-tournament); }
+  .chip-item.game.loud       { background: var(--loud-game-bg); }
+  .chip-item.tournament.loud { background: var(--loud-tourn-bg); }
 
   /* The practice keeps the baseline look: it is the normal working substance. */
   .chip-item.mid .ci-title { font-size: 17px; }
 
   /* Context, not events. No card at all — just a marked line that stays out of
      the way until it is read. */
+  /* Quieter than a practice, but he said the first version disappeared. It keeps
+     a card and full-strength text; what marks it as context is that it is not
+     shouting - normal weight, sentence case, and a thinner edge. */
   .chip-item.quiet {
-    background: transparent; border-color: transparent;
-    border-left: 3px solid var(--dim); padding: 3px 10px;
+    background: var(--panel); border-left-width: 3px; padding: 6px 10px;
   }
   .chip-item.quiet .ci-title {
     font-family: "IBM Plex Sans", system-ui, sans-serif;
-    font-size: 13px; font-weight: 500; text-transform: none;
-    letter-spacing: 0; color: var(--dim);
+    font-size: 14.5px; font-weight: 600; text-transform: none;
+    letter-spacing: 0; color: var(--text);
   }
-  .chip-item.quiet .ci-sub { font-size: 10.5px; }
+  .chip-item.quiet .ci-sub { font-size: 11px; }
   .chip-item.quiet:hover { border-color: transparent; background: var(--panel-hi); }
 
   .chip-item.practice        { border-left-color: var(--accent); }
-  .chip-item.practice.done   { border-left-color: #9CC47F; }
-  .chip-item.game            { border-left-color: #D2603F; }
-  .chip-item.tournament      { border-left-color: #C08BD8; }
-  .chip-item.travel          { border-left-color: #6FA8C7; }
-  .chip-item.off             { border-left-color: #6B655A; }
-  .chip-item.gym             { border-left-color: #8C7A55; }
-  .chip-item.note            { border-left-color: #575149; }
+  .chip-item.practice.done   { border-left-color: var(--good); }
+  .chip-item.game            { border-left-color: var(--k-game); }
+  .chip-item.tournament      { border-left-color: var(--k-tournament); }
+  .chip-item.travel          { border-left-color: var(--k-travel); }
+  .chip-item.off             { border-left-color: var(--k-off); }
+  .chip-item.gym             { border-left-color: var(--k-gym); }
+  .chip-item.note            { border-left-color: var(--k-note); }
 
   .month-grid {
     display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px;
@@ -634,14 +794,14 @@
     min-height: 92px; padding: 5px; display: grid; gap: 3px; align-content: start;
     cursor: pointer; overflow: hidden;
   }
-  .mg-cell:hover { border-color: #4C463C; }
+  .mg-cell:hover { border-color: var(--line-hi); }
   .mg-cell.outside { opacity: .38; }
   .mg-cell.today { border-color: var(--accent); }
   .mg-num {
     font-family: "Barlow Condensed", sans-serif; font-size: 13px; color: var(--dim);
     font-variant-numeric: tabular-nums; line-height: 1;
   }
-  .mg-cell.today .mg-num { color: var(--accent); }
+  .mg-cell.today .mg-num { color: var(--accent-text); }
   .mg-item {
     font-size: 10px; line-height: 1.25; padding: 2px 4px; border-radius: 4px;
     background: var(--panel-hi); border-left: 2px solid var(--dim);
@@ -650,23 +810,24 @@
   /* The same three weights, scaled to a month cell. A game has to be findable
      when a whole month is on screen at once. */
   .mg-item.loud {
-    font-size: 10.5px; font-weight: 700; color: var(--text);
-    border-left-width: 3px; padding: 3px 5px;
+    font-size: 11px; font-weight: 700; color: var(--text);
+    border-left-width: 4px; padding: 3px 5px; text-transform: uppercase;
+    letter-spacing: .02em;
   }
-  .mg-item.game.loud       { background: #52362B; }
-  .mg-item.tournament.loud { background: #413553; }
+  .mg-item.game.loud       { background: var(--loud-game-bg); }
+  .mg-item.tournament.loud { background: var(--loud-tourn-bg); }
   .mg-item.quiet {
-    background: transparent; color: var(--dim); font-size: 9.5px;
-    border-left-width: 2px; padding: 1px 4px;
+    color: var(--text); font-size: 10px;
+    border-left-width: 2px; padding: 2px 4px;
   }
 
   .mg-item.practice      { border-left-color: var(--accent); }
-  .mg-item.practice.done { border-left-color: #9CC47F; }
-  .mg-item.game          { border-left-color: #D2603F; }
-  .mg-item.tournament    { border-left-color: #C08BD8; }
-  .mg-item.travel        { border-left-color: #6FA8C7; }
-  .mg-item.off           { border-left-color: #6B655A; }
-  .mg-item.gym           { border-left-color: #8C7A55; }
+  .mg-item.practice.done { border-left-color: var(--good); }
+  .mg-item.game          { border-left-color: var(--k-game); }
+  .mg-item.tournament    { border-left-color: var(--k-tournament); }
+  .mg-item.travel        { border-left-color: var(--k-travel); }
+  .mg-item.off           { border-left-color: var(--k-off); }
+  .mg-item.gym           { border-left-color: var(--k-gym); }
 
   .ev-form { display: grid; gap: 14px; }
   .ev-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -720,7 +881,7 @@
     width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
     border: 1px solid var(--line); color: var(--dim); font-size: 17px; line-height: 1;
   }
-  .mplus.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .mplus.on { background: var(--accent-fill); border-color: var(--accent-fill); color: var(--accent-ink); }
 
   .modal.choice { max-width: 520px; border-radius: 16px; align-self: center; }
   .modal-back:has(.choice) { align-items: center; padding: 16px; }
@@ -738,11 +899,11 @@
   }
   .choice-btn span { font-size: 12px; color: var(--dim); line-height: 1.45; }
   .choice-btn.danger-choice:hover { border-color: var(--danger); }
-  .choice-btn.danger-choice b { color: #E0A79E; }
+  .choice-btn.danger-choice b { color: var(--danger-ink); }
 
   .usage {
     font-family: "Barlow Condensed", sans-serif; text-transform: uppercase;
-    letter-spacing: .07em; font-size: 10px; color: #9CC47F;
+    letter-spacing: .07em; font-size: 10px; color: var(--good);
   }
 
   @media (max-width: 620px) {
@@ -838,11 +999,12 @@
     <button class="chip" data-view="tactics">Tactics</button>
     <button class="chip" data-view="roster">Roster</button>
   </div>
-  <div id="crumb" class="label" style="font-size:12px;color:var(--dim)"></div>
+  <div id="crumb" class="label" style="font-size:12px;color:var(--topbar-dim)"></div>
   <div class="spacer"></div>
   <span id="saveChip" class="savechip"></span>
   <button class="chip ghost" id="exportBtn">Export backup</button>
   <button class="chip ghost" id="importBtn">Import</button>
+  <button class="chip ghost themebtn" id="themeBtn" aria-label="Switch between paper and dark">&#9789;</button>
   <input type="file" id="importFile" accept="application/json" hidden>
 </div>
 
@@ -863,7 +1025,7 @@
   meta("apple-mobile-web-app-capable", "yes");          // full screen off the Home Screen
   meta("apple-mobile-web-app-status-bar-style", "black-translucent");
   meta("apple-mobile-web-app-title", "Practise");
-  meta("theme-color", "#1B1A17");
+  meta("theme-color", "#1D3E57");
 
   function link(rel, href, extra) {
     var l = document.createElement("link");
@@ -939,14 +1101,35 @@
      left it. Storage being unavailable must never break a screen: every access
      is guarded and the app falls back to "closed". */
   var UI_KEY = "practise-organiser/ui";
-  var ui = { open: {} };
+  var ui = { open: {}, theme: "" };
 
   function loadUI() {
     try {
       var raw = localStorage.getItem(UI_KEY);
       var saved = raw ? JSON.parse(raw) : null;
       if (saved && saved.open) ui.open = saved.open;
-    } catch (e) { ui.open = {}; }
+      if (saved && saved.theme) ui.theme = saved.theme;
+    } catch (e) { ui.open = {}; ui.theme = ""; }
+  }
+
+  /* Which theme is a preference of this iPad, exactly like which categories are
+     open: it belongs to the device, not to the season, so it is never in a
+     backup. Paper is the default; dark is an explicit choice, because a gym at
+     21:00 and a gym at 10:00 are different rooms. */
+  function applyTheme() {
+    var root = document.documentElement;
+    if (!root) return;
+    if (ui.theme === "dark") root.setAttribute("data-theme", "dark");
+    else root.removeAttribute("data-theme");
+    var tc = document.querySelector ? document.querySelector('meta[name="theme-color"]') : null;
+    if (tc) tc.setAttribute("content", ui.theme === "dark" ? "#24221D" : "#1D3E57");
+  }
+
+  function toggleTheme() {
+    ui.theme = ui.theme === "dark" ? "light" : "dark";
+    saveUI();
+    applyTheme();
+    if (themeBtn) themeBtn.textContent = ui.theme === "dark" ? "\u2600" : "\u263D";
   }
 
   function saveUI() {
@@ -1205,6 +1388,7 @@
     else { dirty[id] = "tactics"; schedule(); }
   }
 
+  var themeBtn = document.getElementById("themeBtn");
   var chipEl = document.getElementById("saveChip");
   function chip(msg, sticky) {
     chipEl.textContent = msg;
@@ -1433,14 +1617,19 @@
   /* The four areas are Dusan's own words from the roster pillar. The `what` line
      is on the record rather than in a help page, because the question he asked
      was "what should I write here" and the answer belongs next to the box. */
+  /* The series colours are tokens, not literals, because the set validated
+     against the dark panel is not readable on a light one - the gold was 2.8:1
+     on cream. Each theme carries its own four, both sets checked for contrast
+     and for separation from each other (worst pair dE 33). Used as CSS colours
+     in inline style and in SVG fill/stroke, both of which resolve var(). */
   var AREAS = [
-    { id: "physical",      label: "Physical",      hue: "#3987e5",
+    { id: "physical",      label: "Physical",      hue: "var(--chart-1)",
       what: "Speed, strength, jumping, conditioning, size for his position." },
-    { id: "tactical",      label: "Tactical",      hue: "#d95926",
+    { id: "tactical",      label: "Tactical",      hue: "var(--chart-2)",
       what: "Reading the game: spacing, decisions, running the sets, defensive rotations." },
-    { id: "technical",     label: "Technical",     hue: "#199e70",
+    { id: "technical",     label: "Technical",     hue: "var(--chart-3)",
       what: "The skills themselves: shooting, handling, passing, footwork, finishing." },
-    { id: "psychological", label: "Psychological", hue: "#c98500",
+    { id: "psychological", label: "Psychological", hue: "var(--chart-4)",
       what: "Competitiveness, coachability, composure late in a close game, consistency." }
   ];
 
@@ -4607,6 +4796,11 @@
 
   chip("Opening…");
   loadUI();
+  applyTheme();
+  if (themeBtn) {
+    themeBtn.textContent = ui.theme === "dark" ? "\u2600" : "\u263D";
+    themeBtn.onclick = toggleTheme;
+  }
   initStore().then(function () {
     chip("");
     render();

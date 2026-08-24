@@ -119,6 +119,7 @@ function makeDom() {
       remove: function () { if (n.parentNode) n.parentNode.removeChild(n); },
       setAttribute: function (k, v) { n.attrs[k] = String(v); },
       getAttribute: function (k) { return k in n.attrs ? n.attrs[k] : null; },
+      removeAttribute: function (k) { delete n.attrs[k]; },
       readOnly: false,
       _on: {},
       /* Enough classList for the code under test. Without it the commit path of
@@ -187,7 +188,8 @@ function makeDom() {
   }
 
   var byId = {};
-  ["saveChip", "app", "crumb", "tabs", "exportBtn", "importBtn", "importFile"].forEach(function (id) {
+  ["saveChip", "app", "crumb", "tabs", "exportBtn", "importBtn", "importFile",
+   "themeBtn"].forEach(function (id) {
     byId[id] = Node("div");
   });
   // the two nav buttons the chrome iterates over
@@ -200,9 +202,11 @@ function makeDom() {
   /* Document-level listeners are recorded, not dropped. They used to be a no-op,
      which meant anything the app hangs off the document could not be tested. */
   var docOn = {};
+  var root = Node("html");
   return {
     head: Node("head"),
     body: Node("body"),
+    documentElement: root,
     createElement: Node,
     getElementById: function (id) { return byId[id] || null; },
     addEventListener: function (t, fn) { (docOn[t] || (docOn[t] = [])).push(fn); },
@@ -266,6 +270,7 @@ function appSource() {
     "           maskFrom: maskFrom, maskText: maskText, typedField: typedField,\n" +
     "           pads: function () { return pads; },\n" +
     "           tierOf: tierOf, positionBadge: positionBadge,\n" +
+    "           ui: ui, applyTheme: applyTheme, toggleTheme: toggleTheme,\n" +
     "           applyImport: applyImport };\n";
   return src.slice(0, at) + exported + src.slice(at);
 }
@@ -1109,6 +1114,62 @@ launch(backing, lsStore).then(function (po) {
   var app = document.getElementById("app");
   ok("the week renders weighted entries",
      app.querySelectorAll(".chip-item").length > 0);
+
+  /* Paper by default, dark on request, remembered on this iPad - and never in a
+     backup, because which theme he likes is not part of the season's record. */
+  print("\n23. paper by default, dark by choice");
+
+  eq("it opens on paper", document.documentElement.getAttribute("data-theme"), null);
+  po.toggleTheme();
+  eq("the toggle turns the lights off", document.documentElement.getAttribute("data-theme"), "dark");
+  eq("and the choice is recorded", po.ui.theme, "dark");
+  po.toggleTheme();
+  eq("and back to paper", document.documentElement.getAttribute("data-theme"), null);
+  eq("still recorded, explicitly", po.ui.theme, "light");
+
+  var stored = JSON.parse(lsStore.getItem("practise-organiser/ui"));
+  eq("it is kept with the other preferences of this iPad", stored.theme, "light");
+
+  var backup = JSON.parse(po.serialize(po.state));
+  ok("and never reaches a backup", !("theme" in backup) && !("ui" in backup),
+     Object.keys(backup).join(","));
+
+  /* Adding a colour to one theme and forgetting the other breaks a screen only
+     for whoever is in the other theme, and never fails loudly. */
+  print("\n24. the two palettes stay in step");
+
+  var html = readFile("index.html");
+  var css = html.slice(html.indexOf("<style>"), html.indexOf("</style>"));
+  var darkAt = css.indexOf('[data-theme="dark"]');
+  var appCss = css.slice(css.indexOf("@media (display-mode: standalone)"),
+                         css.indexOf("  @media print"));
+
+  var SKIP = { "--rail":1, "--safe-top":1, "--safe-left":1, "--safe-right":1,
+               "--bar":1, "--bar-total":1 };
+  function tokensIn(block) {
+    var out = {}, m, re = /(--[a-z0-9-]+)\s*:/g;
+    while ((m = re.exec(block))) if (!SKIP[m[1]]) out[m[1]] = 1;
+    return out;
+  }
+  var lightT = tokensIn(css.slice(0, darkAt));
+  var darkT  = tokensIn(css.slice(darkAt, css.indexOf("@media (display-mode")));
+
+  var onlyLight = Object.keys(lightT).filter(function (k) { return !darkT[k]; });
+  var onlyDark  = Object.keys(darkT).filter(function (k) { return !lightT[k]; });
+  eq("no colour exists only on paper", onlyLight.join(",") , "");
+  eq("and none only in the dark", onlyDark.join(","), "");
+  ok("both palettes are substantial", Object.keys(lightT).length > 40,
+     Object.keys(lightT).length + " tokens");
+
+  var stray = appCss.match(/#[0-9A-Fa-f]{3,6}\b/g);
+  eq("no colour is hardcoded outside the palettes", stray ? stray.join(",") : "", "");
+
+  var used = {}, m2, re2 = /var\((--[a-z0-9-]+)/g;
+  while ((m2 = re2.exec(css))) used[m2[1]] = 1;
+  var undef = Object.keys(used).filter(function (k) {
+    return !lightT[k] && !darkT[k] && !SKIP[k];
+  });
+  eq("every colour used is defined", undef.join(","), "");
 
   var pid = po.state.practices[0].id;
   po.go("practice", pid, "schedule");

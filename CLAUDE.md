@@ -954,6 +954,79 @@ size and weight, colour only where it earns its place, palette untouched.
 
 `test/run.sh` is now **227 checks**, covering every tier mapping and every badge class.
 
+## Paper and court: the light theme (2026-08-24) — Dusan's call
+
+*"Why don't we try light theme instead of dark. Or to be base of light blue and orange."*
+
+Two questions were put to him. He chose **both themes with a switch** (rather than replacing
+dark outright) and **"paper and court"** as the direction: the base is the same warm cream as
+the court, so the app and the thing he draws on are the same material and a diagram stops
+looking like a window cut into a different app.
+
+### Everything is a token now, and that was the actual work
+
+There were **91 hardcoded colours** outside `:root`. A second theme is impossible until they
+are named, so all 55 non-print ones became tokens first. There are now **58 tokens, defined
+in both palettes**, no hardcoded colour anywhere in the app's CSS, and no `var()` that is not
+defined. **A test asserts all four of those**, because adding a colour to one theme and
+forgetting the other breaks a screen only for whoever is in the other theme, and never fails
+loudly.
+
+Paper is the default; dark is one tap in the top bar. The choice lives in
+`practise-organiser/ui` beside the open categories — a preference of *this iPad*, **never in
+a backup**, and there is a test for that too.
+
+### One orange could not do three jobs
+
+A vivid orange is unreadable as small text on cream (3.75:1), and an orange dark enough to
+read is muddy as a fill. So there are three:
+
+| Token | Job | Light |
+|---|---|---|
+| `--accent-fill` | filled chips | `#F2A413` — **the original orange survives**, with dark ink on it at 7.9:1 |
+| `--accent` | borders, large text | `#C2700A` — 3.4:1 |
+| `--accent-text` | small text | `#8F5104` — 5.7:1 |
+
+In dark mode all three are `#F2A413`, so nothing about that theme changed.
+
+### The iPad clock forced the top bar
+
+The app installs with `black-translucent`, which is what makes it full-screen — and means
+**iPadOS draws the clock in white over the page**. A cream top bar would have hidden it
+completely.
+
+So the bar is **deep blue** (`#1D3E57`), which is also where his "light blue" belongs: white
+clock on it at 11.2:1, and a clear 8.4 step against the cream body. The bar carries its own
+`--topbar-*` colours and everything inside inherits from the bar rather than the page, so it
+works over either theme. `theme-color` is updated on toggle to match.
+
+### Measured, not chosen
+
+Every value was checked before it shipped — small text 4.5:1, large text and borders 3:1, a
+visible step between stacked surfaces. **Five failures were caught and fixed this way**, and
+each one would have looked fine in a screenshot:
+
+- ink on the accent fill at 3.6:1 → solved by keeping the bright orange and using dark ink
+- the `note` kind border at 2.8:1
+- the chart's gold at **2.8:1 on cream** — the series set was validated against the *dark*
+  panel and is not readable on a light one, so each theme now carries its own four
+  (`--chart-1..4`), both checked for contrast and for separation (worst pair ΔE 33)
+- a loud game title at 2.85:1 on its own tint in dark mode → `--k-game` lifted to `#DC6D4B`
+- the court's drop shadow was a heavy black, right on a dark ground and wrong on paper
+
+### Loud and quiet, corrected
+
+He tried the first version: *"quiet is too quiet and loud is not loud enough."* Both were
+wrong in the same way — the range was set by guessing where the ends should be.
+
+- **Loud** now runs the kind's colour as a 9px bar down the full left edge, colours the
+  title in it, and sets it at 27px. A game should be findable without reading.
+- **Quiet** keeps its card and full-strength text at 14.5px. What marks it as context is
+  that it is not shouting — normal weight, sentence case, thinner edge — not that it is
+  faint. The first version removed the card and dimmed the text, and it disappeared.
+
+`test/run.sh` is now **239 checks**.
+
 ## The ink engine (first proved in `pencil-test.html`)
 
 Worth keeping whichever platform wins, because the reasoning carries over.
