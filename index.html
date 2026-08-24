@@ -44,6 +44,15 @@
     font-family: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     overscroll-behavior-y: none;
+    /* iPadOS reads a Pencil drag as a text-selection gesture, so circling a play
+       on a court was painting the card blue. Switching selection off for the
+       *editor* only was not enough, and made it worse in a way worth remembering:
+       the gesture still fires, so the selection simply landed on the nearest
+       selectable text instead — which was Import, up in the top bar. Turning it
+       off for a region only moves where the highlight appears. It has to be the
+       whole page, with selection handed back to the boxes that are for text. */
+    -webkit-user-select: none; user-select: none;
+    -webkit-touch-callout: none;
   }
 
   .label {
@@ -88,6 +97,8 @@
   .chip.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
   .chip.ghost { background: transparent; }
   .chip.danger { color: var(--danger); border-color: #4A342F; background: transparent; }
+
+  input, textarea { -webkit-user-select: text; user-select: text; }
 
   input[type="text"], input[type="number"], input[type="date"], input[type="time"],
   textarea, select {
@@ -156,14 +167,7 @@
   .empty { color: var(--dim); text-align: center; padding: 60px 20px; line-height: 1.6; }
 
   /* ---------- editor ---------- */
-  /* On an editor screen the Pencil is a drawing tool, but iPadOS still reads its
-     gestures as text gestures: circling a play on a court was taken as "select
-     this text" and painted the whole card blue. Selection is switched off for
-     the screen and handed back only to the boxes that are actually for text. */
-  .editor { display: grid; grid-template-columns: var(--rail) 1fr; min-height: 100dvh;
-            -webkit-user-select: none; user-select: none; }
-  .editor input, .editor textarea { -webkit-user-select: text; user-select: text; }
-  .court-wrap { -webkit-touch-callout: none; }
+  .editor { display: grid; grid-template-columns: var(--rail) 1fr; min-height: 100dvh; }
   .rail {
     position: sticky; top: var(--bar-total); align-self: start;
     height: calc(100dvh - var(--bar-total));

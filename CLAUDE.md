@@ -606,8 +606,15 @@ Drawing a circle on a court turned the whole card blue. Same family of problem: 
 the Pencil loop as "select this text". `user-select: none` on `.editor`, given back to
 `input` and `textarea` only, plus `-webkit-touch-callout: none` on the court.
 
-Scoped to `.editor` deliberately rather than to `body` — courts only exist on the drill and
-tactic editors, and everywhere else selecting text to copy is still worth having.
+**Scoping this to `.editor` was wrong, and the way it failed is the lesson.** Dusan reported
+back that drawing now put a highlight on the **Import button in the top bar**. Switching
+selection off for a region does not stop the gesture — it only moves where the highlight
+lands, in this case onto the nearest selectable text outside the region. It has to be
+`body`, with selection handed back to `input` and `textarea`.
+
+The cost is real and accepted: text outside a form field can no longer be selected to copy.
+On an iPad driven by a Pencil that is the right trade, and the coaching points and every
+other typed field are still selectable.
 
 ### The practice time boxes, and why `align-content` was not enough
 
