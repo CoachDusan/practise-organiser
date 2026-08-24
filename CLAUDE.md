@@ -1014,6 +1014,37 @@ each one would have looked fine in a screenshot:
 - a loud game title at 2.85:1 on its own tint in dark mode → `--k-game` lifted to `#DC6D4B`
 - the court's drop shadow was a heavy black, right on a dark ground and wrong on paper
 
+### Every kind carries its own colour — his call, and a correction to mine
+
+*"I definitely want everything in its own colour, not just games — practices, travels, day
+off. They don't need to be in the same intensity like the game, but I want them in the
+colour. In both, month and week view."*
+
+The first version had colour on a 3px edge and a tinted card only for games, on the
+reasoning that seven tinted kinds would be noisy. He disagreed, and the resolution is that
+**colour and weight are two independent axes** rather than one:
+
+- **Colour** says *which kind*: every one of the eight has its own hue and its own card
+  tint, in the week and in the month alike.
+- **Weight** says *how much it counts*: bar thickness, type size, and which of the two
+  tints. Games are still loudest; nothing else was demoted to grey to achieve that.
+
+Tints are the hue **mixed into the panel** (light 90%, dark 88%; the loud tier uses 76% /
+74%), so the set reads as one family rather than eight unrelated pastels, and the same
+generator produces both themes.
+
+**Only the loud tier colours its title.** A 14.5px title in the kind's own colour could not
+hold 4.5:1 against its own tint for half of these — so on the smaller tiers the tint and the
+bar carry the colour and the text stays full-strength black. That was measured, not assumed;
+the first attempt failed five of eight.
+
+Two more caught by measuring: dark-mode `note` was **ΔE 15.7 from travel** (both blue-grey)
+and moved to a warm grey; and `--dim` could not reach 4.5:1 on *any* tinted card in dark, so
+tinted cards use `--chip-sub`. Final separation: worst pair **ΔE 22.5** light, **30.5** dark.
+
+The parity test earned itself here — it caught two rules still pointing at
+`--loud-game-bg` after the tokens were renamed, which would have left games untinted.
+
 ### Loud and quiet, corrected
 
 He tried the first version: *"quiet is too quiet and loud is not loud enough."* Both were
@@ -1025,7 +1056,8 @@ wrong in the same way — the range was set by guessing where the ends should be
   that it is not shouting — normal weight, sentence case, thinner edge — not that it is
   faint. The first version removed the card and dimmed the text, and it disappeared.
 
-`test/run.sh` is now **239 checks**.
+`test/run.sh` is now **242 checks**, including that every kind has a hue and a tint in
+both themes and a rule in both views.
 
 ## The ink engine (first proved in `pencil-test.html`)
 

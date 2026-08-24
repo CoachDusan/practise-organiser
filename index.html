@@ -67,15 +67,25 @@
     --warn-strong: #4A2415;
 
     /* Schedule kinds. Colour says which; size and fill say how much it counts. */
-    --k-game:       #B33F22;
-    --k-tournament: #7B4A9E;
-    --k-travel:     #2E7BA6;
-    --k-off:        #8A8272;
-    --k-gym:        #8A6F2E;
-    --k-note:       #8E8574;
-    --loud-game-bg: #F6DED3;
-    --loud-tourn-bg:#EBDDF4;
-    --loud-sub:     #6B6252;
+    /* Every kind carries its own colour, not just games - Dusan's call. The
+       colour is the card's tint and its edge; the TIER decides how loud that
+       colour is allowed to be (bar thickness, type size, and which of the two
+       tints). Tints are the hue mixed into the panel, so they are the same
+       colour rather than eight unrelated pastels.
+
+       Only the loud tier colours its title. A 14.5px title in the kind colour
+       could not hold 4.5:1 against its own tint for half of these, so on the
+       smaller tiers the tint and the bar carry the colour and the text stays
+       black. Measured; worst pair separation dE 22.5. */
+    --k-practice: #B5620A; --k-practice-bg: #F1E5D4;
+    --k-done: #2E7D4F; --k-done-bg: #E4E8DA;
+    --k-game: #B33F22; --k-game-bg: #F1E2D6; --k-game-loud: #E7C9BA;
+    --k-tournament: #7B4A9E; --k-tournament-bg: #ECE3E2; --k-tournament-loud: #DACBD8;
+    --k-travel: #2166A8; --k-travel-bg: #E3E6E3;
+    --k-off: #0F7A72; --k-off-bg: #E1E8DE;
+    --k-gym: #7A6420; --k-gym-bg: #EBE6D6;
+    --k-note: #5A6472; --k-note-bg: #E8E6DE;
+    --chip-sub: #6B6252;
 
     --pos-g: #1D5A80; --pos-g-bg: #DCEAF3; --pos-g-line: #A9CEE4;
     --pos-f: #2C5E2A; --pos-f-bg: #DFEEDA; --pos-f-line: #AFD3A6;
@@ -143,16 +153,18 @@
     --warn-text:   #E8C9BF;
     --warn-strong: #FFFFFF;
 
-    --k-game:       #DC6D4B;   /* lifted from #D2603F: a loud title in this
-                                  colour sat at 2.85:1 on its own tint */
-    --k-tournament: #C08BD8;
-    --k-travel:     #6FA8C7;
-    --k-off:        #6B655A;
-    --k-gym:        #8C7A55;
-    --k-note:       #575149;
-    --loud-game-bg: #52362B;
-    --loud-tourn-bg:#413553;
-    --loud-sub:     #B5AD9C;
+    /* Same system. `note` moved off blue-grey (#9AA7B5) because it sat dE 15.7
+       from travel; and the sub line uses --chip-sub rather than --dim, which
+       could not reach 4.5:1 on any tinted card here. */
+    --k-practice: #F2A413; --k-practice-bg: #3D321C;
+    --k-done: #9CC47F; --k-done-bg: #323529;
+    --k-game: #DC6D4B; --k-game-bg: #3A2B23; --k-game-loud: #543629;
+    --k-tournament: #C08BD8; --k-tournament-bg: #372F33; --k-tournament-loud: #4D3D4E;
+    --k-travel: #6FA8C7; --k-travel-bg: #2D3231;
+    --k-off: #5FBFAE; --k-off-bg: #2B352E;
+    --k-gym: #C9A45E; --k-gym-bg: #383225;
+    --k-note: #B0A492; --k-note-bg: #35322B;
+    --chip-sub: #C4BCAB;
 
     --pos-g: #8FC4E0; --pos-g-bg: #1F2C33; --pos-g-line: #334B59;
     --pos-f: #B0D694; --pos-f-bg: #212C1E; --pos-f-line: #384C31;
@@ -738,52 +750,54 @@
   .ci-sub { font-size: 11.5px; color: var(--dim); line-height: 1.4; }
 
   /* ---- the three weights ----
-     Colour says which kind. Size, fill and brightness say how much it counts.
-     Only the loud tier gets a tinted ground, so a busy week does not turn into
-     seven competing colours — the point was to make the week readable, not
-     to decorate it. */
-  /* Louder than the first attempt: he said it was not loud enough. The kind's
-     own colour now runs the full left edge as a solid bar and colours the title,
-     and the card is taller. A game should be findable without reading. */
+     Every kind carries its own colour (see the kind rules below); these decide
+     how LOUD that colour is allowed to be. Two independent axes: colour says
+     which, weight says how much it counts. */
+
+  /* A game should be findable without reading: 27px, a 9px bar of its own
+     colour down the full edge, the title in that colour, and the stronger of
+     its two tints. */
   .chip-item.loud {
     padding: 14px 16px; border-left-width: 9px;
   }
   .chip-item.loud .ci-title {
     font-size: 27px; letter-spacing: .045em; line-height: 1.05;
   }
-  .chip-item.loud .ci-sub { font-size: 13px; color: var(--loud-sub); }
+  .chip-item.loud .ci-sub { font-size: 13px; color: var(--chip-sub); }
   .chip-item.game.loud .ci-title       { color: var(--k-game); }
   .chip-item.tournament.loud .ci-title { color: var(--k-tournament); }
-  .chip-item.game.loud       { background: var(--loud-game-bg); }
-  .chip-item.tournament.loud { background: var(--loud-tourn-bg); }
+  .chip-item .ci-sub { color: var(--chip-sub); }
 
   /* The practice keeps the baseline look: it is the normal working substance. */
   .chip-item.mid .ci-title { font-size: 17px; }
 
-  /* Context, not events. No card at all — just a marked line that stays out of
-     the way until it is read. */
-  /* Quieter than a practice, but he said the first version disappeared. It keeps
-     a card and full-strength text; what marks it as context is that it is not
-     shouting - normal weight, sentence case, and a thinner edge. */
-  .chip-item.quiet {
-    background: var(--panel); border-left-width: 3px; padding: 6px 10px;
-  }
+  /* Context rather than an event - but it keeps its card, its colour and
+     full-strength text. What marks it as quiet is that it is not shouting:
+     normal weight, sentence case, a thin bar. The first version dropped the
+     card and dimmed the text, and Dusan reported it had disappeared. */
+  .chip-item.quiet { border-left-width: 3px; padding: 6px 10px; }
   .chip-item.quiet .ci-title {
     font-family: "IBM Plex Sans", system-ui, sans-serif;
     font-size: 14.5px; font-weight: 600; text-transform: none;
     letter-spacing: 0; color: var(--text);
   }
   .chip-item.quiet .ci-sub { font-size: 11px; }
-  .chip-item.quiet:hover { border-color: transparent; background: var(--panel-hi); }
+  .chip-item.quiet:hover { border-color: var(--line-hi); }
 
-  .chip-item.practice        { border-left-color: var(--accent); }
-  .chip-item.practice.done   { border-left-color: var(--good); }
-  .chip-item.game            { border-left-color: var(--k-game); }
-  .chip-item.tournament      { border-left-color: var(--k-tournament); }
-  .chip-item.travel          { border-left-color: var(--k-travel); }
-  .chip-item.off             { border-left-color: var(--k-off); }
-  .chip-item.gym             { border-left-color: var(--k-gym); }
-  .chip-item.note            { border-left-color: var(--k-note); }
+  /* Every kind is tinted, in both views. These come after the tier rules on
+     purpose: the tier sets size and bar thickness, the kind sets the colour. */
+  .chip-item.practice      { border-left-color: var(--k-practice);   background: var(--k-practice-bg); }
+  .chip-item.practice.done { border-left-color: var(--k-done);       background: var(--k-done-bg); }
+  .chip-item.game          { border-left-color: var(--k-game);       background: var(--k-game-bg); }
+  .chip-item.tournament    { border-left-color: var(--k-tournament); background: var(--k-tournament-bg); }
+  .chip-item.travel        { border-left-color: var(--k-travel);     background: var(--k-travel-bg); }
+  .chip-item.off           { border-left-color: var(--k-off);        background: var(--k-off-bg); }
+  .chip-item.gym           { border-left-color: var(--k-gym);        background: var(--k-gym-bg); }
+  .chip-item.note          { border-left-color: var(--k-note);       background: var(--k-note-bg); }
+
+  /* the loud tier gets the stronger tint of its own colour */
+  .chip-item.loud.game       { background: var(--k-game-loud); }
+  .chip-item.loud.tournament { background: var(--k-tournament-loud); }
 
   .month-grid {
     display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px;
@@ -814,20 +828,20 @@
     border-left-width: 4px; padding: 3px 5px; text-transform: uppercase;
     letter-spacing: .02em;
   }
-  .mg-item.game.loud       { background: var(--loud-game-bg); }
-  .mg-item.tournament.loud { background: var(--loud-tourn-bg); }
-  .mg-item.quiet {
-    color: var(--text); font-size: 10px;
-    border-left-width: 2px; padding: 2px 4px;
-  }
+  .mg-item.quiet { color: var(--text); font-size: 10px;
+                   border-left-width: 2px; padding: 2px 4px; }
 
-  .mg-item.practice      { border-left-color: var(--accent); }
-  .mg-item.practice.done { border-left-color: var(--good); }
-  .mg-item.game          { border-left-color: var(--k-game); }
-  .mg-item.tournament    { border-left-color: var(--k-tournament); }
-  .mg-item.travel        { border-left-color: var(--k-travel); }
-  .mg-item.off           { border-left-color: var(--k-off); }
-  .mg-item.gym           { border-left-color: var(--k-gym); }
+  .mg-item.practice      { border-left-color: var(--k-practice);   background: var(--k-practice-bg); }
+  .mg-item.practice.done { border-left-color: var(--k-done);       background: var(--k-done-bg); }
+  .mg-item.game          { border-left-color: var(--k-game);       background: var(--k-game-bg); }
+  .mg-item.tournament    { border-left-color: var(--k-tournament); background: var(--k-tournament-bg); }
+  .mg-item.travel        { border-left-color: var(--k-travel);     background: var(--k-travel-bg); }
+  .mg-item.off           { border-left-color: var(--k-off);        background: var(--k-off-bg); }
+  .mg-item.gym           { border-left-color: var(--k-gym);        background: var(--k-gym-bg); }
+  .mg-item.note          { border-left-color: var(--k-note);       background: var(--k-note-bg); }
+
+  .mg-item.loud.game       { background: var(--k-game-loud); }
+  .mg-item.loud.tournament { background: var(--k-tournament-loud); }
 
   .ev-form { display: grid; gap: 14px; }
   .ev-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }

@@ -1161,6 +1161,28 @@ launch(backing, lsStore).then(function (po) {
   ok("both palettes are substantial", Object.keys(lightT).length > 40,
      Object.keys(lightT).length + " tokens");
 
+  /* "I definitely want everything in its own colour, not just games." Every
+     kind needs a hue AND a tint, in both themes, and a rule that applies them
+     in both the week and the month. */
+  // "done" is a state on a practice, not a kind of its own: .practice.done
+  var KINDS = ["practice","game","tournament","travel","off","gym","note"];
+  var missing = [];
+  KINDS.concat(["practice.done"]).forEach(function (k) {
+    var tok = "--k-" + (k === "practice.done" ? "done" : k);
+    if (!lightT[tok] || !darkT[tok]) missing.push(k + " hue");
+    if (!lightT[tok + "-bg"] || !darkT[tok + "-bg"]) missing.push(k + " tint");
+    if (appCss.indexOf(".chip-item." + k + " ") < 0) missing.push(k + " in the week");
+    if (appCss.indexOf(".mg-item." + k + " ") < 0) missing.push(k + " in the month");
+  });
+  eq("every kind has its own colour and tint, in both views and both themes",
+     missing.join(", "), "");
+
+  var re3 = /\.chip-item\.[a-z.]+ +\{ border-left-color[^}]*background/g;
+  eq("and all eight are actually tinted, not just the loud ones",
+     (appCss.match(re3) || []).length, 8);
+  var re4 = /\.mg-item\.[a-z.]+ +\{ border-left-color[^}]*background/g;
+  eq("the month is tinted the same way", (appCss.match(re4) || []).length, 8);
+
   var stray = appCss.match(/#[0-9A-Fa-f]{3,6}\b/g);
   eq("no colour is hardcoded outside the palettes", stray ? stray.join(",") : "", "");
 
