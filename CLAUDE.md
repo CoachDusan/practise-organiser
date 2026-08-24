@@ -810,9 +810,42 @@ fix and watching the test fail; this cannot be, because the missing piece is an 
 gesture recogniser that does not exist on this machine. What is proved is that the
 simplifier is not at fault and that the touch handler claims the stylus and nothing else.
 
-If round shapes still go missing after this, the next step is instrumentation on the device
-— count `pointercancel`s and points-per-stroke and show them on screen — rather than a
-fourth guess. `test/run.sh` is now **207 checks**.
+`test/run.sh` is now **207 checks**.
+
+### Status: OPEN, and left open on purpose (2026-08-24)
+
+**It did not fix it.** Dusan tested v15 and round characters are still dropped sometimes.
+Four attempts, each one narrowing the cause and none of them landing it.
+
+He called it off, and the reason he gave is the part that matters:
+
+> *"I can't go around this anymore, I will manage it somehow. It's not that I will paint a
+> picture on that screen. Just a couple of lines and numbers."*
+
+**Do not silently reopen this.** It is a known, accepted defect. What is settled:
+
+- The RDP simplifier is **not** the cause — measured, not assumed (closed, nearly-closed,
+  noisy, few-point and self-overlapping loops all survive).
+- The palm/pan collision **was** a real cause of dropped strokes and **is** fixed, proved by
+  reverting it and watching the test fail. It was not the only cause.
+- Claiming the stylus touch stream did not close it either.
+- Everything left is an iPadOS gesture recogniser that **cannot be reproduced on this
+  machine**. Any further attempt from reasoning alone is a fifth guess.
+
+**If it is ever picked up again, instrument first, on the device.** Count strokes started,
+points captured, and `pointercancel`s, and put the numbers on screen; have him draw one
+zero and read them back. Guessing has now failed four times in a row and measuring has
+worked every time it was tried.
+
+### What he actually needs, which is smaller than what was being built for
+
+"A couple of lines and numbers" is not freehand drawing, and it reframes the whole problem.
+The numbers he writes in ink are also exactly the thing this project decided on day one
+should **not** live in ink — *"draw the courts, type the facts"*. A typed text label that
+can be placed on a diagram would sidestep the broken path entirely for the case he cares
+about, and would be searchable besides, where handwritten digits never can be.
+
+**Offered, not started — his call, and he has not made it.**
 
 ## The ink engine (first proved in `pencil-test.html`)
 
