@@ -161,6 +161,9 @@ asserts the drill and its ink come back. Run it before shipping any storage chan
 
 ### Finger scrolling vs Pencil drawing
 
+*(See "The palm was eating one stroke in five" above — the finger-scroll path below was
+also what swallowed strokes, until each pointer was given an owner.)*
+
 `touch-action: pan-y` on a canvas looked like the tidy way to let a finger scroll while the
 Pencil draws, but the browser may begin a pan before `preventDefault()` is honoured — meaning a
 downward pen stroke could scroll the page instead of drawing. Not worth gambling a first
@@ -727,6 +730,40 @@ That is the second harness gap found in two days, and the same lesson as the vac
 code the stub cannot reach.**
 
 `test/run.sh` is now **192 checks**.
+
+## The palm was eating one stroke in five (2026-08-24)
+
+*"Now just maybe one out of 5 lines doesn't draw."*
+
+`active` and `pan` were each one-at-a-time, and **neither said which pointer owned it**.
+Every handler answered every pointer. A palm is a `touch` pointer, so a hand resting on
+the court took the finger-scroll path, claimed `pan`, and from that moment:
+
+- every **pen** `pointermove` hit `if (pan) { scrollTo(); return; }` and painted nothing;
+- every **pen** `pointerup` hit `if (pan) { pan = null; return; }` and committed nothing.
+
+The stroke was drawn perfectly and thrown away. Intermittent because it depended on
+whether the hand touched the court before the nib did — which is exactly one time in five.
+
+The note in *Finger scrolling vs Pencil drawing* said palm rejection was
+`pointerType === "pen"`. That was true for **drawing** and missed the point: touch was
+still being *promoted to a scroll*, which is a worse outcome than being ignored.
+
+Fixed by giving both states an owner — `pan.id` and `activeId` — so:
+
+- only the pointer that began a pan may scroll it or end it;
+- only the pointer that began a stroke may extend or commit it;
+- **a touch landing while a stroke is active is ignored entirely** — that is the real palm
+  rejection, and it is what was missing;
+- **the Pencil outranks a finger already on the glass**: a pen `pointerdown` cancels any
+  pan, so a resting hand cannot scroll the page out from under a line being drawn.
+
+`activeId` is kept beside the stroke, not on it, so nothing extra reaches the saved ink.
+
+**The test reproduces it.** Two pointers on the glass at once: a palm down, then a full pen
+stroke, then the palm lifting before the pen. Reverting the fix fails three of its five
+checks — checked by actually reverting it, because a test that passes either way proves
+nothing. `test/run.sh` is now **203 checks**.
 
 ## The ink engine (first proved in `pencil-test.html`)
 

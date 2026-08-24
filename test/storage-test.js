@@ -264,6 +264,7 @@ function appSource() {
     "           practiceMinutes: practiceMinutes, prettyDate: prettyDate,\n" +
     "           openDrillPicker: openDrillPicker, route: route,\n" +
     "           maskFrom: maskFrom, maskText: maskText, typedField: typedField,\n" +
+    "           pads: function () { return pads; },\n" +
     "           applyImport: applyImport };\n";
   return src.slice(0, at) + exported + src.slice(at);
 }
@@ -971,6 +972,59 @@ launch(backing, lsStore).then(function (po) {
   var dragged = false;
   document.fire("dragstart", { target: btn, preventDefault: function () { dragged = true; } });
   ok("and nothing outside a text box can be dragged", dragged);
+
+  /* One stroke in five was simply not drawing. A palm is a touch pointer, and
+     touch claimed the pan — so every pen event after it was answered as a scroll
+     and the stroke was never painted or committed. Nothing about it is visible
+     in the source; it only shows when two pointers are on the glass at once. */
+  print("\n19. a palm on the court does not swallow the stroke");
+
+  var drill = po.newDrill();
+  drill.name = "Palm test";
+  po.state.drills.unshift(drill);
+  po.touch(drill);
+  po.go("drill", drill.id);
+
+  var pad = po.pads()[0];
+  ok("the drill editor built a pad", !!pad);
+  var canvas = pad.el.children[pad.el.children.length - 1];
+
+  function pen(type, id, x, y) {
+    return { pointerType: type, pointerId: id, clientX: x, clientY: y,
+             pressure: 0.5, preventDefault: function () {} };
+  }
+  function strokeWith(id, from) {
+    canvas.fire("pointerdown", pen("pen", id, from, 100));
+    canvas.fire("pointermove", pen("pen", id, from + 40, 140));
+    canvas.fire("pointermove", pen("pen", id, from + 80, 180));
+    canvas.fire("pointerup", pen("pen", id, from + 80, 180));
+  }
+
+  var before = drill.diagrams[0].strokes.length;
+  strokeWith(2, 60);
+  eq("a plain stroke is committed", drill.diagrams[0].strokes.length, before + 1);
+
+  // now the palm lands first, as it does when he actually writes
+  canvas.fire("pointerdown", { pointerType: "touch", pointerId: 7,
+                               clientX: 20, clientY: 300, pressure: 0,
+                               preventDefault: function () {} });
+  strokeWith(3, 100);
+  eq("a stroke drawn with a palm down is still committed",
+     drill.diagrams[0].strokes.length, before + 2);
+
+  // the palm lifting must not be mistaken for the pen finishing
+  canvas.fire("pointerdown", { pointerType: "touch", pointerId: 8,
+                               clientX: 20, clientY: 300, pressure: 0,
+                               preventDefault: function () {} });
+  canvas.fire("pointerdown", pen("pen", 4, 200, 100));
+  canvas.fire("pointermove", pen("pen", 4, 240, 140));
+  canvas.fire("pointerup", { pointerType: "touch", pointerId: 8,
+                             clientX: 20, clientY: 305, pressure: 0,
+                             preventDefault: function () {} });
+  eq("the palm lifting does not end the stroke",
+     drill.diagrams[0].strokes.length, before + 2);
+  canvas.fire("pointerup", pen("pen", 4, 240, 140));
+  eq("the pen lifting does", drill.diagrams[0].strokes.length, before + 3);
 
   var pid = po.state.practices[0].id;
   po.go("practice", pid, "schedule");

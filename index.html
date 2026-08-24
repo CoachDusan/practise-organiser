@@ -1827,7 +1827,11 @@
     host.appendChild(wrap);
 
     var bctx = base.getContext("2d"), lctx = live.getContext("2d");
-    var active = null;
+    /* Both of these are one-at-a-time, so both have to say *which* pointer owns
+       them. Without that, a palm resting on the court was answered as if it were
+       the Pencil: see the pointerdown handler below. `activeId` is kept beside
+       the stroke rather than on it, so nothing extra reaches the saved ink. */
+    var active = null, activeId = null;
     var pan = null;      // a finger dragging to scroll, rather than to draw
 
     function dims() { return COURTS[diagram.court] || COURTS.half; }
@@ -1933,22 +1937,33 @@
     live.addEventListener("pointerdown", function (e) {
       // A finger on the court scrolls the page, unless it has been given a pen.
       if (e.pointerType === "touch" && !tool.fingerDraws) {
-        pan = { y: e.clientY, from: window.scrollY };
+        /* A hand resting on the court while the Pencil draws is a palm, not a
+           scroll. This is the real palm rejection: ignoring touch for *drawing*
+           was never enough, because the touch still claimed the pan and every
+           pen event after it was answered as a scroll instead of a line. */
+        if (active) return;
+        pan = { id: e.pointerId, y: e.clientY, from: window.scrollY };
         live.setPointerCapture(e.pointerId);
         return;
       }
       if (!accepts(e)) return;
       e.preventDefault();
+      // The Pencil outranks a finger already on the glass.
+      pan = null;
       live.setPointerCapture(e.pointerId);
       var n = toNorm(e);
+      activeId = e.pointerId;
       active = { tool: tool.name, color: tool.color, size: tool.size,
                  pts: [{ x: n.x, y: n.y, p: pressureOf(e) }] };
       paintNewest(surface(active), active);
     });
 
     live.addEventListener("pointermove", function (e) {
-      if (pan) { window.scrollTo(0, pan.from - (e.clientY - pan.y)); return; }
-      if (!active) return;
+      if (pan && e.pointerId === pan.id) {
+        window.scrollTo(0, pan.from - (e.clientY - pan.y));
+        return;
+      }
+      if (!active || e.pointerId !== activeId) return;
       e.preventDefault();
       var evs = (typeof e.getCoalescedEvents === "function") ? e.getCoalescedEvents() : null;
       if (!evs || !evs.length) evs = [e];
@@ -1968,15 +1983,17 @@
     });
 
     function end(e) {
-      if (pan) {
+      var id = e ? e.pointerId : null;
+      if (pan && (id === null || id === pan.id)) {
         pan = null;
         if (e && live.hasPointerCapture && live.hasPointerCapture(e.pointerId)) {
           live.releasePointerCapture(e.pointerId);
         }
         return;
       }
-      if (!active) return;
-      var done = active; active = null;
+      // A palm lifting is not the end of the Pencil's stroke.
+      if (!active || (id !== null && id !== activeId)) return;
+      var done = active; active = null; activeId = null;
       lctx.clearRect(0, 0, live.width, live.height);
       if (done.pts.length) {
         diagram.strokes.push(simplify(done));
