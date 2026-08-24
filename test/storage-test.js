@@ -189,7 +189,7 @@ function makeDom() {
 
   var byId = {};
   ["saveChip", "app", "crumb", "tabs", "exportBtn", "importBtn", "importFile",
-   "themeBtn"].forEach(function (id) {
+   "themeBtn", "buildTag"].forEach(function (id) {
     byId[id] = Node("div");
   });
   // the two nav buttons the chrome iterates over
@@ -1234,6 +1234,17 @@ launch(backing, lsStore).then(function (po) {
     ok("in " + th[0] + ", no two kinds are hard to tell apart",
        worst >= 20, "closest " + pair + " dE " + worst.toFixed(1));
   });
+
+  /* The shell cache is keyed on VERSION and the screen shows BUILD. If they
+     drift, the tag lies about which code is running - which is the one thing it
+     exists to prevent. */
+  var buildM = /var BUILD = "([^"]+)"/.exec(html);
+  var verM = /var VERSION = "po-shell-([^"]+)"/.exec(readFile("sw.js"));
+  ok("the app and the service worker agree on the build",
+     buildM && verM && buildM[1] === verM[1],
+     (buildM ? buildM[1] : "?") + " vs " + (verM ? verM[1] : "?"));
+  eq("and the screen shows it", document.getElementById("buildTag").textContent,
+     buildM ? buildM[1] : "?");
 
   var stray = appCss.match(/#[0-9A-Fa-f]{3,6}\b/g);
   eq("no colour is hardcoded outside the palettes", stray ? stray.join(",") : "", "");

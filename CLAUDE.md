@@ -129,7 +129,37 @@ Current design:
 
 Deployment is **GitHub Pages from the root of `main`** — live at
 <https://coachdusan.github.io/practise-organiser/>. Push is the deploy; there is no separate step.
-**Bump `VERSION` in `sw.js` on every deploy** or iPads keep serving the cached old shell.
+**Bump `VERSION` in `sw.js` on every deploy**, and `BUILD` in `index.html` to match —
+a test fails if they drift, and the build shows in the top bar.
+
+### The bump did not work, for weeks (2026-08-24)
+
+Dusan reloaded after a deploy and reported *"still teal, no changes"*. The code on disk and
+in the push was correct; the iPad was serving a stale shell **even though VERSION had been
+bumped**.
+
+Two faults, and together they made the cache almost impossible to shift:
+
+1. **`cache.addAll()` fetches through the browser's ordinary HTTP cache.** GitHub Pages
+   serves `index.html` with a ten-minute max-age, so a version bump opened a brand new cache
+   and then filled it with *the same stale HTML the browser already had*. The cache key
+   changed; the content did not.
+2. **The fetch handler was cache-first with no revalidation**, so that stale copy was then
+   served for good.
+
+Fixed by requesting every shell file with `cache: "reload"` on install, and by making the
+**document network-first** — with a signal a reload always gets the current app; the cache
+is the fallback for a gym with none. Icon, manifest and fonts stay cache-first: they change
+almost never and opening should not wait on them.
+
+**This casts doubt on earlier "it's still broken" reports.** Several fixes were sent to the
+device with "reload and try", and there is no way now to know which of them he actually ran.
+The ink/Scribble work is the obvious candidate — it may have been judged against code that
+never reached the iPad. Worth re-checking before assuming any of it failed.
+
+**The lesson: a deploy is not delivered until the device says so.** The top bar now shows
+the build (`v21`), so "what does it say in the corner?" replaces guessing. A test asserts
+`BUILD` and `VERSION` match, verified by making them differ and watching it fail.
 
 The app files sit at the **repo root**, not in a `site/` subfolder (2026-08-22). Pages only offers
 the root or `/docs` as a publish source, and with the app one level down the short, memorable URL

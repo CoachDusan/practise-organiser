@@ -418,6 +418,10 @@
   .add-court:hover, .add-row:hover { color: var(--accent); border-color: var(--accent); }
 
   .themebtn { font-size: 15px; line-height: 1; padding: 7px 10px; }
+  /* Which build is on screen. Three characters, but it ends an argument: for
+     several rounds neither of us could tell whether a reload had actually
+     picked up a change or was serving a stale cached shell. */
+  .buildtag { font-size: 10px; color: var(--topbar-dim); letter-spacing: .06em; }
 
   .savechip { font-size: 11.5px; color: var(--dim); white-space: nowrap; }
   .savechip.on { color: var(--accent-text); }
@@ -1020,6 +1024,7 @@
   <button class="chip ghost" id="exportBtn">Export backup</button>
   <button class="chip ghost" id="importBtn">Import</button>
   <button class="chip ghost themebtn" id="themeBtn" aria-label="Switch between paper and dark">&#9789;</button>
+  <span id="buildTag" class="buildtag"></span>
   <input type="file" id="importFile" accept="application/json" hidden>
 </div>
 
@@ -1402,6 +1407,11 @@
     if (Store.kind === "idb") DB.del("tactics", id).then(flashSaved).catch(function () {});
     else { dirty[id] = "tactics"; schedule(); }
   }
+
+  /* Kept in step with VERSION in sw.js; there is a test that they match. */
+  var BUILD = "v21";
+  var buildTag = document.getElementById("buildTag");
+  if (buildTag) buildTag.textContent = BUILD;
 
   var themeBtn = document.getElementById("themeBtn");
   var chipEl = document.getElementById("saveChip");
