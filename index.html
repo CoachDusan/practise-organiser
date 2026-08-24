@@ -2007,6 +2007,26 @@
     live.addEventListener("pointerup", end);
     live.addEventListener("pointercancel", end);
 
+    /* iOS synthesises pointer events from touch events, and preventDefault() on a
+       *pointer* event does not reliably cancel the touch default underneath it.
+       That gap is how iPadOS gesture recognisers still reach a stroke, and it is
+       why the ROUND characters were the ones going missing: a closed loop is
+       Scribble's circle gesture, so the recogniser claimed the stroke, the moves
+       were never delivered to the page, and a zero committed as a single point.
+
+       Claiming the touch stream directly closes the gap. Only stylus touches are
+       taken — `touchType` is how iOS says which is which — so finger scrolling
+       over a court is completely unaffected. */
+    function stylusTouch(e) {
+      var t = e.changedTouches && e.changedTouches[0];
+      return !!t && t.touchType === "stylus";
+    }
+    ["touchstart", "touchmove", "touchend"].forEach(function (name) {
+      live.addEventListener(name, function (e) {
+        if (stylusTouch(e) && e.cancelable) e.preventDefault();
+      }, { passive: false });
+    });
+
     return {
       el: wrap,
       layout: layout,

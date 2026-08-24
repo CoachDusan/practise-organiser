@@ -1026,6 +1026,27 @@ launch(backing, lsStore).then(function (po) {
   canvas.fire("pointerup", pen("pen", 4, 240, 140));
   eq("the pen lifting does", drill.diagrams[0].strokes.length, before + 3);
 
+  /* Round characters were going missing: a closed loop is Scribble's circle
+     gesture, so iPadOS claimed the stroke before the page saw the moves. The
+     court now takes the stylus touch stream itself — but only the stylus, or
+     finger scrolling over a court would die with it. */
+  print("\n20. the court claims the Pencil's touches, and only those");
+
+  function touchAt(type, kind) {
+    var stopped = false;
+    canvas.fire(type, {
+      cancelable: true,
+      changedTouches: [{ touchType: kind, clientX: 100, clientY: 100 }],
+      preventDefault: function () { stopped = true; }
+    });
+    return stopped;
+  }
+  ok("a Pencil touchstart is claimed", touchAt("touchstart", "stylus"));
+  ok("and its touchmove", touchAt("touchmove", "stylus"));
+  eq("a finger touchstart is left alone", touchAt("touchstart", "direct"), false);
+  eq("and its touchmove, so scrolling still works",
+     touchAt("touchmove", "direct"), false);
+
   var pid = po.state.practices[0].id;
   po.go("practice", pid, "schedule");
   ok("a practice opened from the schedule goes back to the schedule",

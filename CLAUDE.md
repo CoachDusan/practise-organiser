@@ -765,6 +765,55 @@ stroke, then the palm lifting before the pen. Reverting the fix fails three of i
 checks — checked by actually reverting it, because a test that passes either way proves
 nothing. `test/run.sh` is now **203 checks**.
 
+## The round characters were going missing (2026-08-24)
+
+*"It's missing the letters of circular shape. Writing 708 508, it skipped zeroes.
+And this time the palm wasn't on the screen for sure."*
+
+A far better clue than "one in five", and it points at a mechanism: **a closed loop is
+Scribble's circle gesture.**
+
+### What it was not — ruled out by measurement, not by reasoning
+
+The obvious suspect was the RDP simplifier: a closed loop has its first and last point on
+top of each other, which is the degenerate case for "perpendicular distance to the baseline".
+`rdp()` does guard `len2 === 0`, but a hand-drawn zero closes *nearly*, not exactly, which
+takes the other branch.
+
+So it was measured rather than argued about: closed, nearly-closed (gaps down to 0.0001),
+noisy, few-point, and self-overlapping loops were all pushed through `simplify()`. **Every
+one survived with plenty of points** — a 5-point loop stays 5 points. The simplifier is
+innocent, and the loss happens *before* it, which is what made the next step obvious.
+
+### The actual gap: pointer events are not the whole story on iOS
+
+iOS **synthesises pointer events from touch events**, and `preventDefault()` on a *pointer*
+event does not reliably cancel the touch default underneath it. That gap is how iPadOS
+gesture recognisers still reach a stroke even though the canvas is `touch-action: none` and
+`pointerdown` is prevented.
+
+A closed loop is exactly what the circle-to-select recogniser is watching for. It claimed
+the stroke, the moves were never delivered to the page, and the zero committed as a single
+point — drawn perfectly by the hand and never seen by the app.
+
+The court now takes the **touch** stream directly (`touchstart` / `touchmove` / `touchend`,
+`{ passive: false }`), so there is no default left for a recogniser to act on.
+
+**Only stylus touches are claimed.** iOS says which is which via `touchType`, and taking
+finger touches too would have killed the hand-rolled finger scrolling over a court. There
+is a test for both halves of that.
+
+### Honest status
+
+This one is **reasoned, not proved**. The palm bug above was demonstrated by reverting the
+fix and watching the test fail; this cannot be, because the missing piece is an iPadOS
+gesture recogniser that does not exist on this machine. What is proved is that the
+simplifier is not at fault and that the touch handler claims the stylus and nothing else.
+
+If round shapes still go missing after this, the next step is instrumentation on the device
+— count `pointercancel`s and points-per-stroke and show them on screen — rather than a
+fourth guess. `test/run.sh` is now **207 checks**.
+
 ## The ink engine (first proved in `pencil-test.html`)
 
 Worth keeping whichever platform wins, because the reasoning carries over.
