@@ -616,6 +616,21 @@ The cost is real and accepted: text outside a form field can no longer be select
 On an iPad driven by a Pencil that is the right trade, and the coaching points and every
 other typed field are still selectable.
 
+**And `body` was still not enough** — Dusan reported the highlight *still* reaching Import.
+The reason is the important part: `user-select: none` says an element is not *selectable*,
+but iPadOS still **starts the selection gesture** when the Pencil drags, and the highlight
+lands on whatever it can still reach. Excluding a region only moves it. Three rounds of
+chasing it with CSS moved it three times.
+
+The fix is to cancel the gesture rather than to hide from it: `selectstart` and `dragstart`
+are prevented for any target that is not an `input` or a `textarea`. There is then nowhere
+for a selection to land, and editing inside a real text box is untouched.
+
+**The lesson, and it is the third time in three days:** `document.addEventListener` was a
+no-op in the fake DOM, so anything hung off the document could not be tested at all. It
+records listeners now, and the suite fires a real `selectstart` at a button, a court, an
+input and a textarea. The stub keeps being the thing that makes a green run meaningless.
+
 ### The practice time boxes, and why `align-content` was not enough
 
 Same complaint as the date of birth, different cause. `align-content: start` stopped rows

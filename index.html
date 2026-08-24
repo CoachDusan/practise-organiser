@@ -2089,6 +2089,27 @@
   window.addEventListener("resize", function () { clearTimeout(window.__rl);
     window.__rl = setTimeout(relayout, 100); });
 
+  /* `user-select: none` was not enough on its own. It stops an element being
+     *selectable*, but iPadOS still starts the selection gesture when the Pencil
+     drags, and the highlight then lands on whatever it can still reach — first
+     the court, then, once the court was excluded, the Import button in the top
+     bar. Chasing it with CSS moves it; it does not stop it.
+
+     Cancelling the gesture itself does. Nothing outside a real text box may
+     begin a selection or a drag, so there is nowhere left for it to land.
+     Selecting and editing inside an input or a textarea is untouched. */
+  function isTextBox(t) {
+    if (!t || !t.tagName) return false;
+    var tag = String(t.tagName).toUpperCase();
+    return tag === "INPUT" || tag === "TEXTAREA";
+  }
+  document.addEventListener("selectstart", function (e) {
+    if (!isTextBox(e.target)) e.preventDefault();
+  });
+  document.addEventListener("dragstart", function (e) {
+    if (!isTextBox(e.target)) e.preventDefault();
+  });
+
   function el(tag, cls, text) {
     var n = document.createElement(tag);
     if (cls) n.className = cls;

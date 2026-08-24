@@ -197,14 +197,19 @@ function makeDom() {
     byId.tabs.appendChild(b);
   });
 
+  /* Document-level listeners are recorded, not dropped. They used to be a no-op,
+     which meant anything the app hangs off the document could not be tested. */
+  var docOn = {};
   return {
     head: Node("head"),
     body: Node("body"),
     createElement: Node,
     getElementById: function (id) { return byId[id] || null; },
-    addEventListener: function () {},
+    addEventListener: function (t, fn) { (docOn[t] || (docOn[t] = [])).push(fn); },
     removeEventListener: function () {},
+    fire: function (t, ev) { (docOn[t] || []).forEach(function (fn) { fn(ev); }); },
     querySelector: function () { return null; },
+    _on: docOn,
     _byId: byId
   };
 }
@@ -938,6 +943,34 @@ launch(backing, lsStore).then(function (po) {
   var dots = document.getElementById("app").querySelectorAll(".mg-item");
   ok("the month draws what is on a day", dots.length > 0, "found " + dots.length);
   ok("and each one opens its own record", typeof dots[0].onclick === "function");
+
+  /* The Pencil kept starting a text selection that landed on whatever it could
+     reach — the court, then the top bar's Import button once the court was
+     excluded. CSS moved the highlight around; cancelling the gesture stops it. */
+  print("\n18. a Pencil drag cannot start a selection");
+
+  function selectOn(node) {
+    var stopped = false;
+    document.fire("selectstart", { target: node, preventDefault: function () { stopped = true; } });
+    return stopped;
+  }
+  ok("the app listens for the selection gesture at all",
+     (document._on.selectstart || []).length > 0);
+
+  var btn = document.createElement("button");
+  ok("a drag over a button cannot select it", selectOn(btn));
+  var svg = document.createElement("svg");
+  ok("nor over a court", selectOn(svg));
+
+  var txt = document.createElement("input");
+  txt.type = "text";
+  eq("but a text box still selects normally", selectOn(txt), false);
+  var area = document.createElement("textarea");
+  eq("and so does a textarea", selectOn(area), false);
+
+  var dragged = false;
+  document.fire("dragstart", { target: btn, preventDefault: function () { dragged = true; } });
+  ok("and nothing outside a text box can be dragged", dragged);
 
   var pid = po.state.practices[0].id;
   po.go("practice", pid, "schedule");
