@@ -888,6 +888,72 @@ the class, because this is invisible until someone actually prints.
 
 `test/run.sh` is now **214 checks**.
 
+## Visual differentiation (2026-08-24) — Dusan's brief
+
+*"Not enough visual differentiation between entries in the schedule, both week and month.
+Roster also — all the letters are same colour, less or more same font."*
+
+He was right, and the diagnosis was concrete: **every entry was the same dark card with the
+same text, and the only thing telling them apart was a 3px stripe on the left edge** (2px in
+the month, on 10px grey text). One very quiet signal doing a very big job.
+
+He asked to be asked, so the forks were put to him as choices rather than guessed at.
+
+### Weight, not category — his call
+
+Offered three ways to differentiate: by **importance**, by **category** (a tinted card per
+kind, seven colours), or both. He took importance.
+
+So the schedule now has **three weights**, and the reasoning is his: a game is the fixed
+point a week is built around, a practice is the working substance, and travel, days off, a
+taken gym and notes are the context the week happens *around*.
+
+| Tier | What | How it reads |
+|---|---|---|
+| `loud` | Game, tournament | 23px title, filled tinted ground, 5px edge |
+| `mid` | Practice | 17px title, the existing card — the baseline |
+| `quiet` | Travel, day off, gym unavailable, note | 13px, lower case, no card at all — just a marked line |
+
+`tierOf()` is one function driving both the week and the month, so the two views cannot
+drift apart. **Colour still says which kind; size and fill say how much it counts.** Only
+the loud tier gets a tinted ground, so a busy week does not become seven competing colours.
+
+**This survives printing**, which colour would not have: paper drops background tints, but
+23 / 17 / 13px carries through untouched.
+
+### The first tints were measured and thrown away
+
+The initial loud tints were `#2F2520` and `#2B2431` — chosen by eye, and only **1.06**
+against the panel behind them and **1.05** against the practice chip beside them. Invisible,
+which is the exact bug being fixed.
+
+Measured and replaced with `#52362B` and `#413553`: **1.45** against the day panel and
+**1.29** against a practice chip, with title text still at 8.6:1. A visible filled block
+that is still calm.
+
+**Do not pick a tint by eye on this palette.** Two of the four colours chosen that way
+failed, and one of them failed at the thing it was added to do.
+
+### Roster: the position comes out of the grey run
+
+Offered a position badge, grouping the squad by position, or ratings as bars. He took the
+badge.
+
+- The **name is the hero** — 25px, and the row's other details drop to 12px.
+- **Position is a badge**, not the first item in a dot-separated grey list with the
+  birthdate and the height. G, F and C each get their own colour; a position he adds himself
+  stays neutral, and still shows its full text.
+- Contrast checked on every badge: 7.6, 8.9 and 7.3:1. The neutral badge was first written
+  at 4.0:1 — under the 4.5 floor — and lightened.
+
+### Boldness: stronger, still calm
+
+Asked how far to push it. He chose *noticeably stronger but keep the dark, considered look
+and the single accent* — not the bold option, and not a one-screen trial. So: real jumps in
+size and weight, colour only where it earns its place, palette untouched.
+
+`test/run.sh` is now **227 checks**, covering every tier mapping and every badge class.
+
 ## The ink engine (first proved in `pencil-test.html`)
 
 Worth keeping whichever platform wins, because the reasoning carries over.

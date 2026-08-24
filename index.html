@@ -427,6 +427,25 @@
 
   /* ---------- roster ---------- */
   .prow.player { grid-template-columns: 62px 1fr; }
+
+  /* The name is what he looks for, so it is clearly the biggest thing in the
+     row; the details drop back rather than sitting at the same weight. */
+  .pname-row { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .pname-row .pdate {
+    font-size: 25px; letter-spacing: .03em; min-width: 0;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .posbadge {
+    margin-left: auto; flex: none;
+    font-family: "Barlow Condensed", sans-serif; font-weight: 700;
+    font-size: 15px; letter-spacing: .09em; text-transform: uppercase;
+    padding: 2px 10px; border-radius: 6px;
+    background: #332F27; color: #A49B8A; border: 1px solid #433D33;
+  }
+  .posbadge.pg { background: #1F2C33; color: #8FC4E0; border-color: #334B59; }
+  .posbadge.pf { background: #212C1E; color: #B0D694; border-color: #384C31; }
+  .posbadge.pc { background: #2B2431; color: #D0A5E4; border-color: #443850; }
+  .prow.player .psub { font-size: 12px; }
   .prow.inactive { opacity: .55; }
   .shirt {
     font-family: "Barlow Condensed", sans-serif; font-size: 26px; font-weight: 700;
@@ -565,6 +584,38 @@
   }
   .ci-sub { font-size: 11.5px; color: var(--dim); line-height: 1.4; }
 
+  /* ---- the three weights ----
+     Colour says which kind. Size, fill and brightness say how much it counts.
+     Only the loud tier gets a tinted ground, so a busy week does not turn into
+     seven competing colours — the point was to make the week readable, not
+     to decorate it. */
+  .chip-item.loud {
+    padding: 11px 13px; border-left-width: 5px;
+  }
+  .chip-item.loud .ci-title {
+    font-size: 23px; letter-spacing: .045em; line-height: 1.1;
+  }
+  .chip-item.loud .ci-sub { font-size: 12.5px; color: #B5AD9C; }
+  .chip-item.game.loud       { background: #52362B; }
+  .chip-item.tournament.loud { background: #413553; }
+
+  /* The practice keeps the baseline look: it is the normal working substance. */
+  .chip-item.mid .ci-title { font-size: 17px; }
+
+  /* Context, not events. No card at all — just a marked line that stays out of
+     the way until it is read. */
+  .chip-item.quiet {
+    background: transparent; border-color: transparent;
+    border-left: 3px solid var(--dim); padding: 3px 10px;
+  }
+  .chip-item.quiet .ci-title {
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    font-size: 13px; font-weight: 500; text-transform: none;
+    letter-spacing: 0; color: var(--dim);
+  }
+  .chip-item.quiet .ci-sub { font-size: 10.5px; }
+  .chip-item.quiet:hover { border-color: transparent; background: var(--panel-hi); }
+
   .chip-item.practice        { border-left-color: var(--accent); }
   .chip-item.practice.done   { border-left-color: #9CC47F; }
   .chip-item.game            { border-left-color: #D2603F; }
@@ -596,6 +647,19 @@
     background: var(--panel-hi); border-left: 2px solid var(--dim);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
+  /* The same three weights, scaled to a month cell. A game has to be findable
+     when a whole month is on screen at once. */
+  .mg-item.loud {
+    font-size: 10.5px; font-weight: 700; color: var(--text);
+    border-left-width: 3px; padding: 3px 5px;
+  }
+  .mg-item.game.loud       { background: #52362B; }
+  .mg-item.tournament.loud { background: #413553; }
+  .mg-item.quiet {
+    background: transparent; color: var(--dim); font-size: 9.5px;
+    border-left-width: 2px; padding: 1px 4px;
+  }
+
   .mg-item.practice      { border-left-color: var(--accent); }
   .mg-item.practice.done { border-left-color: #9CC47F; }
   .mg-item.game          { border-left-color: #D2603F; }
@@ -1483,6 +1547,19 @@
     { id: "gym",        label: "Gym unavailable", hint: "The hall is taken" },
     { id: "note",       label: "Note",            hint: "Anything else worth seeing on the calendar" }
   ];
+
+  /* Weight, not category — Dusan's call. A week should show what *matters* first
+     rather than what type everything is. A game is the fixed point the week is
+     built around, so it is loud; a practice is the working substance; travel, a
+     day off, a taken gym and a note are the context the week happens around, so
+     they recede. Colour still says which kind it is; size and fill say how much
+     it counts. */
+  var LOUD_KINDS = { game: 1, tournament: 1 };
+
+  function tierOf(it) {
+    if (it.type === "practice") return "mid";
+    return LOUD_KINDS[it.rec.kind] ? "loud" : "quiet";
+  }
 
   function kindLabel(id) {
     for (var i = 0; i < EVENT_KINDS.length; i++) if (EVENT_KINDS[i].id === id) return EVENT_KINDS[i].label;
@@ -2640,6 +2717,13 @@
     app.appendChild(wrap);
   }
 
+  // G, F and C each get their own colour; anything he adds himself stays neutral.
+  function positionBadge(pos) {
+    var first = String(pos).trim().charAt(0).toUpperCase();
+    var known = first === "G" || first === "F" || first === "C";
+    return el("span", "posbadge" + (known ? " p" + first.toLowerCase() : ""), pos);
+  }
+
   function playerRow(p) {
     var row = el("button", "prow player" + (p.active ? "" : " inactive"));
 
@@ -2648,11 +2732,15 @@
     row.appendChild(left);
 
     var right = el("div", "pwhat");
-    var nameLine = el("div", "pdate", p.name || "Unnamed");
+    /* The name and the position are the two things he scans for, so they get
+       their own line and the position comes out of the grey run of details it
+       used to be buried in. */
+    var nameLine = el("div", "pname-row");
+    nameLine.appendChild(el("div", "pdate", p.name || "Unnamed"));
+    if (p.position) nameLine.appendChild(positionBadge(p.position));
     right.appendChild(nameLine);
 
     var sub = [];
-    if (p.position) sub.push(p.position);
     var yrs = ageFrom(p.birthDate);
     if (yrs !== null) sub.push(formatDMY(p.birthDate) + "  ·  " + yrs);
     else if (p.birthYear) sub.push(String(p.birthYear));
@@ -3262,7 +3350,7 @@
   function itemChip(it) {
     if (it.type === "practice") {
       var p = it.rec;
-      var b = el("button", "chip-item practice" + (p.status === "done" ? " done" : ""));
+      var b = el("button", "chip-item mid practice" + (p.status === "done" ? " done" : ""));
       var line = el("div", "ci-title", "Practice");
       b.appendChild(line);
       var bits = [];
@@ -3277,7 +3365,7 @@
       return b;
     }
     var e = it.rec;
-    var c = el("button", "chip-item " + e.kind);
+    var c = el("button", "chip-item " + tierOf(it) + " " + e.kind);
     c.appendChild(el("div", "ci-title", eventTitle(e)));
     var sub = [];
     if (e.time) sub.push(e.time);
@@ -3309,7 +3397,7 @@
         (parts.m !== p.m ? " outside" : "") + (iso === now ? " today" : ""));
       cell.appendChild(el("div", "mg-num", String(parts.d)));
       dayItems(iso).forEach(function (it) {
-        var dot = el("div", "mg-item " +
+        var dot = el("div", "mg-item " + tierOf(it) + " " +
           (it.type === "practice" ? "practice" + (it.rec.status === "done" ? " done" : "")
                                   : it.rec.kind));
         dot.textContent = it.type === "practice" ? "Practice" : eventTitle(it.rec);

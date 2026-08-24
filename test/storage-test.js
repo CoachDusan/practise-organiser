@@ -265,6 +265,7 @@ function appSource() {
     "           openDrillPicker: openDrillPicker, route: route,\n" +
     "           maskFrom: maskFrom, maskText: maskText, typedField: typedField,\n" +
     "           pads: function () { return pads; },\n" +
+    "           tierOf: tierOf, positionBadge: positionBadge,\n" +
     "           applyImport: applyImport };\n";
   return src.slice(0, at) + exported + src.slice(at);
 }
@@ -1082,6 +1083,32 @@ launch(backing, lsStore).then(function (po) {
        var n = document.getElementById("app").querySelectorAll(".noprint");
        return n.length > 0;
      })());
+
+  /* Dusan: not enough visual difference between entries. His call was to sort by
+     weight rather than by category - what matters first, not what type it is. */
+  print("\n22. a week reads by what matters, not by what type it is");
+
+  eq("a game is loud", po.tierOf({ type: "event", rec: { kind: "game" } }), "loud");
+  eq("so is a tournament", po.tierOf({ type: "event", rec: { kind: "tournament" } }), "loud");
+  eq("a practice is the working substance", po.tierOf({ type: "practice", rec: {} }), "mid");
+  ["travel", "off", "gym", "note"].forEach(function (k) {
+    eq(k + " is context, not an event", po.tierOf({ type: "event", rec: { kind: k } }), "quiet");
+  });
+
+  eq("a guard is badged as one", po.positionBadge("G").className, "posbadge pg");
+  eq("a forward too", po.positionBadge("F").className, "posbadge pf");
+  eq("and a centre", po.positionBadge("C").className, "posbadge pc");
+  eq("a position he adds himself stays neutral",
+     po.positionBadge("Point guard").className, "posbadge");
+  eq("and still says what it is", po.positionBadge("Point guard").textContent, "Point guard");
+
+  // and the classes actually reach the screen
+  po.route.smode = "week";
+  po.route.anchor = po.state.practices[0].date;
+  po.go("schedule");
+  var app = document.getElementById("app");
+  ok("the week renders weighted entries",
+     app.querySelectorAll(".chip-item").length > 0);
 
   var pid = po.state.practices[0].id;
   po.go("practice", pid, "schedule");
