@@ -82,7 +82,7 @@
     --k-game: #B33F22; --k-game-bg: #F1E2D6; --k-game-loud: #E7C9BA;
     --k-tournament: #7B4A9E; --k-tournament-bg: #ECE3E2; --k-tournament-loud: #DACBD8;
     --k-travel: #2166A8; --k-travel-bg: #E3E6E3;
-    --k-off: #0F7A72; --k-off-bg: #E1E8DE;
+    --k-off: #8A8272; --k-off-bg: #FFFFFF;   /* a clear day is white paper */
     --k-gym: #7A6420; --k-gym-bg: #EBE6D6;
     --k-note: #5A6472; --k-note-bg: #E8E6DE;
     --chip-sub: #6B6252;
@@ -161,7 +161,7 @@
     --k-game: #DC6D4B; --k-game-bg: #3A2B23; --k-game-loud: #543629;
     --k-tournament: #C08BD8; --k-tournament-bg: #372F33; --k-tournament-loud: #4D3D4E;
     --k-travel: #6FA8C7; --k-travel-bg: #2D3231;
-    --k-off: #5FBFAE; --k-off-bg: #2B352E;
+    --k-off: #FFFFFF; --k-off-bg: #43413D;   /* a clear day is white */
     --k-gym: #C9A45E; --k-gym-bg: #383225;
     --k-note: #B0A492; --k-note-bg: #35322B;
     --chip-sub: #C4BCAB;
@@ -744,7 +744,7 @@
   }
   .chip-item:hover { border-color: var(--line-hi); }
   .ci-title {
-    font-family: "Barlow Condensed", sans-serif; font-size: 16px; font-weight: 600;
+    font-family: "Barlow Condensed", sans-serif; font-size: 16px; font-weight: 700;
     text-transform: uppercase; letter-spacing: .03em; line-height: 1.15;
   }
   .ci-sub { font-size: 11.5px; color: var(--dim); line-height: 1.4; }
@@ -778,7 +778,7 @@
   .chip-item.quiet { border-left-width: 3px; padding: 6px 10px; }
   .chip-item.quiet .ci-title {
     font-family: "IBM Plex Sans", system-ui, sans-serif;
-    font-size: 14.5px; font-weight: 600; text-transform: none;
+    font-size: 14.5px; font-weight: 700; text-transform: none;
     letter-spacing: 0; color: var(--text);
   }
   .chip-item.quiet .ci-sub { font-size: 11px; }
@@ -818,6 +818,7 @@
   .mg-cell.today .mg-num { color: var(--accent-text); }
   .mg-item {
     font-size: 10px; line-height: 1.25; padding: 2px 4px; border-radius: 4px;
+    font-weight: 600;
     background: var(--panel-hi); border-left: 2px solid var(--dim);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }

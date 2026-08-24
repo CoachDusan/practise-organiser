@@ -1045,6 +1045,40 @@ tinted cards use `--chip-sub`. Final separation: worst pair **ΔE 22.5** light, 
 The parity test earned itself here — it caught two rules still pointing at
 `--loud-game-bg` after the tokens were renamed, which would have left games untinted.
 
+### Bold, and a white day off (2026-08-24)
+
+*"I want Practice, day off... to be bold. And change colour of day off to white. It's too
+similar to Travel's blue."*
+
+Titles are bold throughout the week (700) and the month is 600 with the loud tier still a
+step above at 700.
+
+**Day off is white**, which means different things in the two themes and both had to be
+worked out rather than assumed: on paper the *card* is pure white with a warm grey bar (a
+white bar on cream would be invisible); in dark the *bar* is white with a pale grey card.
+Either way a clear day reads as blank paper, which is also what it means.
+
+### The colour-separation test does not do what it looks like it does
+
+A `dE >= 20` floor on every pair of kind colours was added at the same time. **It would not
+have caught the complaint that prompted it** — the old teal against travel's blue measures
+**dE 49.9 with an 87 degree hue gap**, comfortably clear. This was verified by putting the
+teal back and watching the suite stay green, rather than assumed from the fact that the test
+existed.
+
+His eye caught something the arithmetic does not: two mid-saturation cool colours read as
+"two blue-ish things" at a glance regardless of their coordinates. The check is still worth
+keeping — it caught dark-mode `note` sitting **dE 15.7** from travel — but it guards gross
+confusion, not judgement, and the comment on it says so.
+
+**Worth carrying forward: contrast can be computed, distinguishability cannot.** Every
+contrast failure in this work was caught by measurement before it shipped; both
+"these look alike" reports came from Dusan.
+
+*Currently closest, so it is where to look next if he reports it:* on paper, day off vs note
+(dE 22.8, both low-chroma greys — their cards differ sharply, white against beige); in dark,
+gym vs note (dE 30.5).
+
 ### Loud and quiet, corrected
 
 He tried the first version: *"quiet is too quiet and loud is not loud enough."* Both were
@@ -1056,7 +1090,7 @@ wrong in the same way — the range was set by guessing where the ends should be
   that it is not shouting — normal weight, sentence case, thinner edge — not that it is
   faint. The first version removed the card and dimmed the text, and it disappeared.
 
-`test/run.sh` is now **242 checks**, including that every kind has a hue and a tint in
+`test/run.sh` is now **246 checks**, including that every kind has a hue and a tint in
 both themes and a rule in both views.
 
 ## The ink engine (first proved in `pencil-test.html`)

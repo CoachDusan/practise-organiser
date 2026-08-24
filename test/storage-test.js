@@ -1183,6 +1183,58 @@ launch(backing, lsStore).then(function (po) {
   var re4 = /\.mg-item\.[a-z.]+ +\{ border-left-color[^}]*background/g;
   eq("the month is tinted the same way", (appCss.match(re4) || []).length, 8);
 
+  /* A floor on how alike two kinds may be, measured as CIE76 dE on the bar
+     colours, which are what carries the signal.
+
+     Be clear about what this does NOT do. Dusan reported the old teal day-off
+     as "too similar to travel's blue" - and that pair measures dE 49.9 with an
+     87 degree hue gap, so this check passes it comfortably. It was verified by
+     putting the teal back and watching the suite stay green. His eye caught
+     something the arithmetic does not: two mid-saturation cool colours read as
+     "two blue-ish things" at a glance, whatever the numbers say.
+
+     So this guards gross confusion only - it did catch dark-mode note sitting
+     dE 15.7 from travel. It is not a substitute for him looking at it. */
+  function srgb(c) { c /= 255; return c <= 0.03928 ? c/12.92 : Math.pow((c+0.055)/1.055, 2.4); }
+  function toLab(hex) {
+    var h = hex.replace("#",""), p = [0,2,4].map(function (i) {
+      return srgb(parseInt(h.substr(i,2),16)); });
+    var X = (p[0]*0.4124+p[1]*0.3576+p[2]*0.1805)/0.95047;
+    var Y =  p[0]*0.2126+p[1]*0.7152+p[2]*0.0722;
+    var Z = (p[0]*0.0193+p[1]*0.1192+p[2]*0.9505)/1.08883;
+    function f(t) { return t > 0.008856 ? Math.pow(t,1/3) : 7.787*t + 16/116; }
+    return [116*f(Y)-16, 500*(f(X)-f(Y)), 200*(f(Y)-f(Z))];
+  }
+  function dE(a, b) {
+    var x = toLab(a), y = toLab(b);
+    return Math.sqrt(Math.pow(x[0]-y[0],2)+Math.pow(x[1]-y[1],2)+Math.pow(x[2]-y[2],2));
+  }
+  function hexOf(block, token) {
+    var m = new RegExp(token + ":\\s*(#[0-9A-Fa-f]{6})").exec(block);
+    return m ? m[1] : null;
+  }
+  var lightBlock = css.slice(0, darkAt);
+  var darkBlock  = css.slice(darkAt, css.indexOf("@media (display-mode"));
+
+  [["paper", lightBlock], ["dark", darkBlock]].forEach(function (th) {
+    var off = hexOf(th[1], "--k-off"), trav = hexOf(th[1], "--k-travel");
+    ok("in " + th[0] + ", a day off does not look like travel",
+       off && trav && dE(off, trav) >= 20,
+       off + " vs " + trav + " dE " + (off && trav ? dE(off,trav).toFixed(1) : "?"));
+
+    var worst = 999, pair = "";
+    KINDS.forEach(function (a, i) {
+      KINDS.slice(i+1).forEach(function (b) {
+        var ca = hexOf(th[1], "--k-" + a), cb = hexOf(th[1], "--k-" + b);
+        if (!ca || !cb) return;
+        var d = dE(ca, cb);
+        if (d < worst) { worst = d; pair = a + "/" + b; }
+      });
+    });
+    ok("in " + th[0] + ", no two kinds are hard to tell apart",
+       worst >= 20, "closest " + pair + " dE " + worst.toFixed(1));
+  });
+
   var stray = appCss.match(/#[0-9A-Fa-f]{3,6}\b/g);
   eq("no colour is hardcoded outside the palettes", stray ? stray.join(",") : "", "");
 
