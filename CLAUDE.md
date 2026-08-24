@@ -568,6 +568,144 @@ The block starts **open** and stays closed once closed. That needed `ui.open` to
 explicit 1 or 0 rather than "present means open", so a section with a default can still be
 dismissed for good.
 
+## The iPad was fighting the Pencil (2026-08-24)
+
+Three reports from using it, and the first two turned out to be one cause.
+
+### Load tracking is off the table — Dusan's call
+
+*"I don't want to track Load at all. That's the job of S&C coach."* Session load was the
+last deferred item from stage 4 and it is now closed, not parked. The intensity values are
+still worth keeping — they are what `drill-management` measured, and they describe the drill
+— but the app does not compute a load number from them and should not start.
+
+### Scribble was turning ink into text
+
+Drawing along the **top** of a court kept arriving as typed text in the box above it.
+
+Cause: **Apple Scribble**. iPadOS converts Pencil handwriting into text in any *editable*
+field near the nib, and its catch area reaches well past the box — the diagram's name input
+sat 10px above the court, which is nothing. `preventDefault()` cannot help, because the
+system decides before the page sees a pointer event.
+
+There is no web API to switch Scribble off. But it only ever targets a field that **can be
+typed into**, so the fix works on the mechanism: on the two ink screens every text box is
+`readOnly` until it is deliberately tapped or tabbed into, and goes back to readonly on the
+way out (`penSafe` / `armPenSafe`).
+
+- `readOnly` is cleared on **pointerdown**, not on focus alone — iOS will not raise the
+  keyboard for a field that was readonly at the moment it was tapped.
+- `focus` clears it too, so a hardware keyboard can still tab in.
+- Typing is unchanged: the box is already editable by the time the tap becomes focus.
+- The gap under `.diagram-head` went 10px → 16px as well. Belt and braces, same as the
+  status-bar inset floor.
+
+### Circling a play was a text-selection gesture
+
+Drawing a circle on a court turned the whole card blue. Same family of problem: iPadOS read
+the Pencil loop as "select this text". `user-select: none` on `.editor`, given back to
+`input` and `textarea` only, plus `-webkit-touch-callout: none` on the court.
+
+Scoped to `.editor` deliberately rather than to `body` — courts only exist on the drill and
+tactic editors, and everywhere else selecting text to copy is still worth having.
+
+### The practice time boxes, and why `align-content` was not enough
+
+Same complaint as the date of birth, different cause. `align-content: start` stopped rows
+*stretching*, but the practice header still mixes a native `input[type=date]` with typed
+From/To text boxes, and **iOS gives the native date control its own intrinsic height**. The
+boxes were genuinely different sizes, not stretched.
+
+`.field > input, .field > select { height: 40px; line-height: 20px; }` — 40 less 18px
+padding less 2px border is exactly the 20px line box, so every control in a field row is the
+same size on the device. `.adate` in an assessment row is deliberately outside this: it is a
+compact row with its own smaller padding.
+
+**Still inconsistent, not fixed:** practice date, event date and assessment date are still
+native `input[type=date]` wheel pickers, while date of birth is typed. Worth raising, not
+guessed at.
+
+### The test harness was passing vacuously
+
+`penSafe` calls `querySelectorAll("input[type=text], …")`. The fake DOM's selector engine
+only understood `.class`, so it matched nothing and the new code "passed" without ever
+running. It now understands comma-separated lists of `.class`, `tag` and `tag[attr=value]`,
+and nodes record their listeners so a test can fire a real pointerdown and blur.
+
+**Worth remembering: a green test against a stub proves nothing until the stub is checked.**
+That is the third time in this project that something parsed fine and only running it found
+the truth. `test/run.sh` is now **165 checks**, including that the boxes found are non-zero —
+the assertion that would have caught this.
+
+## Two more from using it (2026-08-24)
+
+### He types the numbers; the box types the punctuation
+
+*"I don't need to insert . and : — you know the format."* Right: on an iPad number
+pad the punctuation is extra taps, and it is never in doubt. `05032008` now becomes
+`05.03.2008` and `1830` becomes `18:30` as he types.
+
+**The mask is read from the placeholder, not declared beside it.** `"DD.MM.YYYY"` and
+`"18:00"` already state the format; writing it a second time is two things that drift
+apart. Any alphanumeric in the placeholder is a slot, anything else is punctuation the
+box supplies (`maskFrom`).
+
+Two details that decide whether it feels right:
+
+- **The separator arrives with the digit after it**, never dangling. `05` stays `05`;
+  the dot appears when the third digit does. A trailing `05.` would make backspace
+  ambiguous and look like the box is waiting for something.
+- **Backspace always removes one thing.** Deleting a dot on its own would put it
+  straight back on the next reformat, so a press would appear to do nothing; the digit
+  it was guarding goes with it.
+
+`maskFrom` refuses any placeholder containing a space. `"Who you play"` is a prompt,
+not a pattern — the first version happily turned it into a mask, and the test that
+caught it is in the suite.
+
+Parsing is unchanged and still happens on blur: the mask only decides what the box
+*looks* like, `parseDMY` / `parseTime` still decide what is true. `31.02.2008` is still
+refused after being punctuated for him.
+
+### Planning from the month left the schedule on the week
+
+*"Every time I input practice in month view and I am done, it sends me to week view.
+I want to stay in month view."*
+
+Cause: tapping a day in the month grid did `route.smode = "week"` and stayed there.
+It was documented as "tapping a day drops into that week", and as navigation it was
+fine — but it silently and **permanently** changed his chosen view, so every later
+visit to the schedule opened on the week.
+
+Two changes, and the principle is that a mode should change because he asked, not as
+a side effect of doing something else:
+
+- **A day in the month opens that day's menu**, the same one the week's `+` opens, so
+  a session can be planned from the month without leaving it. Going to the week is now
+  an explicit **"Open this week"** option on that menu.
+- **Items drawn on a month day are tappable**, so an existing practice or game opens
+  directly rather than only through the week.
+
+### A practice belongs to wherever it was opened from
+
+The practice editor's crumb always said "‹ Practices", whatever screen he arrived
+from. `go(view, id, from)` now carries the origin: opened from the schedule, the crumb
+says "‹ Schedule" and goes back to the day, the week or the month he was planning in.
+Deleting from there returns to the same place.
+
+### The stub was hiding a whole code path
+
+Adding a real blur to a typed field threw immediately: the fake DOM had no
+`classList`, so `commit()` — the function that decides whether a typed date is
+accepted or refused — **had never once run under test**, in either direction. It has
+one now, and the suite exercises accept and refuse.
+
+That is the second harness gap found in two days, and the same lesson as the vacuous
+`querySelectorAll`: **the stub is part of the test, and a green run says nothing about
+code the stub cannot reach.**
+
+`test/run.sh` is now **192 checks**.
+
 ## The ink engine (first proved in `pencil-test.html`)
 
 Worth keeping whichever platform wins, because the reasoning carries over.

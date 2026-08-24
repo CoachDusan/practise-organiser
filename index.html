@@ -100,6 +100,12 @@
      makes every other box in the row stretch to match, which is what made the
      date of birth look like a different control from the ones beside it. */
   .field { display: grid; gap: 5px; min-width: 0; align-content: start; }
+  /* iOS gives input[type=date] its own intrinsic height from the native control,
+     so a date box came out a different size from the typed From/To boxes beside
+     it. align-content:start stops rows stretching; this pins the boxes themselves
+     to one height so every control in a row is the same size on the device.
+     Content box is 40 - 18 padding - 2 border = 20px, which is the line-height. */
+  .field > input, .field > select { height: 40px; line-height: 20px; }
   .field > .label { font-size: 10px; color: var(--dim); }
 
   /* ---------- library ---------- */
@@ -150,7 +156,14 @@
   .empty { color: var(--dim); text-align: center; padding: 60px 20px; line-height: 1.6; }
 
   /* ---------- editor ---------- */
-  .editor { display: grid; grid-template-columns: var(--rail) 1fr; min-height: 100dvh; }
+  /* On an editor screen the Pencil is a drawing tool, but iPadOS still reads its
+     gestures as text gestures: circling a play on a court was taken as "select
+     this text" and painted the whole card blue. Selection is switched off for
+     the screen and handed back only to the boxes that are actually for text. */
+  .editor { display: grid; grid-template-columns: var(--rail) 1fr; min-height: 100dvh;
+            -webkit-user-select: none; user-select: none; }
+  .editor input, .editor textarea { -webkit-user-select: text; user-select: text; }
+  .court-wrap { -webkit-touch-callout: none; }
   .rail {
     position: sticky; top: var(--bar-total); align-self: start;
     height: calc(100dvh - var(--bar-total));
@@ -206,7 +219,7 @@
   .diagrams { display: grid; gap: 18px; margin-top: 22px; }
 
   .diagram { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
-  .diagram-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+  .diagram-head { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
   .diagram-head .num {
     font-family: "Barlow Condensed", sans-serif; font-size: 12px; letter-spacing: .09em;
     text-transform: uppercase; color: var(--accent); white-space: nowrap;
@@ -1762,6 +1775,35 @@
     return st;
   }
 
+  /* Apple Scribble turns Pencil handwriting into typed text in any *editable*
+     field near the nib, and its catch area reaches well past the box itself —
+     which is why a stroke along the top of a court kept arriving as text in the
+     name above it. There is no web API to switch Scribble off, but it only ever
+     targets a field that can be typed into: a readonly box is not a target.
+
+     So on the screens where the Pencil draws, every text box stays readonly
+     until it is deliberately tapped or tabbed into, and goes back to readonly on
+     the way out. Deliberate typing is unchanged — the field is already editable
+     by the time the tap becomes focus, so the keyboard still comes up — but a
+     pen stroke that merely passes nearby has nothing to write into.
+
+     readOnly is cleared on pointerdown rather than on focus alone because iOS
+     will not raise the keyboard for a field that was readonly when it was
+     tapped; focus is covered too, so a hardware keyboard can still tab in. */
+  function penSafe(root) {
+    var boxes = root.querySelectorAll("input[type=text], input[type=number], textarea");
+    for (var i = 0; i < boxes.length; i++) armPenSafe(boxes[i]);
+    return root;
+  }
+
+  function armPenSafe(box) {
+    box.readOnly = true;
+    function open() { box.readOnly = false; }
+    box.addEventListener("pointerdown", open);
+    box.addEventListener("focus", open);
+    box.addEventListener("blur", function () { box.readOnly = true; });
+  }
+
   /* ================= ink engine =================
      Two layers per diagram: #base holds finished strokes, #live only the one in
      progress. Pen is opaque so it appends segment by segment (lowest latency);
@@ -1987,8 +2029,11 @@
                 anchor: null, smode: "week", side: "" };
   var pads = [];
 
-  function go(view, id) {
-    route.view = view; route.id = id || null;
+  /* `from` is where the crumb goes back to. A practice reached from the schedule
+     belongs to the schedule: sending it back to the Practices list instead lost
+     the day he was planning, and the week or month he was planning it in. */
+  function go(view, id, from) {
+    route.view = view; route.id = id || null; route.from = from || null;
     render();
     window.scrollTo(0, 0);
   }
@@ -2396,7 +2441,7 @@
 
     sheet.appendChild(footer);
     shell.appendChild(sheet);
-    app.appendChild(shell);
+    app.appendChild(penSafe(shell));
   }
 
   function optionBlock(t, o, i, use) {
@@ -3121,7 +3166,7 @@
       if (mins) bits.push(mins + " min");
       bits.push(p.status === "done" ? "done" : "planned");
       b.appendChild(el("div", "ci-sub", bits.join(" · ")));
-      b.onclick = function () { go("practice", p.id); };
+      b.onclick = function () { go("practice", p.id, "schedule"); };
       return b;
     }
     var e = it.rec;
@@ -3161,12 +3206,22 @@
           (it.type === "practice" ? "practice" + (it.rec.status === "done" ? " done" : "")
                                   : it.rec.kind));
         dot.textContent = it.type === "practice" ? "Practice" : eventTitle(it.rec);
+        (function (item) {
+          dot.onclick = function (ev) {
+            if (ev && ev.stopPropagation) ev.stopPropagation();
+            if (item.type === "practice") go("practice", item.rec.id, "schedule");
+            else openEventEditor(item.rec);
+          };
+        })(it);
         cell.appendChild(dot);
       });
+      /* This used to drop straight into the week, which quietly changed the view
+         mode and left it changed — plan a session from the month and every later
+         visit to the schedule opened on the week instead. The month now adds to
+         the day you are standing on, and going to that week is an option on the
+         menu rather than something that happens to you. */
       (function (dayIso) {
-        cell.onclick = function () {
-          route.anchor = dayIso; route.smode = "week"; render();
-        };
+        cell.onclick = function () { route.anchor = dayIso; openDayMenu(dayIso, true); };
       })(iso);
       box.appendChild(cell);
     }
@@ -3176,7 +3231,7 @@
   /* What can go on a day. A practice is a full record with its own screen; the
      rest are small enough to edit in a sheet. */
 
-  function openDayMenu(iso) {
+  function openDayMenu(iso, offerWeek) {
     var back = el("div", "modal-back");
     var panel = el("div", "modal choice");
 
@@ -3197,7 +3252,7 @@
       state.practices.unshift(p);
       state.practices.sort(byDateDesc);
       touchPractice(p);
-      go("practice", p.id);
+      go("practice", p.id, "schedule");
     };
     opts.appendChild(prac);
 
@@ -3214,6 +3269,13 @@
       };
       opts.appendChild(b);
     });
+
+    if (offerWeek) {
+      var wk = el("button", "choice-btn");
+      wk.innerHTML = "<b>Open this week</b><span>See the whole week this day sits in.</span>";
+      wk.onclick = function () { close(); route.smode = "week"; render(); };
+      opts.appendChild(wk);
+    }
 
     var cancel = el("button", "choice-btn");
     cancel.innerHTML = "<b>Cancel</b><span>Change nothing.</span>";
@@ -3447,7 +3509,8 @@
     var p = findPractice(route.id);
     if (!p) { go("practices"); return; }
 
-    backTo("practices", "Practices");
+    var back = route.from === "schedule" ? ["schedule", "Schedule"] : ["practices", "Practices"];
+    backTo(back[0], back[1]);
 
     var wrap = el("div", "wrap narrow");
 
@@ -3542,7 +3605,7 @@
     del.onclick = function () {
       if (!confirm("Delete the practice on " + prettyDate(p.date) + "? This cannot be undone.")) return;
       removePractice(p.id);
-      go("practices");
+      go(back[0]);
     };
     buttons.appendChild(del);
 
@@ -3850,7 +3913,7 @@
     sheet.appendChild(footer);
 
     shell.appendChild(sheet);
-    app.appendChild(shell);
+    app.appendChild(penSafe(shell));
   }
 
   function buildMeta(drill) {
@@ -3937,6 +4000,74 @@
 
   /* A typed field that validates on blur: good input is normalised and saved,
      a typo turns the box red and is not saved over the last good value. */
+  /* Type only the numbers; the box puts the dots and colons in as you go.
+     He knows the format — making him also tap "." and ":" on an iPad keyboard is
+     two extra taps per field, and the punctuation is never in doubt.
+
+     The mask is read from the placeholder rather than declared a second time
+     beside it, so "DD.MM.YYYY" and "18:00" cannot drift apart from the thing
+     that describes them. Any alphanumeric character in the placeholder is a slot
+     for a digit; anything else is punctuation the box supplies itself. */
+  function maskFrom(placeholder) {
+    // A format has no spaces in it. "Who you play" is a prompt, not a pattern,
+    // and must never be turned into a mask that eats what he types.
+    if (!placeholder || /\s/.test(placeholder)) return null;
+    var seps = {}, n = 0, marks = 0;
+    for (var i = 0; i < placeholder.length; i++) {
+      var c = placeholder.charAt(i);
+      if (/[A-Za-z0-9]/.test(c)) n++;
+      else { seps[n] = c; marks++; }
+    }
+    return (marks > 0 && n > 1) ? { seps: seps, max: n } : null;
+  }
+
+  function maskText(m, digits) {
+    var out = "";
+    for (var i = 0; i < digits.length; i++) {
+      if (i > 0 && m.seps[i]) out += m.seps[i];
+      out += digits.charAt(i);
+    }
+    return out;
+  }
+
+  // Where the caret sits after the nth digit of the punctuated text.
+  function caretAfter(text, n) {
+    if (n <= 0) return 0;
+    var seen = 0;
+    for (var i = 0; i < text.length; i++) {
+      if (/\d/.test(text.charAt(i))) { seen++; if (seen === n) return i + 1; }
+    }
+    return text.length;
+  }
+
+  function autoPunctuate(input, m) {
+    input._digits = input.value.replace(/\D/g, "");
+    input.addEventListener("input", function (e) {
+      var raw = input.value;
+      var caret = typeof input.selectionStart === "number" ? input.selectionStart : raw.length;
+      var before = raw.slice(0, caret).replace(/\D/g, "").length;
+      var digits = raw.replace(/\D/g, "");
+      /* Backspacing onto a dot deletes only the dot, which the next reformat puts
+         straight back — one press would look like nothing happened. Take the digit
+         it was guarding as well, so one press always removes one thing. */
+      var deleting = e && typeof e.inputType === "string" && e.inputType.indexOf("delete") === 0;
+      if (deleting && digits.length === input._digits.length && before > 0) {
+        digits = digits.slice(0, before - 1) + digits.slice(before);
+        before -= 1;
+      }
+      digits = digits.slice(0, m.max);
+      if (before > digits.length) before = digits.length;
+      var text = maskText(m, digits);
+      input._digits = digits;
+      if (input.value !== text) input.value = text;
+      if (input.setSelectionRange) {
+        var at = caretAfter(text, before);
+        try { input.setSelectionRange(at, at); } catch (err) {}
+      }
+    });
+    return input;
+  }
+
   function typedField(label, value, placeholder, parse, format, onSet, hint) {
     var f = el("div", "field");
     f.appendChild(el("div", "label", label));
@@ -3959,11 +4090,14 @@
       }
       i.classList.remove("bad");
       i.value = format(parsed);
+      i._digits = i.value.replace(/\D/g, "");
       note.textContent = hint || "";
       onSet(parsed);
     }
     i.onblur = commit;
     i.onkeydown = function (e) { if (e.key === "Enter") { commit(); i.blur(); } };
+    var m = maskFrom(placeholder);
+    if (m) autoPunctuate(i, m);
     f.appendChild(i);
     f.appendChild(note);
     return f;

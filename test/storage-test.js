@@ -119,8 +119,29 @@ function makeDom() {
       remove: function () { if (n.parentNode) n.parentNode.removeChild(n); },
       setAttribute: function (k, v) { n.attrs[k] = String(v); },
       getAttribute: function (k) { return k in n.attrs ? n.attrs[k] : null; },
-      addEventListener: function () {},
+      readOnly: false,
+      _on: {},
+      /* Enough classList for the code under test. Without it the commit path of
+         a typed field threw the moment a test actually blurred one. */
+      classList: {
+        add: function (c) {
+          var l = String(n.className).split(/\s+/).filter(Boolean);
+          if (l.indexOf(c) < 0) l.push(c);
+          n.className = l.join(" ");
+        },
+        remove: function (c) {
+          n.className = String(n.className).split(/\s+/)
+            .filter(Boolean).filter(function (x) { return x !== c; }).join(" ");
+        },
+        contains: function (c) {
+          return String(n.className).split(/\s+/).indexOf(c) >= 0;
+        }
+      },
+      addEventListener: function (t, fn) { (n._on[t] || (n._on[t] = [])).push(fn); },
       removeEventListener: function () {},
+      fire: function (t, ev) {
+        (n._on[t] || []).forEach(function (fn) { fn(ev || { target: n }); });
+      },
       click: function () { if (n.onclick) n.onclick({ target: n }); },
       querySelector: function (sel) { return find(n, sel)[0] || null; },
       querySelectorAll: function (sel) { return find(n, sel); },
@@ -133,12 +154,32 @@ function makeDom() {
     return n;
   }
 
+  /* Enough of a selector engine to answer what the app actually asks for:
+     a comma-separated list of ".class", "tag", or "tag[attr=value]". It used to
+     understand ".class" alone, which meant a querySelectorAll for text boxes
+     quietly matched nothing and the code under test looked like it passed. */
+  function matches(n, sel) {
+    if (sel.charAt(0) === ".") {
+      return String(n.className).split(/\s+/).indexOf(sel.slice(1)) >= 0;
+    }
+    var m = /^([a-zA-Z]+)(?:\[([a-zA-Z-]+)=([^\]]+)\])?$/.exec(sel);
+    if (!m) return false;
+    if (String(n.tagName).toLowerCase() !== m[1].toLowerCase()) return false;
+    if (!m[2]) return true;
+    var want = m[3].replace(/^["']|["']$/g, "");
+    var got = (m[2] in n && n[m[2]] !== "") ? n[m[2]] : n.attrs[m[2]];
+    return String(got) === want;
+  }
+
   function find(root, sel) {
+    var parts = sel.split(",").map(function (s) { return s.trim(); })
+                   .filter(function (s) { return s; });
     var out = [];
-    var wantClass = sel.charAt(0) === "." ? sel.slice(1) : null;
     (function walk(n) {
       n.children.forEach(function (c) {
-        if (wantClass && String(c.className).split(/\s+/).indexOf(wantClass) >= 0) out.push(c);
+        for (var i = 0; i < parts.length; i++) {
+          if (matches(c, parts[i])) { out.push(c); break; }
+        }
         walk(c);
       });
     })(root);
@@ -217,6 +258,7 @@ function appSource() {
     "           POSITIONS: POSITIONS,\n" +
     "           practiceMinutes: practiceMinutes, prettyDate: prettyDate,\n" +
     "           openDrillPicker: openDrillPicker, route: route,\n" +
+    "           maskFrom: maskFrom, maskText: maskText, typedField: typedField,\n" +
     "           applyImport: applyImport };\n";
   return src.slice(0, at) + exported + src.slice(at);
 }
@@ -627,6 +669,33 @@ launch(backing, lsStore).then(function (po) {
   try { po.go("practice", practiceId); } catch (e) { drew3.push("practice with tactics: " + e); }
   ok("the tactics screens built without throwing", drew3.length === 0, drew3.join(" | "));
 
+  /* Apple Scribble was writing Pencil strokes into whichever text box sat above
+     a court. It only targets a box that can be typed into, so on an ink screen
+     every box stays readonly until it is deliberately tapped. */
+  print("\n11. the Pencil cannot write into a text box by accident");
+  po.go("drill", "d-shell");
+  var boxes = document.getElementById("app")
+                .querySelectorAll("input[type=text], input[type=number], textarea");
+  ok("the drill editor has text boxes to guard", boxes.length > 0, "found " + boxes.length);
+  var openBoxes = boxes.filter(function (b) { return !b.readOnly; });
+  eq("none of them is writable until it is tapped", openBoxes.length, 0);
+
+  var box = boxes[0];
+  box.fire("pointerdown");
+  eq("a deliberate tap opens it", box.readOnly, false);
+  box.fire("blur");
+  eq("and leaving it closes it again", box.readOnly, true);
+  box.fire("focus");
+  eq("a hardware keyboard can still tab in", box.readOnly, false);
+  box.fire("blur");
+
+  po.go("tactic", horns.id);
+  var tBoxes = document.getElementById("app")
+                 .querySelectorAll("input[type=text], input[type=number], textarea");
+  ok("the set editor has text boxes too", tBoxes.length > 0, "found " + tBoxes.length);
+  eq("and they are guarded the same way",
+     tBoxes.filter(function (b) { return !b.readOnly; }).length, 0);
+
   po.flush();
   return Promise.resolve().then(function () { return launch(backing, lsStore); });
 })
@@ -653,7 +722,7 @@ launch(backing, lsStore).then(function (po) {
   eq("a backup written before tactics existed still imports", older.tactics.length, 0);
   eq("and its practice items are read as drills", older.practices[0].items[0].kind, "drill");
 
-  print("\n11. what he types, and how it is read back");
+  print("\n12. what he types, and how it is read back");
   eq("a padded date parses", po.parseDMY("05.03.2008"), "2008-03-05");
   eq("so does an unpadded one", po.parseDMY("5.3.2008"), "2008-03-05");
   eq("slashes are accepted", po.parseDMY("5/3/2008"), "2008-03-05");
@@ -690,7 +759,7 @@ launch(backing, lsStore).then(function (po) {
 
   eq("positions are the general three", po.POSITIONS.join(","), "G,F,C");
 
-  print("\n12. categories that open");
+  print("\n13. categories that open");
   eq("a category starts closed", po.isOpen("drill:Shooting"), false);
   po.setOpen("drill:Shooting", true);
   eq("opening one is remembered", po.isOpen("drill:Shooting"), true);
@@ -721,7 +790,7 @@ launch(backing, lsStore).then(function (po) {
   eq("and a help block closed by hand stays closed", po.isOpen("assess:help", true), false);
   eq("and a closed one is still closed", po.isOpen("drill:Shooting"), false);
 
-  print("\n13. the drills imported from drill-management");
+  print("\n14. the drills imported from drill-management");
   var raw = null;
   try { raw = readFile("private/drills-import.json"); } catch (e) { raw = null; }
   if (!raw) {
@@ -761,7 +830,7 @@ launch(backing, lsStore).then(function (po) {
     po.flush();
   }
 
-  print("\n14. the smaller store, for a browser that refuses IndexedDB");
+  print("\n15. the smaller store, for a browser that refuses IndexedDB");
   var fresh = { version: 0, stores: [], data: {} };
   var lsOnly = lsStore;
   globalThis.__forceLocal = true;
@@ -782,6 +851,103 @@ launch(backing, lsStore).then(function (po) {
 .then(function (po) {
   eq("the practice came back from localStorage", po.state.practices.length, 1);
   eq("with its drill", po.state.practices[0].items.length, 1);
+
+  /* He types only the numbers; the box supplies the dots and the colon. The mask
+     is read from the placeholder, so these also check the two do not drift. */
+  print("\n16. typing a date or a time without the punctuation");
+
+  var dm = po.maskFrom("DD.MM.YYYY");
+  eq("a date takes eight digits", dm.max, 8);
+  eq("with a dot after two", dm.seps[2], ".");
+  eq("and after four", dm.seps[4], ".");
+  var tm = po.maskFrom("18:00");
+  eq("a time takes four digits", tm.max, 4);
+  eq("with a colon after two", tm.seps[2], ":");
+  eq("a placeholder that is not a format has no mask", po.maskFrom("Who you play"), null);
+
+  eq("eight digits punctuate themselves", po.maskText(dm, "05032008"), "05.03.2008");
+  eq("the dot arrives with the digit after it", po.maskText(dm, "053"), "05.3");
+  eq("and is not left dangling", po.maskText(dm, "05"), "05");
+  eq("a time punctuates the same way", po.maskText(tm, "1830"), "18:30");
+
+  // typing, one key at a time, into a real field
+  function typeInto(box, keys) {
+    for (var i = 0; i < keys.length; i++) {
+      box.value = box.value + keys.charAt(i);
+      box.fire("input", { inputType: "insertText", target: box });
+    }
+    return box.value;
+  }
+  function backspace(box) {
+    box.value = box.value.slice(0, -1);
+    box.fire("input", { inputType: "deleteContentBackward", target: box });
+    return box.value;
+  }
+  function boxOf(f) { return f.children[1]; }
+
+  var got = null;
+  var dobField = po.typedField("Date of birth", "", "DD.MM.YYYY", po.parseDMY, po.formatDMY,
+                               function (v) { got = v; }, "");
+  var dob = boxOf(dobField);
+  eq("typing 05032008 shows 05.03.2008", typeInto(dob, "05032008"), "05.03.2008");
+  eq("a ninth digit is refused", typeInto(dob, "9"), "05.03.2008");
+  dob.onblur();
+  eq("and it parses to a real date", got, "2008-03-05");
+  eq("backspace takes the year digit", backspace(dob), "05.03.200");
+  eq("and keeps taking one thing per press", backspace(dob) + "|" + backspace(dob),
+     "05.03.20|05.03.2");
+  eq("a dot leaves with the digit it followed", backspace(dob), "05.03");
+
+  var timeField = po.typedField("From", "", "18:00", po.parseTime,
+                                function (v) { return v; }, function (v) { got = v; }, "");
+  var tbox = boxOf(timeField);
+  eq("typing 1830 shows 18:30", typeInto(tbox, "1830"), "18:30");
+  tbox.onblur();
+  eq("and reads back as a time", got, "18:30");
+  eq("the colon goes when the hour does", backspace(tbox) + "|" + backspace(tbox), "18:3|18");
+
+  /* Planning from the month used to flip the schedule to the week and leave it
+     there, so the next visit opened on the wrong view. */
+  print("\n17. the month view stays the month view");
+
+  po.route.smode = "month";
+  po.go("schedule");
+  po.openDayMenu("2026-09-15", true);
+  eq("opening a day from the month does not change the view", po.route.smode, "month");
+
+  var btns = document.body.querySelectorAll(".choice-btn");
+  var labels = btns.map(function (b) { return b.innerHTML; }).join(" ");
+  ok("the day menu can add a practice", labels.indexOf("Practice") >= 0);
+  ok("and offers the week rather than jumping to it",
+     labels.indexOf("Open this week") >= 0);
+
+  document.body.children.slice().forEach(function (c) {
+    if (c.className === "modal-back") c.remove();
+  });
+  po.openDayMenu("2026-09-15");
+  var wLabels = document.body.querySelectorAll(".choice-btn")
+                  .map(function (b) { return b.innerHTML; }).join(" ");
+  eq("the week's own day menu does not offer it", wLabels.indexOf("Open this week"), -1);
+  document.body.children.slice().forEach(function (c) {
+    if (c.className === "modal-back") c.remove();
+  });
+
+  // what is already on a day must stay reachable without going via the week
+  po.route.smode = "month";
+  po.go("schedule");
+  var dots = document.getElementById("app").querySelectorAll(".mg-item");
+  ok("the month draws what is on a day", dots.length > 0, "found " + dots.length);
+  ok("and each one opens its own record", typeof dots[0].onclick === "function");
+
+  var pid = po.state.practices[0].id;
+  po.go("practice", pid, "schedule");
+  ok("a practice opened from the schedule goes back to the schedule",
+     document.getElementById("crumb").textContent.indexOf("Schedule") >= 0,
+     document.getElementById("crumb").textContent);
+  po.go("practice", pid);
+  ok("one opened from the list still goes back to the list",
+     document.getElementById("crumb").textContent.indexOf("Practices") >= 0,
+     document.getElementById("crumb").textContent);
 
   print("");
   print(failures ? "FAILED " + failures + " of " + checks + " checks"
