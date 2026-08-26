@@ -1165,3 +1165,124 @@ is left-right symmetric, so the transpose costs nothing and saves duplicating ev
   and looking at it; the ink pipeline by unit-testing the render calls under JavaScriptCore.
 - Before proposing a new field or a migration, check whether the data is already recorded
   and simply not shown.
+
+## Six changes from using it (2026-08-26)
+
+All six came from the iPad, and four of them are the app asking him to work its way.
+
+### The app opens on the month — his call
+
+*"When I open the app, first thing is month view of schedule."* The schedule already
+opened first; it opened on the **week**. The month is now the default, and **which view
+he is in is remembered** in `practise-organiser/ui` beside the theme and the open
+categories — a preference of this iPad, never in a backup.
+
+Same principle as the month-view fix two days earlier: the view changes because he asked,
+not as a side effect. Tapping Week records Week, and Week is what he gets next time.
+
+### Categories are records now, not constants
+
+*"I need option to edit/delete/rename Categories."*
+
+`TAGS`, `FORMATS`, `POSITIONS` and `TACTIC_CATEGORIES` were constants, which had a
+quieter bug in it than the missing screen: **"Add new…" only ever added to the one
+dropdown in front of him.** The next drill was not offered the name, so it got retyped —
+and a retyped name is how one category silently becomes two.
+
+- `DEFAULT_LISTS` holds the built-ins; one record, id `lists`, holds **only the keys he
+  has actually changed**. A list he never touches follows the defaults, so a list added
+  to the app later arrives populated rather than empty.
+- **A rename is a real rename.** `listUsers(key, name)` finds every drill, set or player
+  on the old name and moves them with it. A list that changes while the records do not
+  splits the library in two and makes every count taken afterwards wrong — the same
+  argument that made a drill a referenced record rather than a retyped string, one level up.
+- **Delete never deletes a record.** It says how many use the name, then takes the label
+  off; they show as uncategorised. Renaming onto a name that already exists is offered as
+  a **merge**, and says how many would move.
+- The screen covers every list he picks from — focus tag, group format, the three sides'
+  tactic categories, and position — rather than guessing which one he meant by "Categories".
+  Reached from a **Categories** button in the drill library and in Tactics.
+- The lists **travel in a backup**. Import replaces them wholesale or, when merging, only
+  **adds names that are not here yet** — importing someone else's drills must not rename or
+  delete a category of his.
+
+Storage: database version 5 → 6, a `lists` store, same upgrade rule as ever.
+
+### A caption you could not read the end of
+
+*"When I type text on ex. Court 1, I can't move the text left or right. So if text is too
+long for that line, I don't see what I typed at the end."*
+
+The diagram caption was a one-line `input`. It scrolls its text sideways while typing and
+scrolls back to the start on blur — and **you cannot drag a caret about on an iPad being
+driven by a Pencil**, so the end of a long caption was genuinely unreachable.
+
+It is a `textarea` now, on a full-width row of its own under the court number and the
+controls, auto-growing to fit. Every word stays on screen. Return blurs rather than
+opening a line, because a caption is one sentence.
+
+### The practices list was one grey card repeated
+
+*"Too monotone, boring. Text is in the same colour, date on the left is not good,
+everything same font, even day, its all same color."*
+
+He was right, and it was the same diagnosis as the schedule two days before: one signal
+doing the whole job. **The same two axes are now used here, so the two screens speak one
+language** — colour says which state, weight says what to read first.
+
+- Planned carries the calendar's practice orange; done carries the green this app already
+  uses for a fact. Card tint, 7px left edge, and the day name in the state's colour.
+- The date is the headline: `WED` at 15px letterspaced beside `26 Aug` at 27px, with the
+  year and the session's `18:00–19:30` beside it in the condensed face.
+- Minutes / drills / tactics are numbers with small quiet units, ranged right.
+- **Each item is its own chip.** As one dot-joined grey sentence this was the part he
+  could not scan at all. Tactics get a dashed edge.
+- The month divider went from 11px grey caption to a condensed rule.
+
+**Two contrast failures were caught by measuring, and both would have looked fine.**
+`--k-practice` and `--k-done` are edge and fill colours: as a 15px label on their own card
+tints they measure **3.58 and 4.05**, under the 4.5 floor. `--prac-plan-ink` / `--prac-done-ink`
+are the readable versions (5.05 and 5.35 on the tint). Two pre-existing failures went with
+them: the default `.pbadge` was `--dim` on `--pill-bg` at **4.00** in dark, and `.pbadge.done`
+was `--good` on `--good-bg` at **4.18** on paper.
+
+### The picker leads with what he actually runs
+
+*"When All are selected, I want them lined up by the usage. Drill that is used the most is
+on top of the list."*
+
+Sorted by `usageMap()` descending, ties by name — so a brand new library (all zeros) is
+simply alphabetical rather than in edit order. The row prints **run 7×**, because an order
+nothing explains reads as no order at all. Applied whatever the filter chip says, since
+"most used first" means the same thing inside a tag.
+
+### The search box empties itself
+
+*"When I search the drill by typing text, and choose it, I need text in search box to
+delete and that drills go back to starting positions automatically."*
+
+A search is spent once it has found the drill. The tick shows for half a second, then the
+box empties, the full list repaints and scrolls to the top. **The filter chip is left
+alone** — that is a choice about what he is looking through, not a leftover from the last
+search.
+
+### `<meta charset>` was missing entirely
+
+Found while screenshotting: the app declares no charset and relies on GitHub Pages sending
+one. Opened from a file, or from any host that omits it, **every `·` `—` and `’` came out as
+mojibake**. Now stated in the page.
+
+### Two things worth keeping about how this was checked
+
+**The suite can screenshot itself now.** `qlmanage` renders HTML with JavaScript disabled,
+so it only ever showed the static top bar. A 40-line Swift `WKWebView` + `takeSnapshot`
+tool renders the real app; seeded copies of `index.html` (state injected, boot made
+synchronous) go in the scratchpad. That is how the mojibake, the caption wrap and the
+picker order were confirmed rather than argued about.
+
+**Every new test was checked by reverting the code.** The month default, the usage sort and
+the caption textarea were each put back and the suite watched to fail — six failures across
+the three. A test that passes either way proves nothing, and this project has been caught by
+that three times.
+
+`test/run.sh` is now **285 checks**.

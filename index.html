@@ -1,3 +1,7 @@
+<meta charset="utf-8">
+<!-- Stated in the page rather than left to the server. GitHub Pages sends
+     charset=utf-8, but nothing else does: opened from a file, or from a host
+     that omits it, every · — and ’ in the app comes out as mojibake. -->
 <title>Practise Organiser</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -87,6 +91,13 @@
     --k-note: #5A6472; --k-note-bg: #E8E6DE;
     --chip-sub: #6B6252;
 
+    /* The practice row's own ink. --k-practice and --k-done are edge and
+       fill colours: measured on their own card tints they come out at 3.58 and
+       4.05, under the 4.5 floor for a 15px label. These are the readable
+       versions - 5.05 and 5.35 on the tint, 5.71 and 6.07 on a panel. */
+    --prac-plan-ink: #8F5104;
+    --prac-done-ink: #266845;
+
     --pos-g: #1D5A80; --pos-g-bg: #DCEAF3; --pos-g-line: #A9CEE4;
     --pos-f: #2C5E2A; --pos-f-bg: #DFEEDA; --pos-f-line: #AFD3A6;
     --pos-c: #5E3576; --pos-c-bg: #EDE0F5; --pos-c-line: #CDAFDF;
@@ -165,6 +176,8 @@
     --k-gym: #C9A45E; --k-gym-bg: #383225;
     --k-note: #B0A492; --k-note-bg: #35322B;
     --chip-sub: #C4BCAB;
+    --prac-plan-ink: #F2A413;   /* 6.04 on its tint */
+    --prac-done-ink: #9CC47F;   /* 6.33 */
 
     --pos-g: #8FC4E0; --pos-g-bg: #1F2C33; --pos-g-line: #334B59;
     --pos-f: #B0D694; --pos-f-bg: #212C1E; --pos-f-line: #384C31;
@@ -393,8 +406,13 @@
     font-family: "Barlow Condensed", sans-serif; font-size: 12px; letter-spacing: .09em;
     text-transform: uppercase; color: var(--accent-text); white-space: nowrap;
   }
-  .diagram-head input[type="text"] { flex: 1 1 180px; min-width: 120px; background: var(--ground); }
-  .diagram-head .grp { display: flex; gap: 5px; margin-left: auto; }
+  /* The caption takes a whole row of its own and wraps, so a long one is never
+     scrolled out of reach — see buildDiagram. */
+  .diagram-cap {
+    flex: 1 0 100%; order: 3; width: 100%; min-height: 40px; resize: none;
+    overflow: hidden; background: var(--ground); line-height: 20px;
+  }
+  .diagram-head .grp { display: flex; gap: 5px; margin-left: auto; order: 2; }
   .diagram-head .grp button { padding: 6px 10px; font-size: 12px; }
 
   .court-wrap {
@@ -439,8 +457,12 @@
 
   .narrow { max-width: 780px; }
 
+  /* The month a run of practices belongs to. It was 11px grey and read as a
+     caption, when it is the only thing separating one month from the next. */
   .month {
-    font-size: 11px; color: var(--dim); margin: 22px 0 8px;
+    font-family: "Barlow Condensed", sans-serif; font-size: 13px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .1em; color: var(--dim);
+    margin: 26px 0 10px; padding-bottom: 5px; border-bottom: 1px solid var(--line);
   }
   .month:first-of-type { margin-top: 14px; }
 
@@ -459,9 +481,12 @@
     display: inline-block; font-family: "Barlow Condensed", sans-serif;
     text-transform: uppercase; letter-spacing: .09em; font-size: 10px;
     padding: 3px 8px; border-radius: 99px;
-    background: var(--pill-bg); color: var(--dim); border: 1px solid var(--pill-line);
+    /* --dim could only reach 4.00:1 on the pill in the dark theme. */
+    background: var(--pill-bg); color: var(--chip-sub); border: 1px solid var(--pill-line);
   }
-  .pbadge.done { background: var(--good-bg); color: var(--good); border-color: var(--good-line); }
+  /* --good on --good-bg measures 4.18:1 on paper, under the floor for 10px
+     uppercase; --prac-done-ink is the same green made readable (5.53). */
+  .pbadge.done { background: var(--good-bg); color: var(--prac-done-ink); border-color: var(--good-line); }
   .pwhat { display: grid; gap: 5px; min-width: 0; }
   .psub { font-size: 11.5px; color: var(--dim); }
   .pnames { font-size: 13.5px; line-height: 1.5; }
@@ -470,6 +495,89 @@
     font-size: 12.5px; color: var(--dim); line-height: 1.5;
     border-left: 2px solid var(--line); padding-left: 9px; margin-top: 3px;
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+
+  /* ---------- a practice in the list ----------
+     Colour says which state, weight says what to read first — the schedule's two
+     axes, so the two screens read as one app. */
+  .prow.prac {
+    display: block; padding: 12px 15px 13px; border-left-width: 7px;
+    border-left-style: solid; margin-bottom: 10px;
+  }
+  .prow.prac.planned { background: var(--k-practice-bg); border-left-color: var(--k-practice); }
+  .prow.prac.done    { background: var(--k-done-bg);     border-left-color: var(--k-done); }
+
+  .ptop { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .prow.prac .pwhen {
+    flex-direction: row; align-items: baseline; gap: 8px; flex-wrap: wrap; min-width: 0;
+  }
+  .pday {
+    font-family: "Barlow Condensed", sans-serif; font-size: 15px; font-weight: 700;
+    letter-spacing: .16em; line-height: 1;
+  }
+  .prow.prac.planned .pday { color: var(--prac-plan-ink); }
+  .prow.prac.done    .pday { color: var(--prac-done-ink); }
+  .prow.prac .pdate { font-size: 27px; letter-spacing: .01em; text-transform: none; }
+  .pyear { font-family: "Barlow Condensed", sans-serif; font-size: 15px; color: var(--chip-sub); }
+  .ptime {
+    font-family: "Barlow Condensed", sans-serif; font-size: 16px; font-weight: 600;
+    letter-spacing: .03em; color: var(--text);
+  }
+  /* The badge sits on the panel colour rather than the card's tint, so it
+     reads as a label pinned to the card and not as more of the same wash. */
+  .prow.prac .pbadge { margin-left: 4px; background: var(--panel); }
+  .prow.prac.planned .pbadge { color: var(--prac-plan-ink); border-color: var(--k-practice); }
+  .prow.prac.done    .pbadge { color: var(--prac-done-ink); border-color: var(--k-done); }
+
+  /* The numbers are the fact; the unit beside each one is only there to say what
+     the number is, so it is set small and quiet rather than repeated loud. */
+  .pstats { margin-left: auto; display: flex; align-items: baseline; gap: 12px; }
+  .pstat { font-family: "Barlow Condensed", sans-serif; white-space: nowrap; }
+  .pstat b { font-size: 19px; font-weight: 700; }
+  .pstat i {
+    font-style: normal; font-size: 11px; text-transform: uppercase;
+    letter-spacing: .09em; color: var(--chip-sub); margin-left: 3px;
+  }
+  .pstat.strong b { font-size: 23px; }
+
+  /* One chip per thing that was run. As a single dot-joined grey sentence this
+     was the part of the card he could not scan. */
+  .pitems { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+  .pitem {
+    font-size: 13.5px; line-height: 1.25; padding: 4px 9px; border-radius: 7px;
+    background: var(--panel); border: 1px solid var(--line); color: var(--text);
+  }
+  .pitem.tactic { border-style: dashed; border-color: var(--line-hi); }
+  .pempty { margin-top: 8px; font-size: 13px; font-style: italic; color: var(--chip-sub); }
+  .prow.prac .pnote { color: var(--chip-sub); border-left-color: var(--line-hi); }
+
+  /* ---------- categories ---------- */
+  .listbox {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 4px 14px 10px; margin-bottom: 12px;
+  }
+  .listbox-head {
+    display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+    padding: 10px 0 8px; border-bottom: 1px solid var(--line);
+  }
+  .listbox-title {
+    font-family: "Barlow Condensed", sans-serif; font-size: 17px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .05em;
+  }
+  .listrow {
+    display: grid; grid-template-columns: 1fr auto auto auto; gap: 10px;
+    align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line);
+  }
+  .listrow:last-child { border-bottom: 0; }
+  .listname { font-size: 15px; min-width: 0; overflow-wrap: anywhere; }
+  .listuse {
+    font-family: "Barlow Condensed", sans-serif; font-size: 12.5px;
+    letter-spacing: .04em; text-transform: uppercase; color: var(--accent-text);
+  }
+  .listuse.none { color: var(--faint); }
+  @media (max-width: 560px) {
+    .listrow { grid-template-columns: 1fr auto; }
+    .listuse { grid-column: 1 / -1; order: 3; }
   }
 
   .prac-head {
@@ -985,7 +1093,12 @@
        paper: no dark panels, no form-field chrome around the numbers. */
     .wrap { padding: 0; max-width: none; }
     .item, .prow, .hint { background: #fff; border-color: #bbb; break-inside: avoid; }
-    .isub, .psub, .label, .imunit, .pnote { color: #555; }
+    .isub, .psub, .label, .imunit, .pnote, .pstat i, .pyear { color: #555; }
+    /* Paper drops the tint, so the edge has to do the work on its own. */
+    .prow.prac { border-left-width: 4px !important; border-left-color: #000 !important; }
+    .pday, .pitem { color: #000; }
+    .pitem { background: #fff; border-color: #bbb; }
+    .month { color: #000; border-bottom-color: #bbb; }
     .inum { color: #000; }
     input, textarea { background: #fff !important; color: #000 !important;
                       border: 0 !important; padding: 0 !important; }
@@ -1097,10 +1210,46 @@
 
   /* ================= state ================= */
 
-  var TAGS = ["Warm-up", "Shooting", "Transition", "Offence", "Defence",
-              "Live / scrimmage", "Pick & roll", "Post play", "Rebounding",
-              "Conditioning", "Set plays", "Ball handling"];
-  var FORMATS = ["Individual", "Pairs", "3v3", "4v4", "5v5", "5:0", "Whole team"];
+  /* ---- the lists he picks from, and can now change ----
+     These started as constants, which meant "Add new..." only ever added to the
+     one dropdown in front of him and the next drill was never offered it. They
+     are records now: one editable list per key, defaults below, and the
+     Categories screen renames, adds and deletes.
+
+     A rename is a real rename — it rewrites every drill, set or player that was
+     on the old name, so the library does not quietly split in two. Same argument
+     that made a drill a referenced record rather than a retyped string, one
+     level up. */
+  var DEFAULT_LISTS = {
+    "tag": ["Warm-up", "Shooting", "Transition", "Offence", "Defence",
+            "Live / scrimmage", "Pick & roll", "Post play", "Rebounding",
+            "Conditioning", "Set plays", "Ball handling"],
+    "format": ["Individual", "Pairs", "3v3", "4v4", "5v5", "5:0", "Whole team"],
+    "position": ["G", "F", "C"],
+    "cat:Offence": ["Half-court sets", "Early offence", "Zone offence", "Press break",
+                    "Baseline out of bounds", "Sideline out of bounds", "Delay / clock offence"],
+    "cat:Defence": ["Man-to-man", "Zone defence", "Full-court press", "Half-court trap",
+                    "Transition defence", "Defending out of bounds", "Defending the pick & roll"],
+    "cat:Special situations": ["Last shot", "End of quarter", "Free-throw situations",
+                               "Fouling and clock", "Jump ball"]
+  };
+
+  /* One record, id "lists". `sets` holds only the keys he has actually changed,
+     so a list he never touches keeps following the defaults above — and a list
+     added to the app later arrives with its defaults rather than empty. */
+  var lists = { id: "lists", sets: {}, updatedAt: 0 };
+
+  function listFor(key) {
+    var mine = lists.sets && lists.sets[key];
+    if (Array.isArray(mine)) return mine.slice();
+    return (DEFAULT_LISTS[key] || []).slice();
+  }
+
+  function setList(key, arr) {
+    if (!lists.sets) lists.sets = {};
+    lists.sets[key] = arr.slice();
+    touchLists();
+  }
   var SIZES = { S: 300, M: 460, L: 660 };   // css px, the court's drawn width
 
   var state = { version: 5, drills: [], practices: [], events: [], players: [], tactics: [] };
@@ -1121,7 +1270,11 @@
      left it. Storage being unavailable must never break a screen: every access
      is guarded and the app falls back to "closed". */
   var UI_KEY = "practise-organiser/ui";
-  var ui = { open: {}, theme: "" };
+  /* smode is which schedule view he is in. The month is the default because it
+     is what he asked to see when the app opens — the season at a glance, not one
+     week of it. Like the theme and the open categories it belongs to this iPad,
+     so it is remembered and never part of a backup. */
+  var ui = { open: {}, theme: "", smode: "month" };
 
   function loadUI() {
     try {
@@ -1129,7 +1282,8 @@
       var saved = raw ? JSON.parse(raw) : null;
       if (saved && saved.open) ui.open = saved.open;
       if (saved && saved.theme) ui.theme = saved.theme;
-    } catch (e) { ui.open = {}; ui.theme = ""; }
+      if (saved && saved.smode) ui.smode = saved.smode;
+    } catch (e) { ui.open = {}; ui.theme = ""; ui.smode = "month"; }
   }
 
   /* Which theme is a preference of this iPad, exactly like which categories are
@@ -1197,15 +1351,15 @@
   }
 
   /* One object store per kind of record. Practices arrived at DB version 2 and
-     schedule events at version 3, players at version 4 and tactics at version 5;
-     each upgrade only creates what is missing, so data written under an older
-     version is carried across untouched. */
+     schedule events at version 3, players at version 4, tactics at version 5 and
+     the editable category lists at version 6; each upgrade only creates what is
+     missing, so data written under an older version is carried across untouched. */
   var DB = (function () {
     var opening = null;
     function open() {
       if (opening) return opening;
       opening = new Promise(function (resolve, reject) {
-        var req = indexedDB.open("practise-organiser", 5);
+        var req = indexedDB.open("practise-organiser", 6);
         req.onupgradeneeded = function () {
           var db = req.result;
           if (!db.objectStoreNames.contains("drills")) db.createObjectStore("drills", { keyPath: "id" });
@@ -1213,6 +1367,7 @@
           if (!db.objectStoreNames.contains("events")) db.createObjectStore("events", { keyPath: "id" });
           if (!db.objectStoreNames.contains("players")) db.createObjectStore("players", { keyPath: "id" });
           if (!db.objectStoreNames.contains("tactics")) db.createObjectStore("tactics", { keyPath: "id" });
+          if (!db.objectStoreNames.contains("lists")) db.createObjectStore("lists", { keyPath: "id" });
         };
         req.onsuccess = function () { resolve(req.result); };
         req.onerror = function () { reject(req.error); };
@@ -1244,11 +1399,12 @@
       .then(function () {
         if (!window.indexedDB) throw new Error("no idb");
         return Promise.all([DB.all("drills"), DB.all("practices"), DB.all("events"),
-                            DB.all("players"), DB.all("tactics")])
+                            DB.all("players"), DB.all("tactics"), DB.all("lists")])
           .then(function (r) {
             Store.kind = "idb";
             return { drills: r[0] || [], practices: r[1] || [], events: r[2] || [],
-                     players: r[3] || [], tactics: r[4] || [] };
+                     players: r[3] || [], tactics: r[4] || [],
+                     lists: (r[5] || [])[0] || null };
           });
       })
       .catch(function () {
@@ -1264,10 +1420,11 @@
                    practices: (saved && saved.practices) || [],
                    events: (saved && saved.events) || [],
                    players: (saved && saved.players) || [],
-                   tactics: (saved && saved.tactics) || [] };
+                   tactics: (saved && saved.tactics) || [],
+                   lists: (saved && saved.lists) || null };
         } catch (e) {
           Store.kind = "memory";
-          return { drills: [], practices: [], events: [], players: [], tactics: [] };
+          return { drills: [], practices: [], events: [], players: [], tactics: [], lists: null };
         }
       })
       .then(function (rows) {
@@ -1278,6 +1435,7 @@
         state.players = rows.players.map(inflatePlayer).sort(bySquadNumber);
         state.tactics = rows.tactics.map(inflateTactic)
           .sort(function (a, b) { return (b.updatedAt || 0) - (a.updatedAt || 0); });
+        adoptLists(rows.lists);
         // Ask Safari not to evict this data when space runs low.
         if (navigator.storage && navigator.storage.persist) {
           navigator.storage.persist().catch(function () {});
@@ -1289,11 +1447,12 @@
     if (Store.kind === "local") {
       try {
         localStorage.setItem(LS_KEY, JSON.stringify({
-          version: 5, drills: state.drills.map(deflateDrill),
+          version: 6, drills: state.drills.map(deflateDrill),
           practices: state.practices.map(deflatePractice),
           events: state.events.map(deflateEvent),
           players: state.players.map(deflatePlayer),
-          tactics: state.tactics.map(deflateTactic)
+          tactics: state.tactics.map(deflateTactic),
+          lists: deflateLists()
         }));
         return Promise.resolve();
       } catch (e) { return Promise.reject(e); }
@@ -1335,6 +1494,26 @@
     schedule();
   }
 
+  function touchLists() {
+    lists.updatedAt = Date.now();
+    dirty["lists"] = "lists";
+    schedule();
+  }
+
+  /* Anything that is not an array of strings is ignored: a stored record or a
+     backup is data from outside, and a broken one must not take a screen down. */
+  function adoptLists(rec) {
+    lists = { id: "lists", sets: {}, updatedAt: (rec && rec.updatedAt) || 0 };
+    var src = rec && rec.sets;
+    if (!src || typeof src !== "object") return;
+    Object.keys(src).forEach(function (k) {
+      if (!Array.isArray(src[k])) return;
+      lists.sets[k] = src[k].filter(function (v) { return typeof v === "string" && v.trim(); });
+    });
+  }
+
+  function deflateLists() { return { id: "lists", sets: lists.sets, updatedAt: lists.updatedAt }; }
+
   function schedule() {
     clearTimeout(saveTimer);
     saveTimer = setTimeout(flush, 400);
@@ -1365,13 +1544,16 @@
           var t = findTactic(id);
           return t ? DB.put("tactics", deflateTactic(t)) : DB.del("tactics", id);
         }
+        if (queued[id] === "lists") return DB.put("lists", deflateLists());
         var d = findDrill(id);
         return d ? DB.put("drills", deflateDrill(d)) : DB.del("drills", id);
       }));
     } else {
       work = persistAll();
     }
-    work.then(flashSaved).catch(function () {
+    // Returned so a caller that must know the write landed can wait for it.
+    // Nothing in the app does; the test simulates quitting, and needs to.
+    return work.then(flashSaved).catch(function () {
       Store.kind = "memory";
       chip("Could not save — export a backup now", true);
       render();
@@ -1409,7 +1591,7 @@
   }
 
   /* Kept in step with VERSION in sw.js; there is a test that they match. */
-  var BUILD = "v21";
+  var BUILD = "v22";
   var buildTag = document.getElementById("buildTag");
   if (buildTag) buildTag.textContent = BUILD;
 
@@ -1542,16 +1724,7 @@
 
   var SIDES = ["Offence", "Defence", "Special situations"];
 
-  var TACTIC_CATEGORIES = {
-    "Offence": ["Half-court sets", "Early offence", "Zone offence", "Press break",
-                "Baseline out of bounds", "Sideline out of bounds", "Delay / clock offence"],
-    "Defence": ["Man-to-man", "Zone defence", "Full-court press", "Half-court trap",
-                "Transition defence", "Defending out of bounds", "Defending the pick & roll"],
-    "Special situations": ["Last shot", "End of quarter", "Free-throw situations",
-                           "Fouling and clock", "Jump ball"]
-  };
-
-  function categoriesFor(side) { return TACTIC_CATEGORIES[side] || []; }
+  function categoriesFor(side) { return listFor("cat:" + side); }
 
   function newTactic() {
     return {
@@ -1657,8 +1830,6 @@
     { id: "psychological", label: "Psychological", hue: "var(--chart-4)",
       what: "Competitiveness, coachability, composure late in a close game, consistency." }
   ];
-
-  var POSITIONS = ["G", "F", "C"];
 
   function newPlayer() {
     return {
@@ -2087,12 +2258,13 @@
 
   function serialize(st) {
     return JSON.stringify({
-      version: 5, updatedAt: st.updatedAt,
+      version: 6, updatedAt: st.updatedAt,
       drills: st.drills.map(deflateDrill),
       practices: st.practices.map(deflatePractice),
       events: st.events.map(deflateEvent),
       players: st.players.map(deflatePlayer),
-      tactics: st.tactics.map(deflateTactic)
+      tactics: st.tactics.map(deflateTactic),
+      lists: st.lists || deflateLists()
     });
   }
 
@@ -2109,6 +2281,8 @@
     st.players = Array.isArray(st.players) ? st.players.map(inflatePlayer) : [];
     st.players.sort(bySquadNumber);
     st.tactics = Array.isArray(st.tactics) ? st.tactics.map(inflateTactic) : [];
+    // Backups written before the lists were editable simply carry the defaults.
+    st.lists = (st.lists && typeof st.lists === "object") ? st.lists : null;
     return st;
   }
 
@@ -2400,7 +2574,7 @@
   var app = document.getElementById("app");
   var crumb = document.getElementById("crumb");
   var route = { view: "schedule", id: null, pfilter: "",
-                anchor: null, smode: "week", side: "" };
+                anchor: null, smode: "", side: "" };
   var pads = [];
 
   /* `from` is where the crumb goes back to. A practice reached from the schedule
@@ -2451,6 +2625,7 @@
     else if (route.view === "player") renderPlayer();
     else if (route.view === "tactics") renderTactics();
     else if (route.view === "tactic") renderTacticEditor();
+    else if (route.view === "lists") renderLists();
     else renderLibrary();
     relayout();
   }
@@ -2507,6 +2682,164 @@
     return w;
   }
 
+  /* ---------- categories ----------
+     Every list he picks from, in one place. Rename is a real rename: it rewrites
+     the records that were on the old name, because a category that only changes
+     in the dropdown splits the library in two without saying so.
+
+     Delete never deletes a drill. It takes the label off, and says how many
+     records are about to become uncategorised before it does it. */
+
+  var LIST_GROUPS = [
+    { title: "Drills",
+      lists: [{ key: "tag", label: "Focus tag" }, { key: "format", label: "Group format" }] },
+    { title: "Tactics",
+      lists: [{ key: "cat:Offence", label: "Offence" },
+              { key: "cat:Defence", label: "Defence" },
+              { key: "cat:Special situations", label: "Special situations" }] },
+    { title: "Roster",
+      lists: [{ key: "position", label: "Position" }] }
+  ];
+
+  /* Who is on this name right now — the number that has to be shown before a
+     rename or a delete, and what makes the cascade possible at all. */
+  function listUsers(key, name) {
+    var out = [];
+    if (key === "tag") {
+      state.drills.forEach(function (d) {
+        if (d.tag === name) out.push({ set: function (v) { d.tag = v; touch(d); } });
+      });
+    } else if (key === "format") {
+      state.drills.forEach(function (d) {
+        if (d.format === name) out.push({ set: function (v) { d.format = v; touch(d); } });
+      });
+    } else if (key === "position") {
+      state.players.forEach(function (p) {
+        if (p.position === name) out.push({ set: function (v) { p.position = v; touchPlayer(p); } });
+      });
+    } else if (key.indexOf("cat:") === 0) {
+      var side = key.slice(4);
+      state.tactics.forEach(function (t) {
+        if (t.side === side && t.category === name) {
+          out.push({ set: function (v) { t.category = v; touchTactic(t); } });
+        }
+      });
+    }
+    return out;
+  }
+
+  function listNoun(key) {
+    if (key === "position") return ["player", "players"];
+    if (key.indexOf("cat:") === 0) return ["set", "sets"];
+    return ["drill", "drills"];
+  }
+
+  function saysMany(n, noun) { return n + " " + (n === 1 ? noun[0] : noun[1]); }
+
+  function renderLists() {
+    var fromView = route.from || "library";
+    backTo(fromView, fromView === "tactics" ? "Tactics"
+                   : fromView === "roster" ? "Roster" : "Drills");
+
+    var wrap = el("div", "wrap narrow");
+
+    var head = el("div", "lib-head");
+    head.appendChild(el("h1", null, "Categories"));
+    wrap.appendChild(head);
+
+    var intro = el("div", "hint");
+    intro.innerHTML = "These are the lists every picker offers. <b>Renaming one renames it " +
+                      "everywhere</b> — every drill, set or player already on it moves with it. " +
+                      "Deleting one never deletes a record: it takes the label off, and says " +
+                      "first how many it is about to leave uncategorised.";
+    wrap.appendChild(intro);
+
+    LIST_GROUPS.forEach(function (g) {
+      wrap.appendChild(el("div", "month label", g.title));
+      g.lists.forEach(function (spec) { wrap.appendChild(listBlock(spec)); });
+    });
+
+    app.appendChild(wrap);
+  }
+
+  function listBlock(spec) {
+    var box = el("div", "listbox");
+    var names = listFor(spec.key);
+    var noun = listNoun(spec.key);
+
+    var h = el("div", "listbox-head");
+    h.appendChild(el("div", "listbox-title", spec.label));
+    h.appendChild(el("span", "count", saysMany(names.length, ["category", "categories"])));
+    var gap = el("div"); gap.style.marginLeft = "auto";
+    h.appendChild(gap);
+    var add = el("button", "chip", "+  Add");
+    add.onclick = function () {
+      var v = prompt("New " + spec.label.toLowerCase());
+      if (!v || !v.trim()) return;
+      v = v.trim();
+      var arr = listFor(spec.key);
+      if (arr.indexOf(v) >= 0) { alert("\u201C" + v + "\u201D is already on the list."); return; }
+      arr.push(v);
+      setList(spec.key, arr);
+      render();
+    };
+    h.appendChild(add);
+    box.appendChild(h);
+
+    if (!names.length) {
+      box.appendChild(el("div", "empty", "Nothing on this list yet."));
+      return box;
+    }
+
+    names.forEach(function (n) {
+      var used = listUsers(spec.key, n).length;
+      var r = el("div", "listrow");
+      r.appendChild(el("div", "listname", n));
+      r.appendChild(el("div", "listuse" + (used ? "" : " none"),
+                       used ? "in " + saysMany(used, noun) : "not used"));
+
+      var ren = el("button", "chip ghost", "Rename");
+      ren.onclick = function () {
+        var v = prompt("Rename \u201C" + n + "\u201D to", n);
+        if (!v || !v.trim() || v.trim() === n) return;
+        v = v.trim();
+        var arr = listFor(spec.key);
+        if (arr.indexOf(v) >= 0) {
+          // Renaming onto a name that already exists is a merge, and says so.
+          if (!confirm("\u201C" + v + "\u201D already exists. Merge \u201C" + n +
+                       "\u201D into it? " + saysMany(used, noun) + " would move across.")) return;
+          listUsers(spec.key, n).forEach(function (u) { u.set(v); });
+          setList(spec.key, arr.filter(function (x) { return x !== n; }));
+        } else {
+          arr[arr.indexOf(n)] = v;
+          setList(spec.key, arr);
+          listUsers(spec.key, n).forEach(function (u) { u.set(v); });
+        }
+        render();
+      };
+      r.appendChild(ren);
+
+      var del = el("button", "chip danger", "Delete");
+      del.onclick = function () {
+        var msg = used
+          ? "Delete \u201C" + n + "\u201D?\n\n" + saysMany(used, noun) +
+            " use it. Nothing is deleted \u2014 they lose the label and show as uncategorised."
+          : "Delete \u201C" + n + "\u201D?";
+        if (!confirm(msg)) return;
+        listUsers(spec.key, n).forEach(function (u) { u.set(""); });
+        setList(spec.key, listFor(spec.key).filter(function (x) { return x !== n; }));
+        render();
+      };
+      r.appendChild(del);
+
+      box.appendChild(r);
+    });
+
+    return box;
+  }
+
+  /* ---------- library ---------- */
+
   function renderLibrary() {
     var wrap = el("div", "wrap");
     var usage = usageMap();
@@ -2527,6 +2860,9 @@
       touch(d);
       go("drill", d.id);
     };
+    var cats = el("button", "chip ghost noprint", "Categories");
+    cats.onclick = function () { go("lists", null, "library"); };
+    head.appendChild(cats);
     head.appendChild(add);
     wrap.appendChild(head);
 
@@ -2623,6 +2959,9 @@
       : ""));
     var gap = el("div"); gap.style.marginLeft = "auto";
     head.appendChild(gap);
+    var tcats = el("button", "chip ghost noprint", "Categories");
+    tcats.onclick = function () { go("lists", null, "tactics"); };
+    head.appendChild(tcats);
     var add = el("button", "chip primary", "+  New set");
     add.onclick = function () {
       var t = newTactic();
@@ -2782,7 +3121,7 @@
     }));
     row.appendChild(pickerField("Category", categoriesFor(t.side), t.category, function (v) {
       t.category = v; touchTactic(t);
-    }));
+    }, "cat:" + t.side));
     sheet.appendChild(row);
 
     var noteField = el("div", "field");
@@ -3019,9 +3358,9 @@
     numF.appendChild(ni);
     row.appendChild(numF);
 
-    row.appendChild(pickerField("Position", POSITIONS, p.position, function (v) {
+    row.appendChild(pickerField("Position", listFor("position"), p.position, function (v) {
       p.position = v; touchPlayer(p);
-    }));
+    }, "position"));
 
     var age = ageFrom(p.birthDate);
     var hint = age === null
@@ -3454,7 +3793,7 @@
     if (banner) wrap.appendChild(banner);
 
     if (!route.anchor) route.anchor = todayISO();
-    if (!route.smode) route.smode = "week";
+    if (!route.smode) route.smode = ui.smode || "month";
 
     var head = el("div", "lib-head");
     head.appendChild(el("h1", null, "Schedule"));
@@ -3476,7 +3815,11 @@
     [["week", "Week"], ["month", "Month"]].forEach(function (m) {
       var b = el("button", "chip", m[1]);
       b.setAttribute("aria-pressed", String(route.smode === m[0]));
-      b.onclick = function () { route.smode = m[0]; render(); };
+      b.onclick = function () {
+        route.smode = m[0];
+        ui.smode = m[0]; saveUI();     // his choice, so it is still there next time
+        render();
+      };
       modes.appendChild(b);
     });
     head.appendChild(modes);
@@ -3884,29 +4227,60 @@
     app.appendChild(wrap);
   }
 
+  /* Every row used to be the same card in the same size of the same colour, with
+     the date parked in a column of its own on the left. Dusan's report was
+     that nothing told one session from another.
+
+     Same two axes as the schedule, for the same reason, so the two screens speak
+     one language: COLOUR says which state it is in (planned is the practice
+     orange the calendar already uses, done is the green this app uses for a
+     fact), and WEIGHT says what to read first. The day and the date are the
+     headline; the contents are one chip per drill rather than a grey run of
+     names joined by dots, which is the part he could not scan at all. */
   function practiceRow(p) {
-    var row = el("button", "prow");
+    var done = p.status === "done";
+    var row = el("button", "prow prac" + (done ? " done" : " planned"));
 
-    var left = el("div", "pwhen");
-    left.appendChild(el("div", "pdate", prettyDate(p.date)));
-    left.appendChild(el("div", "pbadge" + (p.status === "done" ? " done" : ""),
-                       p.status === "done" ? "Done" : "Planned"));
-    row.appendChild(left);
+    var top = el("div", "ptop");
+    var when = el("div", "pwhen");
+    when.appendChild(el("span", "pday", (shortDay(p.date) || "").toUpperCase()));
+    when.appendChild(el("span", "pdate", shortDate(p.date) || "No date"));
+    var yr = (isoParts(p.date) || {}).y;
+    if (yr) when.appendChild(el("span", "pyear", String(yr)));
+    var span = timeRange(p.time, p.timeEnd);
+    if (span) when.appendChild(el("span", "ptime", span));
+    top.appendChild(when);
 
-    var right = el("div", "pwhat");
+    top.appendChild(el("div", "pbadge" + (done ? " done" : ""), done ? "Done" : "Planned"));
+
     var drills = p.items.filter(function (it) { return it.kind !== "tactic"; }).length;
     var tactics = p.items.length - drills;
     var mins = practiceMinutes(p);
-    var sub = [];
-    if (drills || !tactics) sub.push(drills + (drills === 1 ? " drill" : " drills"));
-    if (tactics) sub.push(tactics + (tactics === 1 ? " tactic" : " tactics"));
-    if (mins) sub.push(mins + " min");
-    right.appendChild(el("div", "psub", sub.join(" · ")));
-    right.appendChild(p.items.length
-      ? el("div", "pnames", p.items.map(itemLabel).join("   ·   "))
-      : el("div", "pnames dim", "Nothing added yet"));
-    if (p.note) right.appendChild(el("div", "pnote", p.note));
-    row.appendChild(right);
+    var stats = el("div", "pstats");
+    function stat(n, word, strong) {
+      var sp = el("span", "pstat" + (strong ? " strong" : ""));
+      sp.appendChild(el("b", null, String(n)));
+      sp.appendChild(el("i", null, word));
+      stats.appendChild(sp);
+    }
+    if (mins) stat(mins, "min", true);
+    if (drills || !tactics) stat(drills, drills === 1 ? "drill" : "drills");
+    if (tactics) stat(tactics, tactics === 1 ? "tactic" : "tactics");
+    top.appendChild(stats);
+    row.appendChild(top);
+
+    if (p.items.length) {
+      var names = el("div", "pitems");
+      p.items.forEach(function (it) {
+        names.appendChild(el("span", "pitem" + (it.kind === "tactic" ? " tactic" : ""),
+                             itemLabel(it)));
+      });
+      row.appendChild(names);
+    } else {
+      row.appendChild(el("div", "pempty", "Nothing added yet"));
+    }
+
+    if (p.note) row.appendChild(el("div", "pnote", p.note));
 
     row.onclick = function () { go("practice", p.id); };
     return row;
@@ -4098,6 +4472,8 @@
 
   function openDrillPicker(p) {
     var q = "", tag = "", source = "drills", filterRow = null, rows = null;
+    // Counted once here rather than on every repaint: the list is ordered by it.
+    var usage = usageMap();
 
     var back = el("div", "modal-back");
     var panel = el("div", "modal");
@@ -4185,7 +4561,19 @@
         count();
         plus.textContent = "✓";
         plus.className = "mplus on";
-        setTimeout(function () { plus.textContent = "+"; plus.className = "mplus"; }, 700);
+        /* A search is spent once it has found the drill. Leaving the word in the
+           box means the next one has to be deleted by hand before the list comes
+           back, so: the tick is shown, then the box empties and the full list
+           returns to the top, ready for the next tap. The filter chip is left
+           alone — that is a choice about what he is looking through, not a
+           leftover from the last search. */
+        setTimeout(function () {
+          plus.textContent = "+"; plus.className = "mplus";
+          if (!q) return;
+          q = ""; search.value = "";
+          paint();
+          if (rows.scrollTop != null) rows.scrollTop = 0;
+        }, 550);
       };
       return r;
     }
@@ -4211,10 +4599,23 @@
           if (tag && d.tag !== tag) return false;
           return matches(d.name) || matches(d.tag) || matches(d.points);
         });
+        /* Most-used first — his call. The drills he reaches for every week are
+           the ones that should need no scrolling. Ties fall back to the name so
+           the order is stable rather than whatever was edited last, which means
+           a brand new library (every count zero) is simply alphabetical. The
+           count is printed on the row, because an order nothing explains reads
+           as no order at all. */
+        hits.sort(function (a, b) {
+          var ua = usage[a.id] || 0, ub = usage[b.id] || 0;
+          if (ua !== ub) return ub - ua;
+          return String(a.name || "").localeCompare(String(b.name || ""));
+        });
         if (!hits.length) { rows.appendChild(el("div", "empty", "No drill matches that.")); return; }
         hits.forEach(function (d) {
+          var n = usage[d.id] || 0;
           rows.appendChild(row(thumbFor(d), d.name || "Untitled",
-            [d.tag, d.format, d.minutes ? d.minutes + " min" : ""],
+            [d.tag, d.format, d.minutes ? d.minutes + " min" : "",
+             n ? "run " + n + "\u00D7" : ""],
             function () { p.items.push(newItem(d)); }));
         });
         return;
@@ -4329,12 +4730,12 @@
   function buildMeta(drill) {
     var row = el("div", "metarow");
 
-    row.appendChild(pickerField("Focus tag", TAGS, drill.tag, function (v) {
+    row.appendChild(pickerField("Focus tag", listFor("tag"), drill.tag, function (v) {
       drill.tag = v; touch(drill);
-    }));
-    row.appendChild(pickerField("Group format", FORMATS, drill.format, function (v) {
+    }, "tag"));
+    row.appendChild(pickerField("Group format", listFor("format"), drill.format, function (v) {
       drill.format = v; touch(drill);
-    }));
+    }, "format"));
 
     var mins = el("div", "field");
     mins.appendChild(el("div", "label", "Typical minutes"));
@@ -4513,7 +4914,7 @@
     return f;
   }
 
-  function pickerField(label, options, value, onSet) {
+  function pickerField(label, options, value, onSet, listKey) {
     var f = el("div", "field");
     f.appendChild(el("div", "label", label));
     var sel = document.createElement("select");
@@ -4528,6 +4929,13 @@
         var v = prompt("New " + label.toLowerCase());
         if (v && v.trim()) {
           v = v.trim();
+          // Added to the list itself, not just to this dropdown — otherwise the
+          // next drill is not offered it and the name gets retyped, which is
+          // exactly how one category becomes two.
+          if (listKey) {
+            var arr = listFor(listKey);
+            if (arr.indexOf(v) === -1) { arr.push(v); setList(listKey, arr); }
+          }
           sel.insertBefore(new Option(v, v), sel.lastChild);
           sel.value = v; onSet(v);
         } else { sel.value = value || ""; }
@@ -4546,11 +4954,29 @@
     var head = el("div", "diagram-head");
     head.appendChild(el("span", "num", "Court " + (i + 1)));
 
-    var cap = document.createElement("input");
-    cap.type = "text"; cap.value = dg.caption;
+    /* A one-line input scrolls its text sideways as you type and then scrolls
+       back to the start on the way out, so the end of a long caption became
+       unreachable — you cannot drag a caret about on an iPad being driven by a
+       Pencil. A textarea wraps instead: every word stays on screen, and the box
+       grows to fit rather than hiding anything. It takes a full-width row of its
+       own under the court number and its controls.
+
+       Return does not open a new line. A caption is one sentence, and a stray
+       newline would only make the box taller for nothing. */
+    var cap = document.createElement("textarea");
+    cap.className = "diagram-cap";
+    cap.rows = 1;
+    cap.value = dg.caption;
     cap.placeholder = "What this one shows — e.g. initial spacing";
-    cap.oninput = function () { dg.caption = cap.value; save(); };
+    function grow() {
+      if (typeof cap.scrollHeight !== "number") return;   // no layout in a test
+      cap.style.height = "auto";
+      cap.style.height = Math.max(40, cap.scrollHeight + 2) + "px";
+    }
+    cap.oninput = function () { dg.caption = cap.value; grow(); save(); };
+    cap.onkeydown = function (e) { if (e.key === "Enter") { e.preventDefault(); cap.blur(); } };
     head.appendChild(cap);
+    setTimeout(grow, 0);
 
     var grp = el("div", "grp");
     var pad;
@@ -4707,6 +5133,27 @@
      imported twice without doubling the library. */
 
   function applyImport(incoming, mode) {
+    /* The category lists travel with the file. Replacing takes the file's lists
+       whole; merging only adds names that are not here yet, so importing someone
+       else's drills cannot rename or delete a category of his own. */
+    if (incoming.lists) {
+      if (mode === "replace") { adoptLists(incoming.lists); touchLists(); }
+      else if (incoming.lists.sets) {
+        var changed = false;
+        Object.keys(incoming.lists.sets).forEach(function (k) {
+          var add = incoming.lists.sets[k];
+          if (!Array.isArray(add)) return;
+          var mine = listFor(k), grew = false;
+          add.forEach(function (n) {
+            if (typeof n === "string" && n.trim() && mine.indexOf(n) === -1) {
+              mine.push(n); grew = true;
+            }
+          });
+          if (grew) { if (!lists.sets) lists.sets = {}; lists.sets[k] = mine; changed = true; }
+        });
+        if (changed) touchLists();
+      }
+    }
     if (mode === "replace") {
       state = incoming;
       state.drills.forEach(function (d) { dirty[d.id] = "drills"; });

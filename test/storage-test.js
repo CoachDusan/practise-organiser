@@ -19,6 +19,7 @@
  */
 
 var failures = 0, checks = 0;
+var listedTags = null;
 
 function ok(label, cond, detail) {
   checks++;
@@ -264,7 +265,8 @@ function appSource() {
     "           parseDMY: parseDMY, formatDMY: formatDMY, ageFrom: ageFrom,\n" +
     "           parseTime: parseTime, spanMinutes: spanMinutes, timeRange: timeRange,\n" +
     "           isOpen: isOpen, setOpen: setOpen, setOpenAll: setOpenAll,\n" +
-    "           POSITIONS: POSITIONS,\n" +
+    "           listFor: listFor, setList: setList, DEFAULT_LISTS: DEFAULT_LISTS,\n" +
+    "           listUsers: listUsers, adoptLists: adoptLists, deflateLists: deflateLists,\n" +
     "           practiceMinutes: practiceMinutes, prettyDate: prettyDate,\n" +
     "           openDrillPicker: openDrillPicker, route: route,\n" +
     "           maskFrom: maskFrom, maskText: maskText, typedField: typedField,\n" +
@@ -338,11 +340,12 @@ print("\n1. a version 1 library survives the upgrade to version 2");
 launch(backing, lsStore).then(function (po) {
   eq("storage is IndexedDB", po.Store.kind, "idb");
   eq("both drills came back", po.state.drills.length, 2);
-  eq("database is now at version 5", backing.version, 5);
+  eq("database is now at version 6", backing.version, 6);
   ok("the practices store was created", backing.stores.indexOf("practices") >= 0);
   ok("the events store was created", backing.stores.indexOf("events") >= 0);
   ok("the players store was created", backing.stores.indexOf("players") >= 0);
   ok("the tactics store was created", backing.stores.indexOf("tactics") >= 0);
+  ok("the category lists store was created", backing.stores.indexOf("lists") >= 0);
   var shell = po.findDrill("d-shell");
   ok("the drill kept its name", shell && shell.name === "Shell defence");
   ok("its ink was unpacked into points",
@@ -769,7 +772,7 @@ launch(backing, lsStore).then(function (po) {
   eq("a start alone still shows", po.timeRange("18:00", ""), "18:00");
   eq("both show as a range", po.timeRange("18:00", "19:30"), "18:00\u201319:30");
 
-  eq("positions are the general three", po.POSITIONS.join(","), "G,F,C");
+  eq("positions are the general three", po.listFor("position").join(","), "G,F,C");
 
   print("\n13. categories that open");
   eq("a category starts closed", po.isOpen("drill:Shooting"), false);
@@ -1265,6 +1268,181 @@ launch(backing, lsStore).then(function (po) {
   ok("one opened from the list still goes back to the list",
      document.getElementById("crumb").textContent.indexOf("Practices") >= 0,
      document.getElementById("crumb").textContent);
+
+  /* The stage above runs on the localStorage fallback, so the lists get their
+     round-trip through the smaller store here before moving back to IndexedDB. */
+  po.setList("format", ["Whole team only"]);
+  po.flush();
+  var lsSaved = JSON.parse(lsStore.getItem("practise-organiser/v1"));
+  eq("the category lists reach the smaller store too",
+     lsSaved.lists.sets.format.join(","), "Whole team only");
+
+  return launch(backing, lsStore);
+})
+.then(function (po) {
+
+  /* ---------------------------------------------------------------
+     "I need option to edit/delete/rename Categories."
+
+     The lists used to be constants, so "Add new..." only ever added to the one
+     dropdown in front of him and the next drill was never offered it. They are
+     records now, and the part worth guarding is that a RENAME is a real rename:
+     if the list changes and the drills do not, the library quietly splits in two
+     and every count taken after it is wrong. */
+  print("\n25. the categories are his to change");
+
+  eq("an untouched list is the built-in one",
+     po.listFor("tag").join(","), po.DEFAULT_LISTS.tag.join(","));
+
+  var before = po.listUsers("tag", "Shooting").length;
+  var catDrill = po.newDrill();
+  catDrill.name = "Form shooting";
+  catDrill.tag = "Shooting";
+  po.state.drills.unshift(catDrill);
+  po.touch(catDrill);
+
+  eq("it knows who is on a category", po.listUsers("tag", "Shooting").length, before + 1);
+  eq("and nobody on one nothing uses", po.listUsers("tag", "Rebounding").length, 0);
+
+  // exactly what the Rename button does
+  (function () {
+    var arr = po.listFor("tag");
+    arr[arr.indexOf("Shooting")] = "Shooting & finishing";
+    po.setList("tag", arr);
+    po.listUsers("tag", "Shooting").forEach(function (u) { u.set("Shooting & finishing"); });
+  })();
+  eq("a rename takes the drills with it", catDrill.tag, "Shooting & finishing");
+  eq("all of them, not just the one in front of him",
+     po.listUsers("tag", "Shooting & finishing").length, before + 1);
+  eq("and none are left behind on the old name",
+     po.listUsers("tag", "Shooting").length, 0);
+  ok("which is gone from the list too", po.listFor("tag").indexOf("Shooting") < 0);
+
+  // and exactly what Delete does: the label goes, the drill does not
+  po.listUsers("tag", "Shooting & finishing").forEach(function (u) { u.set(""); });
+  po.setList("tag", po.listFor("tag").filter(function (x) { return x !== "Shooting & finishing"; }));
+  ok("deleting a category does not delete the drill", !!po.findDrill(catDrill.id));
+  eq("it only takes the label off", catDrill.tag, "");
+
+  po.setList("position", ["G", "F", "C", "Combo"]);
+  eq("a position he adds is on the list", po.listFor("position").join(","), "G,F,C,Combo");
+
+  po.go("lists", null, "library");
+  ok("the Categories screen renders",
+     document.getElementById("app").querySelectorAll(".listrow").length > 0);
+  ok("and goes back where he came from",
+     document.getElementById("crumb").textContent.indexOf("Drills") >= 0,
+     document.getElementById("crumb").textContent);
+
+  var catBackup = JSON.parse(po.serialize(po.state));
+  ok("the lists travel in a backup", !!(catBackup.lists && catBackup.lists.sets),
+     Object.keys(catBackup).join(","));
+
+  listedTags = po.listFor("tag").slice();
+  return po.flush().then(function () { return launch(backing, lsStore); });
+})
+.then(function (po) {
+
+  eq("a renamed list is still renamed after a restart",
+     po.listFor("tag").join(","), listedTags.join(","));
+  eq("and an added position is still there", po.listFor("position").join(","), "G,F,C,Combo");
+  eq("a list he never touched still follows the defaults",
+     po.listFor("format").join(","), po.DEFAULT_LISTS.format.join(","));
+
+  /* ---------------------------------------------------------------
+     "When I open the app, first thing is month view of schedule." */
+  print("\n26. the app opens on the month");
+
+  eq("the month is what a fresh install shows", po.ui.smode, "month");
+  po.route.smode = "";
+  po.go("schedule");
+  eq("and that is what opening the schedule lands on", po.route.smode, "month");
+
+  var weekBtn = document.getElementById("app").querySelectorAll("button")
+                  .filter(function (b) { return b.textContent === "Week"; })[0];
+  ok("the week is still one tap away", !!weekBtn);
+  weekBtn.onclick();
+  eq("choosing the week records the choice", po.ui.smode, "week");
+  eq("so it is still the week next time",
+     JSON.parse(lsStore.getItem("practise-organiser/ui")).smode, "week");
+  ok("but which view he likes is not part of the season's record",
+     !("smode" in JSON.parse(po.serialize(po.state))));
+
+  /* ---------------------------------------------------------------
+     "When All are selected, I want them lined up by the usage. Drill that is
+     used the most is on top." And: the search box empties itself once it has
+     found the thing, so the next tap starts from the whole list again. */
+  print("\n27. the picker leads with what he actually runs");
+
+  var rare = po.newDrill();  rare.name  = "Aaa rarely";
+  var often = po.newDrill(); often.name = "Zzz weekly";
+  var never = po.newDrill(); never.name = "Mmm never";
+  [rare, often, never].forEach(function (d) { po.state.drills.unshift(d); po.touch(d); });
+
+  ["2026-09-01", "2026-09-03", "2026-09-05"].forEach(function (date) {
+    var pr = po.newPractice();
+    pr.date = date; pr.status = "done";
+    pr.items.push(po.newItem(often));
+    if (date === "2026-09-01") pr.items.push(po.newItem(rare));
+    po.state.practices.push(pr);
+    po.touchPractice(pr);
+  });
+
+  var host = po.newPractice();
+  po.state.practices.push(host);
+  po.openDrillPicker(host);
+
+  function pickerNames() {
+    return document.body.querySelectorAll(".mname").map(function (n) { return n.textContent; });
+  }
+  // Only these three, since the library already holds drills with counts of
+  // their own from earlier sections.
+  var mine = pickerNames().filter(function (n) { return /^(Aaa|Zzz|Mmm)/.test(n); });
+  eq("the most-used of the three is first", mine[0], "Zzz weekly");
+  eq("then the one that was run once", mine[1], "Aaa rarely");
+  eq("and the one never run is last", mine[2], "Mmm never");
+  eq("the most-used drill in the whole library leads the list",
+     pickerNames()[0], "Zzz weekly");
+
+  var says = document.body.querySelectorAll(".isub")
+               .filter(function (n) { return n.textContent.indexOf("run 3\u00D7") >= 0; });
+  eq("the row says how often, so the order is not arbitrary", says.length, 1);
+
+  var box = document.body.querySelectorAll(".msearch")[0];
+  box.value = "zzz";
+  box.oninput();
+  eq("a search narrows the list", pickerNames().length, 1);
+
+  /* The tick is shown, then the box empties. setTimeout is a no-op in here, so
+     the callback is captured and fired by hand — otherwise this would pass
+     without the code ever running, which has caught this suite out before. */
+  var later = [], realTimeout = globalThis.setTimeout;
+  globalThis.setTimeout = function (fn) { later.push(fn); return 0; };
+  document.body.querySelectorAll(".mrow")[0].onclick();
+  globalThis.setTimeout = realTimeout;
+  eq("picking one adds it to the practice", host.items.length, 1);
+  eq("and the search survives just long enough to show the tick", box.value, "zzz");
+  later.forEach(function (fn) { fn(); });
+
+  eq("then the box empties itself", box.value, "");
+  ok("and the whole library is back, in usage order", pickerNames().length > 1,
+     pickerNames().length + " rows");
+
+  /* ---------------------------------------------------------------
+     "I can't move the text left or right, so if it's too long I don't see what
+     I typed at the end." A one-line box scrolls its text out of reach on an
+     iPad driven by a Pencil; a textarea wraps and shows all of it. */
+  print("\n28. a long caption stays readable");
+
+  po.go("drill", often.id);
+  var caps = document.getElementById("app").querySelectorAll(".diagram-cap");
+  ok("every court has a caption box", caps.length > 0);
+  eq("and it wraps rather than scrolling sideways", caps[0].tagName, "textarea");
+  caps[0].value = "A very long caption that would once have run off the end of one line";
+  caps[0].oninput();
+  eq("what is typed is what is kept",
+     po.findDrill(often.id).diagrams[0].caption,
+     "A very long caption that would once have run off the end of one line");
 
   print("");
   print(failures ? "FAILED " + failures + " of " + checks + " checks"
