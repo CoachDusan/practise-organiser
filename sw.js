@@ -3,7 +3,7 @@
    data is NOT here: that lives in IndexedDB, which is offline by nature. Bump
    VERSION whenever the shell changes, so old copies are cleared out. */
 
-var VERSION = "po-shell-v22";
+var VERSION = "po-shell-v23";
 var SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg"];
 
 /* THE BUG THAT MADE BUMPING VERSION USELESS (2026-08-24)

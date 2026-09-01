@@ -1286,3 +1286,114 @@ the three. A test that passes either way proves nothing, and this project has be
 that three times.
 
 `test/run.sh` is now **285 checks**.
+
+## Importing the playbook from FastDraw (2026-09-01) — Dusan's call
+
+*"I have all our sets drawn there, and I don't want to draw it again in this app."*
+
+There is no way to link the two. FastDraw's plays live in its own `.fdp` format, there is
+no public API and nothing outside FastModel reads it. **But the PDF it exports is far more
+than a picture**, and that is what made this cheap.
+
+### FastDraw prints structure, not pictures
+
+The export is **pure vector line art with a live text layer** — 111 KB for 5 pages, no
+raster images anywhere. And it labels every frame with two lines above the court:
+
+> upper line = the play · lower line = the category it belongs to
+
+That is **exactly a set and its options**, which is how this app already holds tactics. So
+the whole tree comes out of the file and nothing is retyped — which matters for the same
+reason the drill library does: a retyped name is one typo away from being two tactics, and
+every count taken afterwards is then wrong.
+
+Font size is the discriminator, and it is stable across the export:
+
+| Size | What it is |
+|---|---|
+| 24 | the page's section heading (Transition, Set plays, SOB, BOB) |
+| ~7.3 | the play name |
+| ~5.85 | the set it sits in |
+| ~6.9 | a caption under a frame |
+| ~3–4 | player numbers inside the court |
+
+His own export came out as **8 sets, 18 options, 50 courts**, with all five of its captions
+on the right diagram. *(The package itself is club data and is not written down here — see
+the note at the end of this section.)*
+
+**Two things about the geometry were not guessable and had to be measured:**
+
+- **Frames are found by their clip rectangle**, not by looking for courts. Each frame opens
+  with one, and the counts matched the pages exactly (6 · 13 · 14 · 5 · 12).
+- **Captions sit on their own column grid, offset from the frame boxes** — same pitch,
+  different origin — and *two captions in one row share a text baseline*. Assigning them by
+  line, or by "which frame box does this text overlap", put one play's note under its
+  neighbour and split another in half. They are bucketed by column index instead, flooring
+  rather than taking the nearest because a wrapped line runs past its column's right edge.
+
+### Pictures now, vector later — his call
+
+The frames were rendered two ways and both were tried, not argued about:
+
+- **Pictures** (`tools/fastdraw-crop.swift`, CoreGraphics): rendered from the vector art at
+  whatever resolution is asked for, so they are drawn rather than resampled. **Proven** —
+  half courts and full courts both checked on screen.
+- **Vector → SVG**: 20× smaller (490 KB for all fifty), crisp at any zoom, and it would take
+  the Pencil on top. A prototype got courts, players, arrows, screens and dribble squiggles
+  across, but **two long curves and the dashed passing lines still drop**. Not finished.
+
+He took pictures now. Vector stays open as an upgrade that replaces the images in place.
+
+**Grayscale at 16×, measured against the alternatives:** the art is black on white, so
+colour is wasted. 3.8 MB at 16× (a ~950px half court, sharp at size L on the iPad) against
+5.9 MB for *colour at 12×*. Smaller and sharper at once.
+
+### A diagram can now be a picture
+
+`dg.image` (a data URI) and `dg.aspect`. When present the picture stands in for the drawn
+court, and ink still goes **on top** — the canvases sit above it either way, and the eraser
+only ever cuts into the ink layer, so an imported play cannot be rubbed out by accident.
+
+- **Half/Full is not offered on an imported court.** It picks which court to draw, and the
+  play brought its own; the choice would do nothing.
+- A **FastDraw full court is portrait** where this app's is landscape, so the picture carries
+  its own aspect and `court` only decides how wide ink is scaled on top of it.
+- `deflateDiagram` exists because **diagram fields are listed by hand, not copied** — a new
+  field is silently dropped on the next save, and only shows up after a quit and reopen.
+
+### Two real bugs in the import path, found on the way
+
+`applyImport` **named drills and practices by hand**, so:
+
+1. a file holding only tactics — which is exactly what this importer produces — **imported
+   nothing at all**; and
+2. a merged ordinary backup silently dropped its diary, its roster and its tactical package,
+   while a *replace* left the old ones in the database to reappear on the next reload.
+
+Both fixed by looping the five kinds. The import sheet also counts whatever the file
+actually holds, rather than reading *"0 drills in this file"* at the exact moment he most
+needs telling what he is about to import.
+
+### Judgement calls, stated rather than hidden
+
+- **A play split across the page is one option, not several.** One of his sets prints a play
+  in three separate blocks with two of its branches in between; those blocks are merged into
+  a single option with its courts in reading order, rather than becoming three options that
+  happen to share a name.
+- **A play stays where FastDraw filed it**, even where this app also offers that name as a
+  category of its own. Moving it would be a judgement about his package, not a conversion.
+- Sections map to sides and categories through `SECTIONS`; an unrecognised one **keeps its
+  FastDraw name** rather than being guessed at — a wrong category is invisible, an unknown
+  one is one tap to fix.
+- Ids are derived from the play's own name, so **re-importing the book updates rather than
+  doubles** — the same reason the drill import keeps its source ids.
+
+**The file is club data, and so are the set names.** The import lands in `private/` (5.1 MB,
+gitignored) and reaches the iPad by AirDrop. This repo is public, so **the club's actual
+sets and options are deliberately not written down here or in the tests** — the reasoning is
+what these notes are for, and it does not need his package to make sense. The same rule that
+kept `drill-management`'s measured values out of this repo.
+
+`test/run.sh` is now **300 checks**. All three changes were checked by reverting them and
+watching the suite fail — dropping the image from the save, drawing the app's court over the
+picture, and naming only drills and practices in the merge.

@@ -1444,6 +1444,95 @@ launch(backing, lsStore).then(function (po) {
      po.findDrill(often.id).diagrams[0].caption,
      "A very long caption that would once have run off the end of one line");
 
+  /* ---------------------------------------------------------------
+     "I have all our sets drawn in FastDraw and I don't want to draw them
+     again." A FastDraw playbook PDF is vector art with a live text layer that
+     names each play and the set it belongs to, so the whole package imports as
+     records with the courts as pictures. A picture is still only a picture -
+     the set name, the option name and the practices it was worked in stay
+     typed, which is what keeps them countable. */
+  print("\n29. a play imported from FastDraw");
+
+  var PNG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUg==";
+
+  var zip = po.newTactic();
+  zip.name = "Wedge";
+  zip.side = "Offence";
+  zip.category = "Half-court sets";
+  zip.options[0].name = "2";
+  zip.options[0].diagrams[0].image = PNG;
+  zip.options[0].diagrams[0].aspect = 1.87;
+  zip.options[0].diagrams[0].caption = "Second option if the first is taken";
+  po.state.tactics.unshift(zip);
+  po.touchTactic(zip);
+
+  po.go("tactic", zip.id);
+  var wraps = document.getElementById("app").querySelectorAll(".court-wrap");
+  ok("the imported play is drawn", wraps.length > 0, "found " + wraps.length);
+  ok("as its own picture rather than the app's court",
+     wraps[0].innerHTML.indexOf("court-img") >= 0 && wraps[0].innerHTML.indexOf(PNG) >= 0);
+  ok("and it says so, so it can be styled as paper",
+     String(wraps[0].className).indexOf("imported") >= 0);
+  /* Half/Full picks which court to draw, and an imported play brought its own,
+     so offering the choice would be offering something that does nothing. */
+  eq("half and full are not offered on it",
+     document.getElementById("app").querySelectorAll("button[data-court=half]").length, 0);
+
+  po.go("drill", often.id);
+  eq("but they still are on a court drawn here",
+     document.getElementById("app").querySelectorAll("button[data-court=half]").length, 1);
+
+  /* Diagram fields are listed by hand in deflateDiagram rather than copied, so
+     a new one is dropped on the next save unless it is added there - which is
+     invisible until the app is quit and reopened. */
+  var packed = po.serialize(po.state);
+  var back = po.deserialize(packed);
+  var zBack = null;
+  back.tactics.forEach(function (t) { if (t.name === "Wedge") zBack = t; });
+  eq("the picture survives a backup", zBack.options[0].diagrams[0].image, PNG);
+  eq("and so does its shape, so the court does not jump before it loads",
+     zBack.options[0].diagrams[0].aspect, 1.87);
+  eq("and the caption FastDraw printed under it",
+     zBack.options[0].diagrams[0].caption, "Second option if the first is taken");
+
+  /* The importer writes a backup carrying tactics and nothing else. Merging
+     used to name drills and practices by hand, so such a file imported nothing
+     at all - and a merged ordinary backup silently dropped its diary, its
+     roster and its tactical package. */
+  var only = po.deserialize(JSON.stringify({
+    version: 6, drills: [], practices: [], events: [], players: [],
+    tactics: [{ id: "fd-imported", name: "Imported set", side: "Offence",
+                category: "Half-court sets", note: "",
+                options: [{ id: "fd-o1", name: "Imported option", points: "",
+                            diagrams: [{ id: "fd-d1", court: "half", size: "M",
+                                         caption: "", strokes: [],
+                                         image: PNG, aspect: 1.06 }] }] }]
+  }));
+  var setsBefore = po.state.tactics.length;
+  var drillsBefore = po.state.drills.length;
+  po.applyImport(only, "merge");
+  eq("a file holding only tactics still imports", po.state.tactics.length, setsBefore + 1);
+  eq("and it leaves the drills alone", po.state.drills.length, drillsBefore);
+  var imported = null;
+  po.state.tactics.forEach(function (t) { if (t.id === "fd-imported") imported = t; });
+  ok("the imported set is there", !!imported);
+  eq("with its picture", imported.options[0].diagrams[0].image, PNG);
+
+  /* Merging the same file again must update rather than double, which is what
+     the importer's name-derived ids are for. */
+  po.applyImport(only, "merge");
+  eq("importing it twice does not double it", po.state.tactics.length, setsBefore + 1);
+
+  var withRoster = po.deserialize(JSON.stringify({
+    version: 6, drills: [], practices: [], tactics: [],
+    players: [{ id: "pl-import", name: "Imported player", number: 99, assessments: [] }],
+    events: [{ id: "ev-import", date: "2026-09-05", kind: "game", title: "Imported game" }]
+  }));
+  var playersBefore = po.state.players.length, eventsBefore = po.state.events.length;
+  po.applyImport(withRoster, "merge");
+  eq("merging brings the roster across too", po.state.players.length, playersBefore + 1);
+  eq("and the diary", po.state.events.length, eventsBefore + 1);
+
   print("");
   print(failures ? "FAILED " + failures + " of " + checks + " checks"
                  : "all " + checks + " checks passed");
